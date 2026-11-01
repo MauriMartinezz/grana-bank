@@ -14,6 +14,7 @@ function createUser(email: string, reference: string, counterparty: string) {
     data: {
       email,
       name: "Test",
+      passwordHash: "!",
       account: {
         create: {
           balanceCents: 0,

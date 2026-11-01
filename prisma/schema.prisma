@@ -19,10 +19,24 @@ enum CardBrand {
 }
 
 model User {
-  id      String   @id @default(uuid())
-  email   String   @unique
-  name    String
-  account Account?
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  /// Salted scrypt hash, never the password itself.
+  passwordHash String
+  account      Account?
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  /// SHA-256 of the cookie token, so a database leak exposes no usable session.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+
+  @@index([userId])
 }
 
 model Account {

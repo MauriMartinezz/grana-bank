@@ -13,7 +13,7 @@ cp .env.example .env
 pnpm install
 pnpm db:up        # Postgres on port 5433
 pnpm db:migrate
-pnpm db:seed
+SEED_USER_PASSWORD='<password from the brief>' pnpm db:seed
 pnpm dev
 ```
 

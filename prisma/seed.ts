@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { hashPassword } from "../features/auth/password";
 import { PrismaClient, MovementType } from "../generated/prisma/client";
 
 const { SUBSCRIPTION, RECEIVED, SENT } = MovementType;
@@ -20,6 +21,14 @@ const movements: Array<[MovementType, string, number, string]> = [
 ];
 
 async function main() {
+  // Read from the environment so the password never lives in the repository.
+  const password = process.env.SEED_USER_PASSWORD;
+  if (!password) {
+    throw new Error(
+      "Set SEED_USER_PASSWORD to the password from the challenge brief.",
+    );
+  }
+
   const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL,
   });
@@ -34,6 +43,7 @@ async function main() {
     data: {
       email,
       name: "Granate",
+      passwordHash: await hashPassword(password),
       account: {
         create: {
           currency: "USD",
