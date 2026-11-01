@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MovementType {
+  SUBSCRIPTION
+  RECEIVED
+  SENT
+}
+
+enum CardBrand {
+  MASTERCARD
+  VISA
+}
+
+model User {
+  id      String   @id @default(uuid())
+  email   String   @unique
+  name    String
+  account Account?
+}
+
+model Account {
+  id           String     @id @default(uuid())
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// ISO 4217 code.
+  currency     String     @default("USD")
+  /// Integer cents, so amounts never go through floating point.
+  balanceCents Int
+  cardBrand    CardBrand
+  cardLast4    String
+  cardHolder   String
+  /// Formatted as MM/YY.
+  cardExpiry   String
+  movements    Movement[]
+}
+
+model Movement {
+  id           String       @id @default(uuid())
+  accountId    String
+  account      Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  type         MovementType
+  /// Person or service on the other side of the movement.
+  counterparty String
+  /// Integer cents, always positive. The direction comes from `type`.
+  amountCents  Int
+  /// Operation number shown on the detail screen.
+  reference    String       @unique
+  occurredAt   DateTime
+
+  @@index([accountId, occurredAt(sort: Desc)])
+}
