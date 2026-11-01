@@ -44,3 +44,5 @@ Route evidence: no writer reason applies. Units depend on each other, so all tas
 - L8 (2026-11-01): Next step: T7, when the user decides delivery is close. The user's running dev server served stale CSS and needs a restart.
 - L9 (2026-11-01): Independent verifier found no blockers for the production guard, data isolation and secrets. Accepted advisories fixed: literal `%` and `_` in search, and filter click racing the search debounce. 23 tests and 18 browser checks pass.
 - L10 (2026-11-01): Native review approved and acknowledged for the app code (lineage review-ac6c439a70976c39, base 5c6423e). The DB and dependency commit did not fit the review budget and stays out of that review. Fixed review advisories: inherited Object names in the type filter, filter click resetting the input, unstable order for equal dates.
+- L11 (2026-11-01, user): "bien, podrías fraccionarlo en diferentes commits? para que no sea un big ass commit"
+- L12 (2026-11-01): History rewritten into 18 work-unit commits with an identical final tree. Commit ids in L10 refer to the previous history; the reviewed code is the same. Every commit passes type checks and its tests.
