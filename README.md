@@ -25,7 +25,7 @@ Open http://localhost:3000 in a mobile viewport.
 | `pnpm lint` | ESLint |
 | `pnpm build` | Production build |
 
-> **Login is a development bypass for now.** Any input enters the app, and the bypass refuses to run in production. Real authentication is pending, so `pnpm start` shows the error state on private screens until then.
+Sign in with the credentials from the brief. The seed reads the password from `SEED_USER_PASSWORD`, so it is never stored in the repository.
 
 ## Project structure
 
@@ -35,6 +35,7 @@ features/    Code grouped by domain: account, auth, movements
 components/  Shared UI with no domain knowledge
 lib/         Database client and formatters
 prisma/      Schema, migrations and seed
+proxy.ts     Redirects visitors with no session cookie to login
 ```
 
 ## Decisions
@@ -42,7 +43,11 @@ prisma/      Schema, migrations and seed
 | Topic | Decision | Why |
 |-------|----------|-----|
 | Money | Integer cents | Floating point cannot represent cents exactly. |
-| Current user | Single `getCurrentUser()` function | Real sessions can replace the bypass without changing screens or queries. |
+| Current user | Single `getCurrentUser()` function | Screens and queries never read cookies or sessions themselves. |
+| Passwords | Salted scrypt from `node:crypto` | It resists brute force and adds no dependency. |
+| Sessions | Random token in an `httpOnly` cookie, stored as a SHA-256 hash in the database | Logout revokes a session at once, and a database leak exposes no usable token. |
+| Route protection | `proxy.ts` checks the cookie, `getCurrentUser()` validates the session | The proxy avoids rendering private screens for anonymous visitors, without a database query on each request. |
+| "Recordarme" | 7 day persistent cookie, otherwise a browser-session cookie that expires on the server after 1 day | It follows the checkbox in the design with a short default for a banking app. |
 | Data access | Every query filters by `account.userId` | A user cannot read another account by guessing an id. |
 | Search and filters | Stored in the URL | They survive a reload and the way back from the detail page. |
 | Loading | Suspense boundaries with skeletons | The screen layout appears at once and data streams in. |
@@ -61,3 +66,4 @@ prisma/      Schema, migrations and seed
 - **Contrast:** the yellow amount is hard to read on white. It is kept to follow the design, and the icon and subtitle also convey the movement type.
 - **Search:** it ignores case but not accents, so "Jose" does not find "José".
 - **List size:** the movement list shows the 50 most recent items, without pagination.
+- **Login attempts:** there is no rate limiting, which a real banking app would need.

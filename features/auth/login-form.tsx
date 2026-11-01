@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { EyeIcon, EyeOffIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { login } from "./actions";
 
 const INPUT_CLASS =
   "h-11 w-full rounded-xl border border-line bg-white px-4 text-sm placeholder:font-serif placeholder:text-muted";
+
+const ERROR_CLASS = "mt-1.5 text-sm text-garnet";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -19,10 +21,12 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
+  const [state, action] = useActionState(login, undefined);
   const [showPassword, setShowPassword] = useState(false);
+  const errors = state?.errors;
 
   return (
-    <form action={login} className="flex flex-1 flex-col">
+    <form action={action} noValidate className="flex flex-1 flex-col">
       <label htmlFor="email" className="mb-1.5 text-sm font-medium">
         Email
       </label>
@@ -33,8 +37,16 @@ export function LoginForm() {
         inputMode="email"
         autoComplete="email"
         placeholder="tu@email.com"
+        defaultValue={state?.email}
+        aria-invalid={Boolean(errors?.email)}
+        aria-describedby={errors?.email ? "email-error" : undefined}
         className={INPUT_CLASS}
       />
+      {errors?.email && (
+        <p id="email-error" role="alert" className={ERROR_CLASS}>
+          {errors.email}
+        </p>
+      )}
 
       <label htmlFor="password" className="mt-4 mb-1.5 text-sm font-medium">
         Contraseña
@@ -46,6 +58,8 @@ export function LoginForm() {
           type={showPassword ? "text" : "password"}
           autoComplete="current-password"
           placeholder="Tu contraseña"
+          aria-invalid={Boolean(errors?.password)}
+          aria-describedby={errors?.password ? "password-error" : undefined}
           className={`${INPUT_CLASS} pr-11`}
         />
         <button
@@ -62,6 +76,11 @@ export function LoginForm() {
           )}
         </button>
       </div>
+      {errors?.password && (
+        <p id="password-error" role="alert" className={ERROR_CLASS}>
+          {errors.password}
+        </p>
+      )}
 
       <label className="mt-3 flex min-h-11 items-center gap-2 font-serif text-sm">
         <input
@@ -71,6 +90,12 @@ export function LoginForm() {
         />
         Recordarme
       </label>
+
+      {errors?.form && (
+        <p role="alert" className={ERROR_CLASS}>
+          {errors.form}
+        </p>
+      )}
 
       <div className="mt-auto pt-8">
         <SubmitButton />
