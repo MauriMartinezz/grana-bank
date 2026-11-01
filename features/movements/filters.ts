@@ -17,11 +17,11 @@ export const TYPE_FILTERS = [
   { value: "sent", label: "Enviado" },
 ] as const;
 
-const TYPES_BY_URL_VALUE: Record<string, MovementType> = {
-  subscription: "SUBSCRIPTION",
-  received: "RECEIVED",
-  sent: "SENT",
-};
+const TYPES_BY_URL_VALUE = new Map<string, MovementType>([
+  ["subscription", "SUBSCRIPTION"],
+  ["received", "RECEIVED"],
+  ["sent", "SENT"],
+]);
 
 type UrlParam = string | string[] | undefined;
 
@@ -36,7 +36,7 @@ export function parseMovementFilters(params: {
 }): MovementFilters {
   return {
     query: firstValue(params.q).trim().slice(0, MAX_QUERY_LENGTH),
-    type: TYPES_BY_URL_VALUE[firstValue(params.type)] ?? null,
+    type: TYPES_BY_URL_VALUE.get(firstValue(params.type)) ?? null,
   };
 }
 

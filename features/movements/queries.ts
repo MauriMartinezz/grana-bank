@@ -26,7 +26,7 @@ export function listMovements(
         },
       }),
     },
-    orderBy: { occurredAt: "desc" },
+    orderBy: [{ occurredAt: "desc" }, { id: "asc" }],
     take: limit,
     include: { account: { select: { currency: true } } },
   });

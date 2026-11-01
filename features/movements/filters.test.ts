@@ -24,6 +24,11 @@ describe("parseMovementFilters", () => {
     expect(parseMovementFilters({ type: "hacked" }).type).toBeNull();
   });
 
+  it("ignores names inherited from Object", () => {
+    expect(parseMovementFilters({ type: "constructor" }).type).toBeNull();
+    expect(parseMovementFilters({ type: "toString" }).type).toBeNull();
+  });
+
   it("uses the first value of repeated parameters", () => {
     expect(parseMovementFilters({ q: ["uno", "dos"] }).query).toBe("uno");
   });

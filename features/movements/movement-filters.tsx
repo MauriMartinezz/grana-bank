@@ -38,13 +38,16 @@ export function MovementFilters() {
     setQuery(urlQuery);
   }
 
-  function applyQuery(value: string) {
+  function navigate(nextQuery: string, nextType: string | null) {
     clearTimeout(timer.current);
-    const trimmed = value.trim();
-    setAppliedQuery(trimmed);
+    setAppliedQuery(nextQuery);
     startTransition(() => {
-      router.replace(buildHref(trimmed, urlType), { scroll: false });
+      router.replace(buildHref(nextQuery, nextType), { scroll: false });
     });
+  }
+
+  function applyQuery(value: string) {
+    navigate(value.trim(), urlType);
   }
 
   function handleChange(value: string) {
@@ -105,11 +108,11 @@ export function MovementFilters() {
               href={buildHref(query.trim(), value)}
               replace
               scroll={false}
-              onClick={() => {
-                // The link already carries the typed text, and a pending
-                // search would restore the previous filter when it fires.
-                clearTimeout(timer.current);
-                setAppliedQuery(query.trim());
+              onClick={(event) => {
+                // Navigating here keeps the transition pending, so the input
+                // is not reset while the URL catches up.
+                event.preventDefault();
+                navigate(query.trim(), value);
               }}
               aria-current={isActive ? "true" : undefined}
               className={`flex min-h-11 items-center rounded-full border px-3 text-sm font-medium whitespace-nowrap ${
