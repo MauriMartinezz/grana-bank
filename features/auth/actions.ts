@@ -15,6 +15,8 @@ export type LoginState =
   | undefined;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Checked before the pattern, which takes quadratic time on crafted input.
+const MAX_EMAIL_LENGTH = 254;
 
 // Unknown emails verify against this value, so response time does not reveal
 // whether an account exists.
@@ -41,7 +43,9 @@ export async function login(
 
   const errors: NonNullable<LoginState>["errors"] = {};
   if (!email) errors.email = "Ingresá tu email.";
-  else if (!EMAIL_PATTERN.test(email)) errors.email = "Ingresá un email válido.";
+  else if (email.length > MAX_EMAIL_LENGTH || !EMAIL_PATTERN.test(email)) {
+    errors.email = "Ingresá un email válido.";
+  }
   if (!password) errors.password = "Ingresá tu contraseña.";
   if (Object.keys(errors).length > 0) return { email, remember, errors };
 

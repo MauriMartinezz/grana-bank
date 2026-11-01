@@ -147,6 +147,16 @@ describe("login", () => {
     expect(findUnique).not.toHaveBeenCalled();
   });
 
+  it("rejects an oversized email before running the pattern", async () => {
+    const email = `a@${".".repeat(200_000)}@`;
+    const startedAt = performance.now();
+
+    await expect(signIn({ email })).resolves.toMatchObject({
+      errors: { email: "Ingresá un email válido." },
+    });
+    expect(performance.now() - startedAt).toBeLessThan(100);
+  });
+
   it("reports a failure instead of crashing when the database is down", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(db.user, "findUnique").mockRejectedValue(new Error("offline"));
