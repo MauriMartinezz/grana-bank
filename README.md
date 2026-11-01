@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GranaBank
 
-## Getting Started
+Mobile-first banking web app built for a technical challenge. It has login, a home screen with balance and recent movements, a searchable movement list, and a movement detail page.
 
-First, run the development server:
+**Stack:** Next.js, TypeScript, PostgreSQL and Prisma. Vitest runs the tests.
+
+## Quick path
+
+Requires Node 22, pnpm and Docker.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+cp .env.example .env
+pnpm install
+pnpm db:up        # Postgres on port 5433
+pnpm db:migrate
+pnpm db:seed
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 in a mobile viewport.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command | Purpose |
+|---------|---------|
+| `pnpm test` | Unit and integration tests. The database must be running. |
+| `pnpm lint` | ESLint |
+| `pnpm build` | Production build |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+> **Login is a development bypass for now.** Any input enters the app, and the bypass refuses to run in production. Real authentication is pending, so `pnpm start` shows the error state on private screens until then.
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```text
+app/         Routes, layouts, and loading and error boundaries
+features/    Code grouped by domain: account, auth, movements
+components/  Shared UI with no domain knowledge
+lib/         Database client and formatters
+prisma/      Schema, migrations and seed
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Decisions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Topic | Decision | Why |
+|-------|----------|-----|
+| Money | Integer cents | Floating point cannot represent cents exactly. |
+| Current user | Single `getCurrentUser()` function | Real sessions can replace the bypass without changing screens or queries. |
+| Data access | Every query filters by `account.userId` | A user cannot read another account by guessing an id. |
+| Search and filters | Stored in the URL | They survive a reload and the way back from the detail page. |
+| Loading | Suspense boundaries with skeletons | The screen layout appears at once and data streams in. |
+| Detail screen | Page at `/movements/[id]` | Required by the brief and missing from Figma. It has a URL and natural loading and not-found states. |
+| Validation libraries | None | Filters are parsed by a small tested function. |
 
-## Deploy on Vercel
+## Differences from Figma
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Colors:** sampled from PNG exports, so they are close approximations.
+- **"Subscripción":** corrected to "Suscripción", matching "Pago de suscripción" in the same design.
+- **Bell:** the brief gives it no behavior, so it reports that there are no notifications.
+- **Logo:** cropped from a PNG export. Replace `public/logo.png` with the original vector.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Known limitations
+
+- **Contrast:** the yellow amount is hard to read on white. It is kept to follow the design, and the icon and subtitle also convey the movement type.
+- **Search:** it ignores case but not accents, so "Jose" does not find "José".
+- **List size:** the movement list shows the 50 most recent items, without pagination.

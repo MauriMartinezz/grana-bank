@@ -22,12 +22,12 @@ Branch: `feat/grana-bank-app`. Delivery strategy: `single-pr` (solo challenge, n
 
 ## Tasks
 
-- [ ] T1 (S1, S11, S12) inline: Postgres, Prisma schema, migration, seed.
-- [ ] T2 (S9, S14) inline: design tokens, fonts, app shell, bottom navigation.
-- [ ] T3 (S4, S7, S10, S13) inline: current-user seam and Home.
-- [ ] T4 (S2, S4, S8) inline: Movimientos with search and filters.
-- [ ] T5 (S3, S4) inline: movement detail.
-- [ ] T6 (S5, S9, S10) inline: Login screen with dev bypass.
+- [x] T1 (S1, S11, S12) inline: Postgres, Prisma schema, migration, seed.
+- [x] T2 (S9, S14) inline: design tokens, fonts, app shell, bottom navigation.
+- [x] T3 (S4, S7, S10, S13) inline: current-user seam and Home.
+- [x] T4 (S2, S4, S8) inline: Movimientos with search and filters.
+- [x] T5 (S3, S4) inline: movement detail.
+- [x] T6 (S5, S9, S10) inline: Login screen with dev bypass.
 - [ ] T7 (S6, S10) pending: real auth, deferred by the user until close to delivery.
 
 Route evidence: no writer reason applies. Units depend on each other, so all tasks run inline.
@@ -39,3 +39,6 @@ Route evidence: no writer reason applies. Units depend on each other, so all tas
 - L3 (2026-11-01, user): "Siento que si añado por añadir para lucirme pensarán que estoy haciendo estupideces to show off"
 - L4 (2026-11-01): Prisma pinned to 7.10.1 because the npm `latest` tag points to 8.0.0-rc.29.
 - L5 (2026-11-01): Next.js config has `cacheComponents` and `partialPrefetching` on, so request-time reads live inside Suspense boundaries.
+- L6 (2026-11-01): Bugs found by running the app: `usePathname` in the bottom nav blocked prerendering of the dynamic route, and the dev bypass ran during `next build`. Fixed with a Suspense boundary and `connection()`.
+- L7 (2026-11-01): Verified in a scratch copy: 22 Vitest tests, 18 browser flow checks with no console errors, forced skeleton, empty, error and retry states, production build, and production guard (`/home` serves no data).
+- L8 (2026-11-01): Next step: T7, when the user decides delivery is close. The user's running dev server served stale CSS and needs a restart.
