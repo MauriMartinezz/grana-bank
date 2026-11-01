@@ -28,7 +28,7 @@ Branch: `feat/grana-bank-app`. Delivery strategy: `single-pr` (solo challenge, n
 - [x] T4 (S2, S4, S8) inline: Movimientos with search and filters.
 - [x] T5 (S3, S4) inline: movement detail.
 - [x] T6 (S5, S9, S10) inline: Login screen with dev bypass.
-- [x] T7 (S6, S10) inline: real auth, commits cd5895b, 4a82dfe and the outage fix that follows them.
+- [x] T7 (S6, S10) inline: real auth, commits cd5895b, 4a82dfe, 9256640, 917c2e3.
 
 Route evidence: no writer reason applies. Units depend on each other, so all tasks run inline.
 
@@ -50,3 +50,4 @@ Route evidence: no writer reason applies. Units depend on each other, so all tas
 - L14 (2026-11-01): T7 route inline, no writer reason. Design: scrypt from `node:crypto`, random session token stored only as a SHA-256 hash, `proxy.ts` as an optimistic cookie check, `getCurrentUser()` as the real check. "Recordarme" keeps a persistent cookie for 7 days; otherwise a browser-session cookie backed by a 1 day server expiry. The migration keeps existing rows with an unusable hash, so it needs no reset.
 - L15 (2026-11-01): Independent verifier passed S6, S10 and S5 and failed S4 with two blockers, both only during a database outage: `/login` crashed for a visitor with a session cookie, and logout crashed and kept the cookie. Both fixed with regression tests. Accepted advisories also fixed: a failed login cleared Recordarme, the proxy matcher test was tautological, and the login page read the session directly. Declined advisories: no rate limiting (documented in the README), timing of unmigrated `'!'` rows, and passwords over 1 MB (413 from Next).
 - L16 (2026-11-01): Evidence after the fix: 54 Vitest tests, type check, lint and production build pass. Firefox against `next start`: 30 checks on the normal flow, 7 checks with the database unreachable. The user still has to confirm the password value against Figma, because the verifier and the parent could not see the brief.
+- L17 (2026-11-01): Native review granted by the user and approved (lineage review-be99432a066ead4a, base ac3956b, high risk, lenses risk, resilience and reliability). It found one critical candidate-caused defect, confirmed by measurement: the email pattern took quadratic time, about 36 s for a 200 KB field, on an anonymous request. Fixed in 917c2e3 by checking the 254 character limit first. Non-blocking advisories left: no rate limiting (documented), and no test asserts the `secure` cookie flag (the browser flow checks it). 55 Vitest tests pass.
