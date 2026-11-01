@@ -28,7 +28,7 @@ Branch: `feat/grana-bank-app`. Delivery strategy: `single-pr` (solo challenge, n
 - [x] T4 (S2, S4, S8) inline: Movimientos with search and filters.
 - [x] T5 (S3, S4) inline: movement detail.
 - [x] T6 (S5, S9, S10) inline: Login screen with dev bypass.
-- [ ] T7 (S6, S10) pending: real auth, deferred by the user until close to delivery.
+- [x] T7 (S6, S10) inline: real auth, commits cd5895b, 4a82dfe and the outage fix that follows them.
 
 Route evidence: no writer reason applies. Units depend on each other, so all tasks run inline.
 
@@ -46,3 +46,7 @@ Route evidence: no writer reason applies. Units depend on each other, so all tas
 - L10 (2026-11-01): Native review approved and acknowledged for the app code (lineage review-ac6c439a70976c39, base 5c6423e). The DB and dependency commit did not fit the review budget and stays out of that review. Fixed review advisories: inherited Object names in the type filter, filter click resetting the input, unstable order for equal dates.
 - L11 (2026-11-01, user): "bien, podrías fraccionarlo en diferentes commits? para que no sea un big ass commit"
 - L12 (2026-11-01): History rewritten into 18 work-unit commits with an identical final tree. Commit ids in L10 refer to the previous history; the reviewed code is the same. Every commit passes type checks and its tests.
+- L13 (2026-11-01, user): gave the login password from the brief. The value is redacted here on purpose: it is never stored in the repository, and the seed reads it from `SEED_USER_PASSWORD`.
+- L14 (2026-11-01): T7 route inline, no writer reason. Design: scrypt from `node:crypto`, random session token stored only as a SHA-256 hash, `proxy.ts` as an optimistic cookie check, `getCurrentUser()` as the real check. "Recordarme" keeps a persistent cookie for 7 days; otherwise a browser-session cookie backed by a 1 day server expiry. The migration keeps existing rows with an unusable hash, so it needs no reset.
+- L15 (2026-11-01): Independent verifier passed S6, S10 and S5 and failed S4 with two blockers, both only during a database outage: `/login` crashed for a visitor with a session cookie, and logout crashed and kept the cookie. Both fixed with regression tests. Accepted advisories also fixed: a failed login cleared Recordarme, the proxy matcher test was tautological, and the login page read the session directly. Declined advisories: no rate limiting (documented in the README), timing of unmigrated `'!'` rows, and passwords over 1 MB (413 from Next).
+- L16 (2026-11-01): Evidence after the fix: 54 Vitest tests, type check, lint and production build pass. Firefox against `next start`: 30 checks on the normal flow, 7 checks with the database unreachable. The user still has to confirm the password value against Figma, because the verifier and the parent could not see the brief.
