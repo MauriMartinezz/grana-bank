@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { db } from "@/lib/db";
 import { login, logout } from "./actions";
-import { getCurrentUser } from "./current-user";
+import { getCurrentUser, redirectIfSignedIn } from "./current-user";
 import { hashPassword } from "./password";
 import { SESSION_COOKIE } from "./session-cookie";
 
@@ -104,15 +104,23 @@ describe("login", () => {
   it("rejects a wrong password and keeps the typed email", async () => {
     await expect(signIn({ password: "wrong" })).resolves.toEqual({
       email: EMAIL,
+      remember: false,
       errors: { form: "Email o contraseña incorrectos." },
     });
     expect(jar.size).toBe(0);
     await expect(sessionCount()).resolves.toBe(0);
   });
 
+  it("keeps Recordarme after a rejected attempt", async () => {
+    await expect(
+      signIn({ password: "wrong", remember: "on" }),
+    ).resolves.toMatchObject({ remember: true });
+  });
+
   it("answers the same for an unknown email", async () => {
     await expect(signIn({ email: "nobody@auth.test" })).resolves.toEqual({
       email: "nobody@auth.test",
+      remember: false,
       errors: { form: "Email o contraseña incorrectos." },
     });
     expect(jar.size).toBe(0);
@@ -121,6 +129,7 @@ describe("login", () => {
   it("asks for missing fields", async () => {
     await expect(login(undefined, form({}))).resolves.toEqual({
       email: "",
+      remember: false,
       errors: {
         email: "Ingresá tu email.",
         password: "Ingresá tu contraseña.",
@@ -132,6 +141,7 @@ describe("login", () => {
     const findUnique = vi.spyOn(db.user, "findUnique");
     await expect(signIn({ email: "not-an-email" })).resolves.toEqual({
       email: "not-an-email",
+      remember: false,
       errors: { email: "Ingresá un email válido." },
     });
     expect(findUnique).not.toHaveBeenCalled();
@@ -142,6 +152,7 @@ describe("login", () => {
     vi.spyOn(db.user, "findUnique").mockRejectedValue(new Error("offline"));
     await expect(signIn()).resolves.toEqual({
       email: EMAIL,
+      remember: false,
       errors: { form: "No pudimos iniciar sesión. Probá de nuevo." },
     });
     expect(jar.size).toBe(0);
@@ -221,7 +232,34 @@ describe("getCurrentUser", () => {
   });
 });
 
+describe("redirectIfSignedIn", () => {
+  it("sends a signed-in user to home", async () => {
+    await expect(signIn()).rejects.toThrow("REDIRECT:");
+    await expect(redirectIfSignedIn()).rejects.toThrow("REDIRECT:/home");
+  });
+
+  it("keeps a visitor without a session on the page", async () => {
+    await expect(redirectIfSignedIn()).resolves.toBeUndefined();
+  });
+
+  it("keeps the login page usable when the database is down", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(db.session, "findUnique").mockRejectedValue(new Error("offline"));
+    jar.set(SESSION_COOKIE, { value: "stale", options: {} });
+    await expect(redirectIfSignedIn()).resolves.toBeUndefined();
+  });
+});
+
 describe("logout", () => {
+  it("still signs out of the browser when the database is down", async () => {
+    await expect(signIn()).rejects.toThrow("REDIRECT:");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(db.session, "deleteMany").mockRejectedValue(new Error("offline"));
+
+    await expect(logout()).rejects.toThrow("REDIRECT:/login");
+    expect(jar.has(SESSION_COOKIE)).toBe(false);
+  });
+
   it("deletes the session and the cookie, so the token stops working", async () => {
     await expect(signIn()).rejects.toThrow("REDIRECT:");
     const token = jar.get(SESSION_COOKIE)?.value as string;

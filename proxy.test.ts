@@ -1,3 +1,5 @@
+import { readdirSync } from "node:fs";
+import path from "node:path";
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 import { SESSION_COOKIE } from "@/features/auth/session-cookie";
@@ -28,6 +30,15 @@ describe("proxy", () => {
   });
 
   it("covers every private route", () => {
-    expect(config.matcher).toEqual(["/home", "/movements/:path*"]);
+    const routes = readdirSync(path.join(__dirname, "app/(app)"), {
+      withFileTypes: true,
+    }).filter((entry) => entry.isDirectory());
+
+    expect(routes.length).toBeGreaterThan(0);
+    for (const route of routes) {
+      expect(
+        config.matcher.some((pattern) => pattern.startsWith(`/${route.name}`)),
+      ).toBe(true);
+    }
   });
 });

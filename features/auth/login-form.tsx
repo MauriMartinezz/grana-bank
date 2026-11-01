@@ -86,6 +86,7 @@ export function LoginForm() {
         <input
           type="checkbox"
           name="remember"
+          defaultChecked={state?.remember}
           className="size-5 rounded accent-garnet"
         />
         Recordarme

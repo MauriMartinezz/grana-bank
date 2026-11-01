@@ -7,7 +7,9 @@ import { createSession, deleteSession } from "./session";
 
 export type LoginState =
   | {
+      // Returned because React resets the form after the action runs.
       email: string;
+      remember: boolean;
       errors: { email?: string; password?: string; form?: string };
     }
   | undefined;
@@ -41,18 +43,23 @@ export async function login(
   if (!email) errors.email = "Ingresá tu email.";
   else if (!EMAIL_PATTERN.test(email)) errors.email = "Ingresá un email válido.";
   if (!password) errors.password = "Ingresá tu contraseña.";
-  if (Object.keys(errors).length > 0) return { email, errors };
+  if (Object.keys(errors).length > 0) return { email, remember, errors };
 
   try {
     const user = await authenticate(email, password);
     if (!user) {
-      return { email, errors: { form: "Email o contraseña incorrectos." } };
+      return {
+        email,
+        remember,
+        errors: { form: "Email o contraseña incorrectos." },
+      };
     }
     await createSession(user.id, remember);
   } catch (error) {
     console.error("Login failed", error);
     return {
       email,
+      remember,
       errors: { form: "No pudimos iniciar sesión. Probá de nuevo." },
     };
   }

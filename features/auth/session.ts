@@ -54,8 +54,14 @@ export async function deleteSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
 
-  if (token) {
-    await db.session.deleteMany({ where: { tokenHash: hashToken(token) } });
+  // A database failure must not keep the user signed in on this browser.
+  // The row that remains stops working when it expires.
+  try {
+    if (token) {
+      await db.session.deleteMany({ where: { tokenHash: hashToken(token) } });
+    }
+  } catch (error) {
+    console.error("Could not delete the session", error);
   }
   cookieStore.delete(SESSION_COOKIE);
 }

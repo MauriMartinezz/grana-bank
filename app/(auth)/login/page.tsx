@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { redirectIfSignedIn } from "@/features/auth/current-user";
 import { LoginForm } from "@/features/auth/login-form";
-import { getSessionUser } from "@/features/auth/session";
 
 export const metadata: Metadata = { title: "Iniciar sesión" };
 
 // The session depends on the request, so it stays out of the static shell.
 async function RedirectIfSignedIn() {
-  if (await getSessionUser()) redirect("/home");
+  await redirectIfSignedIn();
   return null;
 }
 
