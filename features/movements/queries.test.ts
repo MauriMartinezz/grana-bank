@@ -79,6 +79,13 @@ describe("listMovements", () => {
     expect(movements.map((m) => m.counterparty)).toEqual(["Juan Perez"]);
   });
 
+  it("treats wildcard characters as plain text", async () => {
+    for (const query of ["%", "_"]) {
+      const movements = await listMovements(ownerId, { query, type: null });
+      expect(movements).toEqual([]);
+    }
+  });
+
   it("never finds names from another user", async () => {
     const movements = await listMovements(ownerId, {
       query: "Solo Otro",

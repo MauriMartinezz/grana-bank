@@ -3,6 +3,11 @@ import { NO_FILTERS, type MovementFilters } from "./filters";
 
 const MAX_MOVEMENTS = 50;
 
+/** `%` and `_` are LIKE wildcards; a search must match them literally. */
+function escapeLikePattern(text: string) {
+  return text.replace(/[\\%_]/g, "\\$&");
+}
+
 // Every query goes through `account.userId`, so a user can never read
 // movements from another account, even by guessing an id.
 export function listMovements(
@@ -15,7 +20,10 @@ export function listMovements(
       account: { userId },
       ...(type && { type }),
       ...(query && {
-        counterparty: { contains: query, mode: "insensitive" as const },
+        counterparty: {
+          contains: escapeLikePattern(query),
+          mode: "insensitive" as const,
+        },
       }),
     },
     orderBy: { occurredAt: "desc" },

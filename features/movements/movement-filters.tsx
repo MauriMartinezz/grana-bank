@@ -102,9 +102,15 @@ export function MovementFilters() {
           return (
             <Link
               key={label}
-              href={buildHref(appliedQuery, value)}
+              href={buildHref(query.trim(), value)}
               replace
               scroll={false}
+              onClick={() => {
+                // The link already carries the typed text, and a pending
+                // search would restore the previous filter when it fires.
+                clearTimeout(timer.current);
+                setAppliedQuery(query.trim());
+              }}
               aria-current={isActive ? "true" : undefined}
               className={`flex min-h-11 items-center rounded-full border px-3 text-sm font-medium whitespace-nowrap ${
                 isActive

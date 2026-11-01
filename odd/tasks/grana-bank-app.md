@@ -42,3 +42,4 @@ Route evidence: no writer reason applies. Units depend on each other, so all tas
 - L6 (2026-11-01): Bugs found by running the app: `usePathname` in the bottom nav blocked prerendering of the dynamic route, and the dev bypass ran during `next build`. Fixed with a Suspense boundary and `connection()`.
 - L7 (2026-11-01): Verified in a scratch copy: 22 Vitest tests, 18 browser flow checks with no console errors, forced skeleton, empty, error and retry states, production build, and production guard (`/home` serves no data).
 - L8 (2026-11-01): Next step: T7, when the user decides delivery is close. The user's running dev server served stale CSS and needs a restart.
+- L9 (2026-11-01): Independent verifier found no blockers for the production guard, data isolation and secrets. Accepted advisories fixed: literal `%` and `_` in search, and filter click racing the search debounce. 23 tests and 18 browser checks pass.
