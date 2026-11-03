@@ -35,7 +35,7 @@ export async function UpcomingBills() {
                   {/* The same tile as a service payment in Movimientos. */}
                   <span
                     aria-hidden="true"
-                    className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-soft text-blue"
+                    className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-soft text-blue"
                   >
                     <ReceiptIcon />
                   </span>
