@@ -21,6 +21,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - S15. Review slice 5 found that balances are 32-bit integer cents, so an account tops out at $21.474.836,47 and a credit past it fails with a generic error. User decision: "Cambialo a bigint". Balances and stored amounts become BIGINT (widening only, no stored value changes); per-operation limits stay as they are.
 - S16. "En la pantalla de transferencias preguntar si se desea guardar el contacto antes de guardarlo por defecto". Assumptions: the confirmation step offers an unchecked "Guardar a <nombre> en mis contactos" only when the recipient account is not a contact yet; the transfer saves the contact only when it is checked, in the same transaction; existing contacts and favorites are untouched.
 - S17. User decision: the Home balance card uses the app-wide format, `$978,85` / `USD$978,85`, without the currency badge (added to T13).
+- S18. "Cambiar los nombres de las rutas a nombres en español y más concisos o descriptivos". Mapping: /login→/ingresar, /home→/inicio, /movements→/movimientos, /transfers→/transferir (/new→/nuevo, /to/[accountId]→/[cuentaId], /confirm→/confirmar, /success/[id]→/comprobante/[id]), /exchange→/dolares (/confirmar, /comprobante/[id]), /cards→/tarjetas (/new→/nueva, /[cardId]→/[tarjetaId]), /profile→/perfil (/personal→/datos, /email, /alias/[cuentaId], /password→/contrasena, /currency→/moneda), /services→/servicios, /top-ups→/recargas; `?by=` → `?por=`. Code identifiers stay in English.
 - S8. Existing stored money is never relabeled: the migration keeps each account's stored currency; only the default changes to ARS.
 
 ## Tasks
@@ -36,8 +37,9 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [ ] T10 (S12) delegated: card on each movement, Home latest 6 with Consultar todos.
 - [x] T11 (S13) delegated: card detail with its movements; expiry in Buenos Aires time.
 - [ ] T13 (S15) after T11: balances and amounts as BigInt end to end; Risk items 1 and 4.
-- [ ] T14 (S16) after T13: ask before saving a new contact.
-- [ ] T12 (S14) after T13: group movements by date and filter Movimientos by date.
+- [ ] T15 (S18) right after T13, before every other queued task: Spanish route names.
+- [ ] T14 (S16) after T15: ask before saving a new contact.
+- [ ] T12 (S14) after T15: group movements by date and filter Movimientos by date.
 - [ ] T7 inline: README, seam check, browser checks.
 
 Route evidence: the parent context is past the long-session backstop, so units are delegated (context reason). T2–T6 depend on T1 and start after it, with disjoint edit surfaces. Risk: T1 item 1 (migration moves stored data) and T3/T4 item 4 (balance updates under locks): independent verifier after T1 and at the end.
@@ -67,3 +69,4 @@ Route evidence: the parent context is past the long-session backstop, so units a
 - L21 (2026-11-03, user): "En la pantalla de transferencias preguntar si se desea guardar el contacto antes de guardarlo por defecto". Queued after T13 (both touch the transfer service); T12 and T14 can then run in parallel.
 - L22 (2026-11-03): Final independent verifier on 46e2334 (T2–T6, T8): no blockers, S1–S9 pass. 0 console errors or dev insights on every route in `next dev`; production checks at 390px pass; exchange probes conserve money at 1500 with no deadlock or double charge; the full card number appears in no row, page or action response; differential against 72b0f05 unchanged except requested changes. Advisories queued into T13: `revalidatePath("/", "layout")` logs a cookies() prerender error for /login on every save (narrow the revalidated paths); the seed fails after a seeded user changes email (also delete by seeded alias); the seeded peso balance is too small to buy dollars (raise it). Declined: not-found pages streaming with status 200 (PPR behavior); no exchange filter chip (exchanges show under Todos). Open question for the user: whether the balance card should also show `$` in front.
 - L23 (2026-11-03, user): answered "Sí, $978,85 / USD$978,85" for the balance card; sent to the T13 writer. The full-range START was granted again and refused again (`lens_context_budget_exceeded`, not started).
+- L24 (2026-11-03, user): "Cambiar los nombres de las rutas a nombres en español y más concisos o descriptivos". Queued first after T13 so new features are born with Spanish routes.
