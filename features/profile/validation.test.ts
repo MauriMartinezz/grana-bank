@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   PROFILE_MESSAGES,
   parsePreferredCurrency,
+  savedMessage,
   validateAlias,
   validateNewEmail,
   validatePersonalData,
@@ -121,5 +122,21 @@ describe("validateAlias", () => {
     for (const alias of ["josé", "123", "a".repeat(41), "ana-perez"]) {
       expect(validateAlias(alias)).toEqual({ value: alias, error: PROFILE_MESSAGES.aliasInvalid });
     }
+  });
+});
+
+describe("savedMessage", () => {
+  it.each([
+    ["datos", "Guardamos tus datos."],
+    ["email", "Guardamos tu email."],
+    ["alias", "Guardamos tu alias."],
+    ["contrasena", "Cambiamos tu contraseña."],
+    ["moneda", "Guardamos tu moneda preferida."],
+  ])("confirms %j on the Perfil summary", (key, message) => {
+    expect(savedMessage(key)).toBe(message);
+  });
+
+  it.each([undefined, "", "otra", ["email"], "toString"])("ignores %j", (value) => {
+    expect(savedMessage(value)).toBeNull();
   });
 });

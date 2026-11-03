@@ -1,30 +1,27 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import { Suspense } from "react";
 import { listAccounts } from "@/features/account/queries";
 import { getCurrentUser } from "@/features/auth/current-user";
+import { CURRENCY_LABELS } from "@/features/profile/currency-labels";
 import { ProfileAvatar } from "@/features/profile/profile-avatar";
-import {
-  AliasForm,
-  EmailForm,
-  PersonalDataForm,
-  PreferredCurrencyForm,
-} from "@/features/profile/profile-forms";
+import { SummaryList, SummaryRow } from "@/features/profile/profile-summary";
+import { SavedNotice } from "@/features/profile/saved-notice";
+import { savedMessage } from "@/features/profile/validation";
 
 export const metadata: Metadata = { title: "Perfil" };
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  const id = `section-${title.toLowerCase().replace(/\s+/g, "-")}`;
-  return (
-    <section aria-labelledby={id} className="mt-6 rounded-2xl bg-white p-5">
-      <h2 id={id} className="mb-4 font-serif text-lg font-bold">
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
+const NOT_SET = "Sin cargar";
+
+type SearchParams = PageProps<"/profile">["searchParams"];
+
+// Reads the URL, so it renders behind Suspense.
+async function Confirmation({ searchParams }: { searchParams: SearchParams }) {
+  const { guardado } = await searchParams;
+  const message = savedMessage(guardado);
+  return message ? <SavedNotice message={message} /> : null;
 }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: PageProps<"/profile">) {
   const user = await getCurrentUser();
   const accounts = await listAccounts(user.id);
 
@@ -33,46 +30,40 @@ export default async function ProfilePage() {
       <h1 className="sr-only">Perfil</h1>
       <header className="flex flex-col items-center gap-3 text-center">
         <ProfileAvatar firstName={user.firstName} lastName={user.lastName} />
-        <div>
-          <p className="font-serif text-2xl font-bold">{user.name}</p>
-          <p className="text-sm text-muted">{user.email}</p>
-        </div>
+        <p className="font-serif text-2xl font-bold">{user.name}</p>
       </header>
 
-      <Section title="Datos personales">
-        <PersonalDataForm
-          initial={{
-            firstName: user.firstName,
-            lastName: user.lastName,
-            address: user.address ?? "",
-            phone: user.phone ?? "",
-          }}
-        />
-      </Section>
+      <Suspense fallback={null}>
+        <Confirmation searchParams={searchParams} />
+      </Suspense>
 
-      <Section title="Email">
-        <EmailForm />
-      </Section>
-
-      <Section title="Alias">
-        <div className="flex flex-col gap-6">
-          {accounts.map((account) => (
-            <AliasForm
-              key={account.id}
-              accountId={account.id}
-              currency={account.currency}
-              alias={account.alias}
-            />
-          ))}
-        </div>
-      </Section>
-
-      <Section title="Moneda preferida">
-        <PreferredCurrencyForm
-          currencies={accounts.map((account) => account.currency)}
-          preferred={user.preferredCurrency}
-        />
-      </Section>
+      <SummaryList>
+        <SummaryRow title="Datos personales" href="/profile/personal" item="datos personales">
+          <p>{user.name}</p>
+          <p className="font-normal text-muted">Dirección: {user.address ?? NOT_SET}</p>
+          <p className="font-normal text-muted">Teléfono: {user.phone ?? NOT_SET}</p>
+        </SummaryRow>
+        <SummaryRow title="Email" href="/profile/email" item="email">
+          {user.email}
+        </SummaryRow>
+        {accounts.map((account) => (
+          <SummaryRow
+            key={account.id}
+            title="Alias"
+            href={`/profile/alias/${account.id}`}
+            item={`alias en ${account.currency}`}
+          >
+            {account.currency} · {account.alias}
+          </SummaryRow>
+        ))}
+        <SummaryRow title="Contraseña" href="/profile/password" item="contraseña">
+          <span aria-hidden="true">••••••••</span>
+          <span className="sr-only">Oculta</span>
+        </SummaryRow>
+        <SummaryRow title="Moneda preferida" href="/profile/currency" item="moneda preferida">
+          {CURRENCY_LABELS[user.preferredCurrency]}
+        </SummaryRow>
+      </SummaryList>
     </>
   );
 }

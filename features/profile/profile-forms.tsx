@@ -1,25 +1,22 @@
 "use client";
 
-import { useActionState, type InputHTMLAttributes } from "react";
+import { useActionState, useState, type InputHTMLAttributes } from "react";
 import { useFormStatus } from "react-dom";
+import { EyeIcon, EyeOffIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import type { Currency } from "@/generated/prisma/enums";
 import {
+  changePassword,
   updateAlias,
   updateEmail,
   updatePreferredCurrency,
   updateProfile,
 } from "./actions";
+import { CURRENCY_LABELS } from "./currency-labels";
 
 const INPUT_CLASS =
   "h-11 w-full rounded-xl border border-line bg-white px-4 text-sm placeholder:font-serif placeholder:text-muted";
 const ERROR_CLASS = "mt-1.5 text-sm text-garnet";
-const SUCCESS_CLASS = "mt-3 text-sm text-muted";
-
-const CURRENCY_LABELS: Record<Currency, string> = {
-  ARS: "Pesos (ARS)",
-  USD: "Dólares (USD)",
-};
 
 function SubmitButton({ label = "Guardar" }: { label?: string }) {
   const { pending } = useFormStatus();
@@ -67,12 +64,65 @@ function FormError({ error }: { error?: string }) {
   ) : null;
 }
 
-function Saved({ saved, message }: { saved?: boolean; message: string }) {
-  return saved ? (
-    <p role="status" className={SUCCESS_CLASS}>
-      {message}
-    </p>
-  ) : null;
+/** A password input with a show/hide toggle, like the login form. */
+function PasswordField({
+  id,
+  label,
+  error,
+  autoComplete,
+  hint,
+  toggleName,
+}: {
+  id: string;
+  label: string;
+  /** What the show/hide button names, e.g. "nueva contraseña". */
+  toggleName: string;
+  error?: string;
+  autoComplete: "current-password" | "new-password";
+  hint?: string;
+}) {
+  const [show, setShow] = useState(false);
+  const errorId = `${id}-error`;
+  const hintId = `${id}-hint`;
+  const describedBy = [hint && hintId, error && errorId].filter(Boolean).join(" ");
+
+  return (
+    <div className="flex flex-col">
+      <label htmlFor={id} className="mb-1.5 text-sm font-medium">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          name={id}
+          type={show ? "text" : "password"}
+          autoComplete={autoComplete}
+          aria-invalid={Boolean(error)}
+          aria-describedby={describedBy || undefined}
+          className={`${INPUT_CLASS} pr-11`}
+        />
+        <button
+          type="button"
+          onClick={() => setShow((value) => !value)}
+          aria-label={`${show ? "Ocultar" : "Mostrar"} ${toggleName}`}
+          aria-pressed={show}
+          className="absolute top-0 right-0 flex size-11 items-center justify-center text-muted"
+        >
+          {show ? <EyeIcon className="size-5" /> : <EyeOffIcon className="size-5" />}
+        </button>
+      </div>
+      {hint && (
+        <p id={hintId} className="mt-1.5 text-sm text-muted">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={errorId} role="alert" className={ERROR_CLASS}>
+          {error}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export function PersonalDataForm({
@@ -123,10 +173,7 @@ export function PersonalDataForm({
         error={errors?.phone}
       />
       <FormError error={errors?.form} />
-      <div>
-        <SubmitButton label="Guardar datos" />
-        <Saved saved={state?.saved} message="Guardamos tus datos." />
-      </div>
+      <SubmitButton label="Guardar datos" />
     </form>
   );
 }
@@ -145,7 +192,7 @@ export function EmailForm() {
         inputMode="email"
         autoComplete="email"
         placeholder="tu@email.com"
-        defaultValue={state?.saved ? "" : state?.value}
+        defaultValue={state?.value}
         error={errors?.email}
       />
       <Field
@@ -158,13 +205,7 @@ export function EmailForm() {
         error={errors?.password}
       />
       <FormError error={errors?.form} />
-      <div>
-        <SubmitButton label="Cambiar email" />
-        <Saved
-          saved={state?.saved}
-          message={`Listo. Desde ahora ingresás con ${state?.value}.`}
-        />
-      </div>
+      <SubmitButton label="Cambiar email" />
     </form>
   );
 }
@@ -194,8 +235,7 @@ export function AliasForm({
         defaultValue={state?.value ?? alias}
         error={state?.error}
       />
-      <SubmitButton label={`Guardar alias ${currency}`} />
-      <Saved saved={state?.saved} message={`Guardamos el alias de tu cuenta en ${currency}.`} />
+      <SubmitButton label="Guardar alias" />
     </form>
   );
 }
@@ -240,7 +280,40 @@ export function PreferredCurrencyForm({
         </p>
       )}
       <SubmitButton label="Guardar moneda" />
-      <Saved saved={state?.saved} message="Guardamos tu moneda preferida." />
+    </form>
+  );
+}
+
+export function PasswordForm() {
+  const [state, action] = useActionState(changePassword, undefined);
+  const errors = state?.errors;
+
+  return (
+    <form action={action} noValidate className="flex flex-col gap-4">
+      <PasswordField
+        id="current"
+        label="Contraseña actual"
+        toggleName="contraseña actual"
+        autoComplete="current-password"
+        error={errors?.current}
+      />
+      <PasswordField
+        id="next"
+        label="Nueva contraseña"
+        toggleName="nueva contraseña"
+        autoComplete="new-password"
+        hint="Al menos 8 caracteres."
+        error={errors?.next}
+      />
+      <PasswordField
+        id="confirmation"
+        label="Repetí la nueva contraseña"
+        toggleName="confirmación"
+        autoComplete="new-password"
+        error={errors?.confirmation}
+      />
+      <FormError error={errors?.form} />
+      <SubmitButton label="Cambiar contraseña" />
     </form>
   );
 }

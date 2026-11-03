@@ -1,29 +1,38 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { RedirectType, redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/current-user";
-import { verifyPassword } from "@/features/auth/password";
+import { hashPassword, verifyPassword } from "@/features/auth/password";
+import { otherSessionsWhere } from "@/features/auth/session";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import {
   PROFILE_MESSAGES,
   parsePreferredCurrency,
+  profileSavedPath,
   validateAlias,
   validateNewEmail,
+  validateNewPassword,
   validatePersonalData,
   type PersonalData,
   type PersonalDataErrors,
+  type SavedKey,
 } from "./validation";
 
-// Every state keeps the typed values, because React resets the form after an
-// action. `saved` drives the success message.
+// Every error state keeps the typed values, because React resets the form
+// after an action. A successful save redirects to the Perfil summary instead.
 export type ProfileState =
-  | { values: PersonalData; errors: PersonalDataErrors & { form?: string }; saved?: true }
+  | { values: PersonalData; errors: PersonalDataErrors & { form?: string } }
   | undefined;
 export type EmailState =
-  | { value: string; errors: { email?: string; password?: string; form?: string }; saved?: true }
+  | { value: string; errors: { email?: string; password?: string; form?: string } }
   | undefined;
-export type FieldState = { value: string; error?: string; saved?: true } | undefined;
+export type FieldState = { value: string; error?: string } | undefined;
+// Passwords are never sent back to the browser, so this state only has errors.
+export type PasswordState =
+  | { errors: { current?: string; next?: string; confirmation?: string; form?: string } }
+  | undefined;
 
 const SAVE_FAILED = "No pudimos guardar los cambios. Probá de nuevo.";
 
@@ -35,9 +44,12 @@ function isUniqueViolation(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
-// The name, alias and currency show up on Home, transfers and here.
-function revalidateApp() {
+// The name, alias and currency show up on Home, transfers and here. Replacing
+// the history entry keeps Back on the summary from reopening the change screen.
+// Called outside try/catch, because redirect works by throwing.
+function backToProfile(saved: SavedKey): never {
   revalidatePath("/", "layout");
+  redirect(profileSavedPath(saved), RedirectType.replace);
 }
 
 export async function updateProfile(
@@ -67,8 +79,7 @@ export async function updateProfile(
     console.error("Profile update failed", error);
     return { values, errors: { form: SAVE_FAILED } };
   }
-  revalidateApp();
-  return { values, errors: {}, saved: true };
+  backToProfile("datos");
 }
 
 export async function updatePreferredCurrency(
@@ -94,8 +105,7 @@ export async function updatePreferredCurrency(
     console.error("Preferred currency update failed", error);
     return { value, error: SAVE_FAILED };
   }
-  revalidateApp();
-  return { value, saved: true };
+  backToProfile("moneda");
 }
 
 /** The email signs the user in, so changing it asks for the current password. */
@@ -134,8 +144,7 @@ export async function updateEmail(
     console.error("Email update failed", error);
     return { value, errors: { form: SAVE_FAILED } };
   }
-  revalidateApp();
-  return { value, errors: {}, saved: true };
+  backToProfile("email");
 }
 
 export async function updateAlias(
@@ -160,6 +169,46 @@ export async function updateAlias(
     console.error("Alias update failed", error);
     return { value, error: SAVE_FAILED };
   }
-  revalidateApp();
-  return { value, saved: true };
+  backToProfile("alias");
+}
+
+/**
+ * Changing the password signs out every other browser, so whoever knew the old
+ * one loses access; this browser stays signed in.
+ */
+export async function changePassword(
+  _previous: PasswordState,
+  formData: FormData,
+): Promise<PasswordState> {
+  const user = await getCurrentUser();
+  const current = text(formData, "current");
+  const next = text(formData, "next");
+
+  const errors: NonNullable<PasswordState>["errors"] = validateNewPassword(
+    next,
+    text(formData, "confirmation"),
+  );
+  if (!current) errors.current = PROFILE_MESSAGES.passwordEmpty;
+  if (Object.keys(errors).length > 0) return { errors };
+
+  try {
+    const stored = await db.user.findUniqueOrThrow({
+      where: { id: user.id },
+      select: { passwordHash: true },
+    });
+    if (!(await verifyPassword(current, stored.passwordHash))) {
+      return { errors: { current: PROFILE_MESSAGES.currentPasswordWrong } };
+    }
+    if (next === current) return { errors: { next: PROFILE_MESSAGES.newPasswordSame } };
+
+    const passwordHash = await hashPassword(next);
+    await db.$transaction([
+      db.user.update({ where: { id: user.id }, data: { passwordHash } }),
+      db.session.deleteMany({ where: await otherSessionsWhere(user.id) }),
+    ]);
+  } catch (error) {
+    console.error("Password change failed", error);
+    return { errors: { form: SAVE_FAILED } };
+  }
+  backToProfile("contrasena");
 }
