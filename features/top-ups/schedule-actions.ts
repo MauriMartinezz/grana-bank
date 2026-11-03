@@ -69,7 +69,8 @@ export async function deleteTopUpSchedule(formData: FormData) {
     select: { subeCardId: true },
   });
   if (!schedule) redirect("/recargas/sube");
-  await db.topUpSchedule.delete({ where: { id: scheduleId } });
+  // deleteMany, so a second delete of the same schedule does nothing.
+  await db.topUpSchedule.deleteMany({ where: { id: scheduleId, userId: user.id } });
   revalidatePath(`/recargas/sube/${schedule.subeCardId}`);
   redirect(`/recargas/sube/${schedule.subeCardId}`);
 }
