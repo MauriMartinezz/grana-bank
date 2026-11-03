@@ -20,3 +20,4 @@ Route evidence: starts after accounts T13 (BigInt money), because it adds a move
 ## Log
 
 - L1 (2026-11-03, user request): "Vamos a trabajar en la pantalla de recargas: añadiremos la pantalla de Tarjeta de transporte, la cual será SUBE y se validará el formato, el cual serán 4 bloques de 4 números que empiezan con 6061, podrás dar de alta muchas tarjetas SUBE y ponerle un nombre de recordatorio \"sube de mauri\"por ejemplo, se debe aclarar que luego de recargar que se tiene que convalidar el pago en una terminal o con la aplicación de SUBE"
+- L2 (2026-11-03, user): "En Recargas, quitar el cartel de Proximamente". The notice is gone; each option keeps its small badge until it exists (Tarjeta de transporte turns into SUBE in T1/T2).
