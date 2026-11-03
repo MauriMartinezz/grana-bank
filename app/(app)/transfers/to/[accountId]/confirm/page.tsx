@@ -34,7 +34,7 @@ export default async function ConfirmTransferPage({
   const account = await getAccount(user.id, recipient.currency);
   if (!account) redirect(`/transfers/to/${accountId}`);
 
-  const remaining = account.balanceCents - amountCents;
+  const remaining = account.balanceCents - BigInt(amountCents);
 
   return (
     <>

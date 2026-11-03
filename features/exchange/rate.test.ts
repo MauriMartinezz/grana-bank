@@ -12,11 +12,12 @@ describe("exchange rate", () => {
     [2550, 3825000],
     [MAX_EXCHANGE_USD_CENTS, MAX_EXCHANGE_USD_CENTS * 1500],
   ])("converts %i dollar cents to %i peso cents", (usdCents, arsCents) => {
-    expect(usdToArsCents(usdCents)).toBe(arsCents);
+    expect(usdToArsCents(usdCents)).toBe(BigInt(arsCents));
   });
 
-  it("keeps the largest exchange inside a 32-bit balance", () => {
-    expect(usdToArsCents(MAX_EXCHANGE_USD_CENTS)).toBeLessThanOrEqual(2 ** 31 - 1);
+  it("converts bigint dollar cents exactly, also past 2^53 peso cents", () => {
+    expect(usdToArsCents(BigInt(2550))).toBe(BigInt(3825000));
+    expect(usdToArsCents(BigInt(2) ** BigInt(53))).toBe(BigInt(2) ** BigInt(53) * BigInt(1500));
   });
 
   it.each([

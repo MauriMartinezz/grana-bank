@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { RedirectType, redirect } from "next/navigation";
+import { revalidateAccountScreens } from "@/features/account/revalidate";
 import { getCurrentUser } from "@/features/auth/current-user";
 import { hashPassword, verifyPassword } from "@/features/auth/password";
 import { otherSessionsWhere } from "@/features/auth/session";
@@ -48,7 +48,7 @@ function isUniqueViolation(error: unknown) {
 // the history entry keeps Back on the summary from reopening the change screen.
 // Called outside try/catch, because redirect works by throwing.
 function backToProfile(saved: SavedKey): never {
-  revalidatePath("/", "layout");
+  revalidateAccountScreens();
   redirect(profileSavedPath(saved), RedirectType.replace);
 }
 

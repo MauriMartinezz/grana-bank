@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAccount } from "@/features/account/queries";
+import { revalidateAccountScreens } from "@/features/account/revalidate";
 import { isValidEmail, normalizeEmail } from "@/features/auth/email";
 import { getCurrentUser } from "@/features/auth/current-user";
 import { formatMoney } from "@/lib/format";
@@ -128,7 +129,7 @@ export async function reviewAmount(
       return { value, error: TRANSFER_ERRORS.CURRENCY_MISMATCH };
     }
     // Checked again when the transfer runs; this only spares a wasted step.
-    if (account.balanceCents < amountCents) {
+    if (account.balanceCents < BigInt(amountCents)) {
       return {
         value,
         error: `No tenés saldo suficiente. Disponible: ${formatMoney(account.balanceCents, account.currency)}`,
@@ -181,6 +182,6 @@ export async function confirmTransfer(
   }
   if (!result.ok) return { error: TRANSFER_ERRORS[result.error] };
 
-  revalidatePath("/", "layout");
+  revalidateAccountScreens();
   redirect(`/transfers/success/${result.movementId}`);
 }

@@ -176,7 +176,7 @@ describe("confirmTransfer", () => {
     await expect(result).rejects.toThrow(/^REDIRECT:\/transfers\/success\/[0-9a-f-]{36}$/);
 
     const sender = await db.account.findUniqueOrThrow({ where: { id: senderAccountId } });
-    expect(sender.balanceCents).toBe(7450);
+    expect(sender.balanceCents).toBe(BigInt(7450));
   });
 
   it.each([
@@ -187,7 +187,7 @@ describe("confirmTransfer", () => {
     expect(await confirm(amountCents)).toEqual({ error });
 
     const sender = await db.account.findUniqueOrThrow({ where: { id: senderAccountId } });
-    expect(sender.balanceCents).toBe(10000);
+    expect(sender.balanceCents).toBe(BigInt(10000));
   });
 
   it("treats the same key in upper case as the same transfer", async () => {
@@ -197,7 +197,7 @@ describe("confirmTransfer", () => {
 
     expect(second).toBe(first);
     const sender = await db.account.findUniqueOrThrow({ where: { id: senderAccountId } });
-    expect(sender.balanceCents).toBe(9900);
+    expect(sender.balanceCents).toBe(BigInt(9900));
   });
 
   it("says the recipient is no longer available when their account is gone", async () => {

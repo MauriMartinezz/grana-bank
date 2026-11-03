@@ -84,8 +84,9 @@ model Account {
   /// at least one letter. A CHECK constraint enforces it.
   alias         String     @unique
   currency      Currency   @default(ARS)
-  /// Integer cents, so amounts never go through floating point.
-  balanceCents  Int
+  /// Integer cents as a 64-bit BIGINT, so amounts never go through floating
+  /// point and a balance is not capped at 32 bits.
+  balanceCents  BigInt
   cards         Card[]
   movements     Movement[]
   sent          Transfer[] @relation("TransferFrom")
@@ -124,7 +125,7 @@ model Transfer {
   toAccountId    String
   toAccount      Account    @relation("TransferTo", fields: [toAccountId], references: [id], onDelete: Cascade)
   /// Integer cents, always positive.
-  amountCents    Int
+  amountCents    BigInt
   /// Generated when the confirmation screen renders, so a double submit
   /// creates a single transfer.
   idempotencyKey String
@@ -142,7 +143,7 @@ model Movement {
   /// Person or service on the other side of the movement.
   counterparty String
   /// Integer cents, always positive. The direction comes from `type`.
-  amountCents  Int
+  amountCents  BigInt
   /// Operation number shown on the detail screen. Both sides of a transfer
   /// share it, so it is unique per account.
   reference    String
@@ -171,8 +172,8 @@ model Exchange {
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   direction      ExchangeDirection
   /// Integer cents of each side, always positive.
-  usdCents       Int
-  arsCents       Int
+  usdCents       BigInt
+  arsCents       BigInt
   /// Whole pesos per dollar, for example 1500.
   rateArsPerUsd  Int
   fromAccountId  String

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { MAX_EXCHANGE_USD_CENTS } from "./rate";
@@ -105,6 +106,8 @@ describe("openDollarAccount", () => {
     await db.account.delete({ where: { id: usd.id } });
 
     await expect(openDollarAccount()).rejects.toThrow("REDIRECT:/exchange");
+    // Every signed-in screen, but not the login page under (auth).
+    expect(revalidatePath).toHaveBeenLastCalledWith("/(app)", "layout");
     expect(
       await db.account.count({ where: { userId: current.user.id, currency: "USD" } }),
     ).toBe(1);
@@ -211,9 +214,10 @@ describe("confirmExchange", () => {
 
   it("exchanges and goes to the success screen", async () => {
     await expect(confirm()).rejects.toThrow(/^REDIRECT:\/exchange\/success\/[0-9a-f-]{36}$/);
+    expect(revalidatePath).toHaveBeenLastCalledWith("/(app)", "layout");
 
-    expect(await balanceOf(ars.id)).toBe(300000);
-    expect(await balanceOf(usd.id)).toBe(600);
+    expect(await balanceOf(ars.id)).toBe(BigInt(300000));
+    expect(await balanceOf(usd.id)).toBe(BigInt(600));
   });
 
   it.each([
@@ -227,8 +231,8 @@ describe("confirmExchange", () => {
   ])("rejects %j with a message and moves no money", async (fields, error) => {
     expect(await confirm(fields)).toEqual({ error });
 
-    expect(await balanceOf(ars.id)).toBe(450000);
-    expect(await balanceOf(usd.id)).toBe(500);
+    expect(await balanceOf(ars.id)).toBe(BigInt(450000));
+    expect(await balanceOf(usd.id)).toBe(BigInt(500));
   });
 
   it("treats the same key in upper case as the same exchange", async () => {
@@ -237,7 +241,7 @@ describe("confirmExchange", () => {
     const second = await message(confirm({ idempotencyKey: key.toUpperCase() }));
 
     expect(second).toBe(first);
-    expect(await balanceOf(usd.id)).toBe(600);
+    expect(await balanceOf(usd.id)).toBe(BigInt(600));
   });
 
   it("reports a database failure without crashing", async () => {

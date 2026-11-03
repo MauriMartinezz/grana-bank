@@ -39,7 +39,7 @@ describe("openUsdAccount", () => {
       userId,
       currency: "USD",
       alias: `${ALIAS}.usd`,
-      balanceCents: 0,
+      balanceCents: BigInt(0),
     });
     const [stored] = await usdAccounts();
     expect(stored.id).toBe(account.id);
@@ -53,7 +53,7 @@ describe("openUsdAccount", () => {
     const second = await openUsdAccount(userId);
 
     expect(second.id).toBe(first.id);
-    expect(second.balanceCents).toBe(700);
+    expect(second.balanceCents).toBe(BigInt(700));
     expect(await usdAccounts()).toHaveLength(1);
   });
 

@@ -1,8 +1,8 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { revalidateAccountScreens } from "@/features/account/revalidate";
 import { getCurrentUser } from "@/features/auth/current-user";
 import { isIdempotencyKey } from "@/features/transfers/confirmation";
 import { parseAmountToCents } from "@/features/transfers/amount";
@@ -33,7 +33,8 @@ export async function openDollarAccount(): Promise<ExchangeFormState> {
     console.error("Opening the dollar account failed", error);
     return { error: "No pudimos abrir la cuenta en dólares. Probá de nuevo." };
   }
-  revalidatePath("/", "layout");
+  // The new account shows on Home, Tarjetas, Perfil and the dollar screen.
+  revalidateAccountScreens();
   redirect("/exchange");
 }
 
@@ -69,7 +70,7 @@ export async function reviewExchange(
       where: { id: accounts.fromAccountId },
       select: { balanceCents: true, currency: true },
     });
-    const debitCents = direction === "BUY" ? usdToArsCents(usdCents) : usdCents;
+    const debitCents = direction === "BUY" ? usdToArsCents(usdCents) : BigInt(usdCents);
     // Checked again when the exchange runs; this only spares a wasted step.
     if (from.balanceCents < debitCents) {
       return {
@@ -125,6 +126,6 @@ export async function confirmExchange(
   }
   if (!result.ok) return { error: EXCHANGE_ERRORS[result.error] };
 
-  revalidatePath("/", "layout");
+  revalidateAccountScreens();
   redirect(`/exchange/success/${result.movementId}`);
 }

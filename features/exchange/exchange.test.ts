@@ -100,8 +100,8 @@ describe("exchange", () => {
 
     expect(result).toMatchObject({ ok: true });
     if (!result.ok) return;
-    expect(await balanceOf(user.ars)).toBe(300000);
-    expect(await balanceOf(user.usd)).toBe(600);
+    expect(await balanceOf(user.ars)).toBe(BigInt(300000));
+    expect(await balanceOf(user.usd)).toBe(BigInt(600));
 
     const record = await db.exchange.findUniqueOrThrow({
       where: { id: result.exchangeId },
@@ -110,8 +110,8 @@ describe("exchange", () => {
     expect(record).toMatchObject({
       userId: user.id,
       direction: "BUY",
-      usdCents: 100,
-      arsCents: 150000,
+      usdCents: BigInt(100),
+      arsCents: BigInt(150000),
       rateArsPerUsd: 1500,
       fromAccountId: user.ars,
       toAccountId: user.usd,
@@ -122,14 +122,14 @@ describe("exchange", () => {
     expect(byAccount[user.ars]).toMatchObject({
       type: "EXCHANGE",
       counterparty: "Compra de dólares",
-      amountCents: 150000,
+      amountCents: BigInt(150000),
       reference,
       exchangeId: record.id,
     });
     expect(byAccount[user.usd]).toMatchObject({
       type: "EXCHANGE",
       counterparty: "Compra de dólares",
-      amountCents: 100,
+      amountCents: BigInt(100),
       reference,
       exchangeId: record.id,
     });
@@ -143,20 +143,20 @@ describe("exchange", () => {
 
     expect(result).toMatchObject({ ok: true });
     if (!result.ok) return;
-    expect(await balanceOf(user.usd)).toBe(300);
-    expect(await balanceOf(user.ars)).toBe(750000);
+    expect(await balanceOf(user.usd)).toBe(BigInt(300));
+    expect(await balanceOf(user.ars)).toBe(BigInt(750000));
 
     const movements = await db.movement.findMany({ where: { exchangeId: result.exchangeId } });
     const byAccount = Object.fromEntries(movements.map((m) => [m.accountId, m]));
     expect(byAccount[user.usd]).toMatchObject({
       type: "EXCHANGE",
       counterparty: "Venta de dólares",
-      amountCents: 200,
+      amountCents: BigInt(200),
     });
     expect(byAccount[user.ars]).toMatchObject({
       type: "EXCHANGE",
       counterparty: "Venta de dólares",
-      amountCents: 300000,
+      amountCents: BigInt(300000),
     });
     expect(byAccount[user.ars].reference).toBe(byAccount[user.usd].reference);
     expect(result.movementId).toBe(byAccount[user.usd].id);
@@ -165,6 +165,22 @@ describe("exchange", () => {
       fromAccountId: user.usd,
       toAccountId: user.ars,
     });
+  });
+
+  it("credits a sale of dollars to a peso balance above 2^31 cents", async () => {
+    // $30.000.000 is past the old 32-bit limit of $21.474.836,47.
+    await db.user.deleteMany({ where: { email: EMAILS[0] } });
+    user = await createUser(EMAILS[0], 3_000_000_000, 1_000_000);
+
+    const result = await sell(1_000_000);
+
+    expect(result).toMatchObject({ ok: true });
+    expect(await balanceOf(user.usd)).toBe(BigInt(0));
+    expect(await balanceOf(user.ars)).toBe(BigInt(4_500_000_000));
+    if (!result.ok) return;
+    const movements = await db.movement.findMany({ where: { exchangeId: result.exchangeId } });
+    const credit = movements.find((m) => m.accountId === user.ars);
+    expect(credit?.amountCents).toBe(BigInt(1_500_000_000));
   });
 
   it("gives each exchange its own reference", async () => {
@@ -219,7 +235,7 @@ describe("exchange", () => {
 
   it("spends the whole balance when it covers the amount exactly", async () => {
     expect((await buy(300)).ok).toBe(true);
-    expect(await balanceOf(user.ars)).toBe(0);
+    expect(await balanceOf(user.ars)).toBe(BigInt(0));
   });
 });
 
@@ -230,7 +246,7 @@ describe("exchange idempotency", () => {
     const second = await buy(100, { idempotencyKey });
 
     expect(second).toEqual(first);
-    expect(await balanceOf(user.ars)).toBe(300000);
+    expect(await balanceOf(user.ars)).toBe(BigInt(300000));
     expect(await db.exchange.count({ where: { userId: user.id } })).toBe(1);
   });
 
@@ -242,7 +258,7 @@ describe("exchange idempotency", () => {
     ]);
 
     expect(second).toEqual(first);
-    expect(await balanceOf(user.usd)).toBe(600);
+    expect(await balanceOf(user.usd)).toBe(BigInt(600));
     expect(await db.exchange.count({ where: { userId: user.id } })).toBe(1);
   });
 
@@ -282,8 +298,8 @@ describe("exchange concurrency", () => {
       { ok: false, error: "INSUFFICIENT_FUNDS" },
       { ok: false, error: "INSUFFICIENT_FUNDS" },
     ]);
-    expect(await balanceOf(user.ars)).toBe(0);
-    expect(await balanceOf(user.usd)).toBe(800);
+    expect(await balanceOf(user.ars)).toBe(BigInt(0));
+    expect(await balanceOf(user.usd)).toBe(BigInt(800));
   });
 
   it("does not deadlock when buys and sells on the same accounts run at once", async () => {
@@ -292,8 +308,8 @@ describe("exchange concurrency", () => {
     );
 
     expect(results.every((r) => r.ok)).toBe(true);
-    expect(await balanceOf(user.ars)).toBe(450000);
-    expect(await balanceOf(user.usd)).toBe(500);
+    expect(await balanceOf(user.ars)).toBe(BigInt(450000));
+    expect(await balanceOf(user.usd)).toBe(BigInt(500));
   });
 });
 

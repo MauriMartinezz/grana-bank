@@ -43,7 +43,7 @@ export default async function ConfirmExchangePage({
 
   const buying = confirmation.direction === "BUY";
   const arsCents = usdToArsCents(usdCents);
-  const debitCents = buying ? arsCents : usdCents;
+  const debitCents = buying ? arsCents : BigInt(usdCents);
   const remaining = fromCard.account.balanceCents - debitCents;
   const paying = cardOption(fromCard);
   const receiving = cardOption(toCard);

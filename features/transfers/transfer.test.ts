@@ -91,8 +91,8 @@ describe("transfer", () => {
     const result = await send(2550);
 
     expect(result.ok).toBe(true);
-    expect(await balanceOf(sender.accountId)).toBe(7450);
-    expect(await balanceOf(recipient.accountId)).toBe(3050);
+    expect(await balanceOf(sender.accountId)).toBe(BigInt(7450));
+    expect(await balanceOf(recipient.accountId)).toBe(BigInt(3050));
 
     const movements = await db.movement.findMany({
       where: { transferId: { not: null }, account: { userId: { in: [sender.id, recipient.id] } } },
@@ -102,8 +102,8 @@ describe("transfer", () => {
     const received = movements.find((m) => m.account.userId === recipient.id);
 
     expect(movements).toHaveLength(2);
-    expect(sent).toMatchObject({ type: "SENT", counterparty: "Recipient Test", amountCents: 2550 });
-    expect(received).toMatchObject({ type: "RECEIVED", counterparty: "Sender Test", amountCents: 2550 });
+    expect(sent).toMatchObject({ type: "SENT", counterparty: "Recipient Test", amountCents: BigInt(2550) });
+    expect(received).toMatchObject({ type: "RECEIVED", counterparty: "Sender Test", amountCents: BigInt(2550) });
     expect(sent?.reference).toMatch(/^TRF-\d{6,}$/);
     expect(received?.reference).toBe(sent?.reference);
     expect(result.ok && result.movementId).toBe(sent?.id);
@@ -141,9 +141,22 @@ describe("transfer", () => {
     expect(await snapshot()).toEqual(before);
   });
 
+  it("moves money between balances above 2^31 cents", async () => {
+    // $30.000.000 and $25.000.000, both past the old 32-bit limit of $21.474.836,47.
+    await db.user.deleteMany({ where: { email: { in: EMAILS.slice(0, 2) } } });
+    sender = await createUser(EMAILS[0], "Sender", 3_000_000_000);
+    recipient = await createUser(EMAILS[1], "Recipient", 2_500_000_000);
+
+    const result = await send(MAX_TRANSFER_CENTS);
+
+    expect(result.ok).toBe(true);
+    expect(await balanceOf(sender.accountId)).toBe(BigInt(2_900_000_000));
+    expect(await balanceOf(recipient.accountId)).toBe(BigInt(2_600_000_000));
+  });
+
   it("allows spending the whole balance", async () => {
     expect((await send(10000)).ok).toBe(true);
-    expect(await balanceOf(sender.accountId)).toBe(0);
+    expect(await balanceOf(sender.accountId)).toBe(BigInt(0));
   });
 
   it("creates one transfer when the same request arrives twice", async () => {
@@ -159,7 +172,7 @@ describe("transfer", () => {
     expect(first).toEqual(second);
     expect(first.ok).toBe(true);
     expect((await snapshot()).transfers).toBe(1);
-    expect(await balanceOf(sender.accountId)).toBe(9000);
+    expect(await balanceOf(sender.accountId)).toBe(BigInt(9000));
   });
 
   it("finds the sent movement of an already used key, only for its sender", async () => {
@@ -214,8 +227,8 @@ describe("transfer", () => {
       { ok: false, error: "INSUFFICIENT_FUNDS" },
       { ok: false, error: "INSUFFICIENT_FUNDS" },
     ]);
-    expect(await balanceOf(sender.accountId)).toBe(4000);
-    expect(await balanceOf(recipient.accountId)).toBe(6500);
+    expect(await balanceOf(sender.accountId)).toBe(BigInt(4000));
+    expect(await balanceOf(recipient.accountId)).toBe(BigInt(6500));
   });
 
   it("does not deadlock when two users send to each other at once", async () => {
@@ -226,8 +239,8 @@ describe("transfer", () => {
     );
 
     expect(results.every((r) => r.ok)).toBe(true);
-    expect(await balanceOf(sender.accountId)).toBe(10000);
-    expect(await balanceOf(recipient.accountId)).toBe(500);
+    expect(await balanceOf(sender.accountId)).toBe(BigInt(10000));
+    expect(await balanceOf(recipient.accountId)).toBe(BigInt(500));
   });
 });
 
@@ -246,10 +259,10 @@ describe("transfer between currencies", () => {
     const result = await send(1250, payer.id, payee.id);
 
     expect(result.ok).toBe(true);
-    expect(await balanceOf(payer.accounts.USD)).toBe(1750);
-    expect(await balanceOf(payee.id)).toBe(1250);
-    expect(await balanceOf(payer.accounts.ARS)).toBe(3000);
-    expect(await balanceOf(recipient.accountId)).toBe(500);
+    expect(await balanceOf(payer.accounts.USD)).toBe(BigInt(1750));
+    expect(await balanceOf(payee.id)).toBe(BigInt(1250));
+    expect(await balanceOf(payer.accounts.ARS)).toBe(BigInt(3000));
+    expect(await balanceOf(recipient.accountId)).toBe(BigInt(500));
     const sent = await db.movement.findUniqueOrThrow({
       where: { id: result.ok ? result.movementId : "" },
     });

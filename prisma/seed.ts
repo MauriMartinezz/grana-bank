@@ -23,7 +23,7 @@ const movements: Array<[MovementType, string, number, string]> = [
 type SeedAccount = {
   currency: "ARS" | "USD";
   alias: string;
-  balanceCents: number;
+  balanceCents: number | bigint;
   card?: { brand: "MASTERCARD" | "VISA"; last4: string; expiry: string };
 };
 
@@ -90,10 +90,22 @@ async function main() {
   const prisma = new PrismaClient({ adapter });
 
   // Deleting the users cascades to their accounts, cards, movements,
-  // transfers, exchanges and contacts, so running the seed twice leaves the same data.
+  // transfers, exchanges and contacts, so running the seed twice leaves the
+  // same data. Users are matched by email and by seeded alias, so a seeded
+  // user who changed their email in Perfil is replaced too.
   const email = "soygranate@clublanus.com";
+  const seededAliases = [
+    "soy.granate",
+    "soy.granate.usd",
+    ...recipients.flatMap((r) => r.accounts.map((a) => a.alias)),
+  ];
   await prisma.user.deleteMany({
-    where: { email: { in: [email, ...recipients.map((r) => r.email)] } },
+    where: {
+      OR: [
+        { email: { in: [email, ...recipients.map((r) => r.email)] } },
+        { accounts: { some: { alias: { in: seededAliases } } } },
+      ],
+    },
   });
 
   // Every seeded user logs in with the same password, so the demo can show
@@ -137,7 +149,8 @@ async function main() {
               {
                 currency: "ARS",
                 alias: "soy.granate",
-                balanceCents: 97885,
+                // $2.500.000, so the demo can buy dollars.
+                balanceCents: 250_000_000,
                 card: { brand: "MASTERCARD", last4: "1234", expiry: "02/30" },
               },
               holder,

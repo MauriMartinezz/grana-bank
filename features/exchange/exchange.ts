@@ -16,7 +16,7 @@ export type ExchangeResult =
 export type ExchangeRequest = {
   userId: string;
   direction: ExchangeDirection;
-  /** Dollars bought or sold, in cents. */
+  /** Dollars bought or sold, in cents: a typed amount, so a safe integer. */
   usdCents: number;
   /** The card whose account pays: pesos when buying, dollars when selling. */
   fromCardId: string;
@@ -72,7 +72,8 @@ export async function resolveCardAccounts(
   return { ok: true, fromAccountId: from.accountId, toAccountId: to.accountId };
 }
 
-type LockedAccount = { id: string; balanceCents: number };
+// The raw query returns BIGINT columns as bigint.
+type LockedAccount = { id: string; balanceCents: bigint };
 
 export function referenceFor(exchangeNumber: number) {
   return `CX-${String(exchangeNumber).padStart(6, "0")}`;
@@ -97,9 +98,10 @@ export async function exchange({
   if (!isExchangeAmount(usdCents)) {
     return { ok: false, error: "INVALID_AMOUNT" };
   }
-  const arsCents = usdToArsCents(usdCents);
-  const debitCents = direction === "BUY" ? arsCents : usdCents;
-  const creditCents = direction === "BUY" ? usdCents : arsCents;
+  const usd = BigInt(usdCents);
+  const arsCents = usdToArsCents(usd);
+  const debitCents = direction === "BUY" ? arsCents : usd;
+  const creditCents = direction === "BUY" ? usd : arsCents;
 
   return db.$transaction(async (tx) => {
     // A card's account, owner and currency never change, so reading them
@@ -131,7 +133,7 @@ export async function exchange({
     if (existing) {
       const same =
         existing.direction === direction &&
-        existing.usdCents === usdCents &&
+        existing.usdCents === usd &&
         existing.fromAccountId === fromAccountId &&
         existing.toAccountId === toAccountId;
       const movement = existing.movements.find((m) => m.accountId === existing.fromAccountId);
@@ -159,7 +161,7 @@ export async function exchange({
       data: {
         userId,
         direction,
-        usdCents,
+        usdCents: usd,
         arsCents,
         rateArsPerUsd: ARS_PER_USD,
         fromAccountId,

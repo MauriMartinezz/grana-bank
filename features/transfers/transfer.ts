@@ -18,6 +18,7 @@ export type TransferRequest = {
   senderId: string;
   /** The money leaves the sender's account in this account's currency. */
   recipientAccountId: string;
+  /** A typed amount, so a safe integer; stored as bigint. */
   amountCents: number;
   /**
    * Same key, same transfer: a repeated request returns the first result,
@@ -26,7 +27,8 @@ export type TransferRequest = {
   idempotencyKey: string;
 };
 
-type LockedAccount = { id: string; userId: string; balanceCents: number };
+// The raw query returns BIGINT columns as bigint.
+type LockedAccount = { id: string; userId: string; balanceCents: bigint };
 
 function referenceFor(transferNumber: number) {
   return `TRF-${String(transferNumber).padStart(6, "0")}`;
@@ -55,6 +57,7 @@ export async function transfer({
   ) {
     return { ok: false, error: "INVALID_AMOUNT" };
   }
+  const cents = BigInt(amountCents);
 
   return db.$transaction(async (tx) => {
     // Owner and currency never change, so reading them before the lock is
@@ -98,7 +101,7 @@ export async function transfer({
     if (existing) {
       // A key belongs to one confirmation: replaying it with other values
       // must not report success for a transfer that never happened.
-      return existing.toAccountId === to?.id && existing.amountCents === amountCents
+      return existing.toAccountId === to?.id && existing.amountCents === cents
         ? { ok: true, movementId: existing.movements[0].id }
         : { ok: false, error: "IDEMPOTENCY_MISMATCH" };
     }
@@ -106,7 +109,7 @@ export async function transfer({
     if (!to) {
       return { ok: false, error: "RECIPIENT_NOT_FOUND" };
     }
-    if (from.balanceCents < amountCents) {
+    if (from.balanceCents < cents) {
       return { ok: false, error: "INSUFFICIENT_FUNDS" };
     }
 
@@ -127,24 +130,24 @@ export async function transfer({
 
     await tx.account.update({
       where: { id: from.id },
-      data: { balanceCents: { decrement: amountCents } },
+      data: { balanceCents: { decrement: cents } },
     });
     await tx.account.update({
       where: { id: to.id },
-      data: { balanceCents: { increment: amountCents } },
+      data: { balanceCents: { increment: cents } },
     });
 
     const { id: transferId, number, createdAt } = await tx.transfer.create({
       data: {
         fromAccountId: from.id,
         toAccountId: to.id,
-        amountCents,
+        amountCents: cents,
         idempotencyKey,
       },
     });
     const shared = {
       transferId,
-      amountCents,
+      amountCents: cents,
       reference: referenceFor(number),
       occurredAt: createdAt,
     };
