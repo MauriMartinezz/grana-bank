@@ -39,9 +39,9 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [x] T11 (S13) delegated: card detail with its movements; expiry in Buenos Aires time.
 - [x] T13 (S15, S17) delegated: balances and amounts as BigInt end to end; balance card format; verifier follow-ups.
 - [x] T15 (S18) delegated: Spanish route names.
-- [ ] T16 (S19) after T15: Spanish database names via @map; Risk item 1.
+- [x] T16 (S19) delegated: Spanish database names via @map.
 - [ ] T14 (S16) after T15: ask before saving a new contact.
-- [ ] T12 (S14) after T15: group movements by date and filter Movimientos by date.
+- [x] T12 (S14) delegated: group movements by date and filter Movimientos by date.
 - [ ] T7 inline: README, seam check, browser checks.
 
 Route evidence: the parent context is past the long-session backstop, so units are delegated (context reason). T2–T6 depend on T1 and start after it, with disjoint edit surfaces. Risk: T1 item 1 (migration moves stored data) and T3/T4 item 4 (balance updates under locks): independent verifier after T1 and at the end.
@@ -75,3 +75,4 @@ Route evidence: the parent context is past the long-session backstop, so units a
 - L25 (2026-11-03): T13 committed: 479 tests, tsc, eslint, scratch build; migration on a throwaway DB kept all 23 values identical as text and every CHECK; dev DB migrated. Revalidation now targets the `(app)` route group, so /login is not re-prerendered on saves.
 - L26 (2026-11-03, user): "Los parámetros no hacen falta pasarlos a español, pero sí las rutas, si en la base de datos están en inglés cambiarlos a español también para generar consistencia en los nombres". Parameters stay; database naming asked back to the user (English like the code, or Spanish table and column names via @map).
 - L27 (2026-11-03, user): chose "En español con @map" for database names. The full-range START was granted and refused again (budget).
+- L28 (2026-11-03): T15 routes (d8126fc), T16 database names and T12 date grouping committed; 500 tests, tsc and eslint pass with all of them. T16 rename migration kept identical row hashes and sequence values on a throwaway DB and violates each renamed CHECK as expected; dev DB migrated.
