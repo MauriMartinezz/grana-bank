@@ -18,7 +18,7 @@ export const config = {
     "/movimientos/:path*",
     "/transferir/:path*",
     "/servicios",
-    "/recargas",
+    "/recargas/:path*",
     "/tarjetas/:path*",
     "/dolares/:path*",
     "/perfil/:path*",

@@ -47,13 +47,15 @@ To show a transfer from both sides:
 
 A dollar transfer works the same way to `juan.perez.usd`, from the dollar account. To try the exchange, tap **Dólares** on Home: buying debits pesos at 1 USD = $1.500 and credits dollars; selling does the reverse.
 
+To try a top-up, tap **Recargas** on Home: Granate starts with the SUBE card "sube de mauri" (`6061 2345 6789 0123`); Telefonía and DirecTV take a phone or customer number. Each top-up debits the peso account through the chosen card.
+
 Running the seed again resets all three users.
 
 ## Project structure
 
 ```text
 app/         Routes, layouts, and loading and error boundaries
-features/    Code grouped by domain: account, auth, cards, exchange, movements, profile, transfers
+features/    Code grouped by domain: account, auth, cards, exchange, movements, profile, top-ups, transfers
 components/  Shared UI with no domain knowledge
 lib/         Database client and formatters
 prisma/      Schema, migrations and seed
@@ -81,7 +83,8 @@ proxy.ts     Redirects visitors with no session cookie to login
 | Transfer reference | Sequential `TRF-000001`, shared by both sides | Sender and recipient see the same operation number, as on a bank receipt. |
 | Contacts | Saved only when the sender checks `Guardar a <nombre> en mis contactos` on the confirmation screen; favorites listed first | The list grows from real use without filling up with one-off recipients, and the choice sits on the step the sender already reviews. |
 | Recipient lookup | By alias by default, by email behind a button | An alias is easy to share and hides the email. Aliases have 1 to 40 characters (letters without accents, digits and dots, with at least one letter) and ignore case: they are stored in lower case, unique, and checked again by a database `CHECK`. The lookup tells whether an alias or email has an account, as bank transfers show the recipient's name. |
-| Quick actions | Transferir, Servicios, Recargas, Tarjetas and Dólares on Home | Servicios and Recargas are entry points for planned features and show "Próximamente". |
+| Quick actions | Transferir, Servicios, Recargas, Tarjetas and Dólares on Home | Servicios is an entry point for a planned feature and shows "Próximamente". |
+| Top-ups | SUBE (saved cards with a nickname), phone (Personal, Movistar, Claro, Tuenti) and DirecTV, $100 to $50.000 each, paid with a peso card in one transaction that locks the account, with an idempotency key; reference `RC-000001` | Same guarantees as transfers. A SUBE number is 16 digits starting with 6061 (checked again by a database `CHECK`). A phone number is stored as its 10-digit national number: `+54`, the mobile `9`, the trunk `0` and the legacy `15` after the area code are accepted and removed; `11` numbers read `+54 11 1234 5678` and the rest `+54 351 123 4567`. DirecTV accounts have 8 to 12 digits and receipts show only the last four. |
 | Accounts | One account per user and currency (ARS by default, USD optional), each with its own balance, alias and cards | A balance belongs to an account, and cards are ways to use it, as in a bank. Transfers only go between accounts of the same currency. |
 | Money format | Argentine everywhere: `$5.000` for pesos, `USD$12,50` for dollars; inputs accept `1.500,50` and reject `12.5` | One format for reading and typing avoids reading a dot as a decimal point. |
 | Dollar exchange | Fixed simulated rate of 1 USD = $1.500 in one transaction that locks both accounts, with an idempotency key | Same guarantees as transfers: no overdraft, no deadlock, no double charge. |
@@ -103,6 +106,7 @@ proxy.ts     Redirects visitors with no session cookie to login
 - **List size:** the movement list shows the 50 most recent items, without pagination.
 - **Password attempts:** there is no rate limiting on login or on the Perfil changes that ask for the current password, which a real banking app would need.
 - **Transfers:** there is no daily limit or second factor, only a limit of 1,000,000 per transfer. Deleting a user also deletes their transfers; no screen deletes users.
+- **Top-ups:** simulated: no provider is contacted, a SUBE load still has to be validated at a terminal or in the SUBE app, and phone numbers are not checked against the company. A 4-digit area code is shown grouped 3-3-4, because telling area code lengths apart needs the full numbering plan.
 - **Exchange rate:** fixed at 1 USD = $1.500 for both buying and selling; there is no spread or live quote.
 - **New dollar account:** it starts without a card, so the user adds one in Tarjetas before exchanging.
 - **Theme:** the choice is stored in the browser, so it does not follow the user to another device.

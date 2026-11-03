@@ -90,8 +90,8 @@ async function main() {
   const prisma = new PrismaClient({ adapter });
 
   // Deleting the users cascades to their accounts, cards, movements,
-  // transfers, exchanges and contacts, so running the seed twice leaves the
-  // same data. Users are matched by email and by seeded alias, so a seeded
+  // transfers, exchanges, contacts, SUBE cards and top-ups, so running the
+  // seed twice leaves the same data. Users are matched by email and by seeded alias, so a seeded
   // user who changed their email in Perfil is replaced too.
   const email = "soygranate@clublanus.com";
   const seededAliases = [
@@ -142,6 +142,8 @@ async function main() {
       // Only Juan's peso account starts as a contact; Martin shows the
       // "new recipient" flow.
       contacts: { create: { contactAccountId: juanPesos.id } },
+      // One saved SUBE card, so Recargas shows the list and the top-up flow.
+      subeCards: { create: { number: "6061234567890123", nickname: "sube de mauri" } },
       accounts: {
         create: [
           {

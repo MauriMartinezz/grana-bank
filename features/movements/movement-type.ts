@@ -1,6 +1,6 @@
 import type { ComponentType, SVGProps } from "react";
 import type { MovementType } from "@/generated/prisma/client";
-import { ArrowDownIcon, ArrowUpIcon, SwapIcon } from "@/components/icons";
+import { ArrowDownIcon, ArrowUpIcon, SwapIcon, TopUpIcon } from "@/components/icons";
 
 type MovementTypeStyle = {
   label: string;
@@ -33,5 +33,11 @@ export const MOVEMENT_TYPE_STYLES: Record<MovementType, MovementTypeStyle> = {
     Icon: SwapIcon,
     tileClass: "bg-blue-soft text-blue",
     amountClass: "text-blue",
+  },
+  TOP_UP: {
+    label: "Recarga",
+    Icon: TopUpIcon,
+    tileClass: "bg-yellow-soft text-yellow",
+    amountClass: "text-yellow",
   },
 };

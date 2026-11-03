@@ -13,6 +13,8 @@ enum MovementType {
   SENT
   /// One side of a dollar buy or sell.
   EXCHANGE
+  /// A SUBE, phone or DirecTV top-up paid from a peso card.
+  TOP_UP
 
   @@map("tipo_movimiento")
 }
@@ -41,6 +43,28 @@ enum ExchangeDirection {
   @@map("direccion_cambio")
 }
 
+/// What a top-up loads: a SUBE card, a phone line or a DirecTV account.
+enum TopUpKind {
+  SUBE
+  PHONE
+  DIRECTV
+
+  @@map("tipo_recarga")
+}
+
+/// Who receives a top-up. SUBE and DIRECTV go with their own kind; the
+/// phone companies go with PHONE.
+enum TopUpProvider {
+  SUBE
+  PERSONAL
+  MOVISTAR
+  CLARO
+  TUENTI
+  DIRECTV
+
+  @@map("proveedor_recarga")
+}
+
 model User {
   id                String     @id @default(uuid())
   email             String     @unique
@@ -58,6 +82,8 @@ model User {
   sessions          Session[]
   contacts          Contact[]  @relation("ContactOwner")
   exchanges         Exchange[]
+  subeCards         SubeCard[]
+  topUps            TopUp[]
 
   @@map("usuarios")
 }
@@ -106,6 +132,7 @@ model Account {
   contactOf     Contact[]
   exchangesFrom Exchange[] @relation("ExchangeFrom")
   exchangesTo   Exchange[] @relation("ExchangeTo")
+  topUps        TopUp[]
 
   @@unique([userId, currency])
   @@map("cuentas")
@@ -125,6 +152,7 @@ model Card {
   expiry    String     @map("vencimiento")
   createdAt DateTime   @default(now()) @map("creado_en")
   movements Movement[]
+  topUps    TopUp[]
 
   @@index([accountId])
   @@map("tarjetas")
@@ -172,6 +200,8 @@ model Movement {
   /// card or the card was removed.
   cardId       String?      @map("tarjeta_id")
   card         Card?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  topUpId      String?      @map("recarga_id")
+  topUp        TopUp?       @relation(fields: [topUpId], references: [id], onDelete: SetNull)
 
   @@unique([accountId, reference])
   @@index([accountId, occurredAt(sort: Desc)])
@@ -203,4 +233,50 @@ model Exchange {
 
   @@unique([userId, idempotencyKey])
   @@map("operaciones_cambio")
+}
+
+/// A SUBE transport card the user saved to top it up. A CHECK constraint keeps
+/// the number as 16 digits starting with 6061, stored without spaces.
+model SubeCard {
+  id        String   @id @default(uuid())
+  userId    String   @map("usuario_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  number    String   @map("numero")
+  /// A reminder name such as "sube de mauri", up to 40 characters.
+  nickname  String   @map("apodo")
+  createdAt DateTime @default(now()) @map("creado_en")
+
+  @@unique([userId, number])
+  @@map("tarjetas_sube")
+}
+
+/// A SUBE, phone or DirecTV top-up paid with a card of a peso account.
+model TopUp {
+  id             String        @id @default(uuid())
+  /// Sequential, so the operation number is readable and never collides.
+  number         Int           @unique @default(autoincrement()) @map("numero")
+  userId         String        @map("usuario_id")
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind           TopUpKind     @map("tipo")
+  provider       TopUpProvider @map("proveedor")
+  /// The SUBE card id, the 10-digit national phone number or the DirecTV
+  /// account number, digits only.
+  target         String        @map("destino")
+  /// Integer cents, always positive.
+  amountCents    BigInt        @map("monto_centavos")
+  /// The peso account that paid.
+  accountId      String        @map("cuenta_id")
+  account        Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  /// The card picked to pay. Empty when the card was removed later.
+  cardId         String?       @map("tarjeta_id")
+  card           Card?         @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  /// Same role as in Transfer: a repeated request creates one top-up.
+  idempotencyKey String        @map("clave_idempotencia")
+  createdAt      DateTime      @default(now()) @map("creado_en")
+  movements      Movement[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([accountId])
+  @@index([cardId])
+  @@map("recargas")
 }
