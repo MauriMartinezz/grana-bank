@@ -16,6 +16,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - S10. "Vamos a agregar una funcionalidad en la página de Perfil, añadir un tema oscuro además del claro". Assumptions: light stays the default; the choice is per device (stored in the browser and applied before the first paint, so it also covers the login page); colors move to theme tokens.
 - S11. "El logout deberá estar al final de la pantalla de Perfil en vez de en la barra inferior". Added to T9 because it touches the same files.
 - S12. "los últimos movimientos que aparecen en la pantalla de inicio serán 5 o 6 y tendrá un botón de Consultar todos, los registros deben ser los últimos movimientos independientemente de la tarjeta, se detallará en el mismo registro (ejemplo, tarjeta terminada en 8845)". Assumptions: Home lists the latest 6 across all accounts; movements record their card (the chosen card for dollar exchange, the account's first card for transfers; existing movements are backfilled with their account's first card); rows show "Tarjeta terminada en 8845", or the account when there is no card.
+- S13. "En la pantalla de Tarjetas, al hacer click en la tarjeta se podrán consultar movimiento realizados con esa tarjeta y ver los detalles de la misma (nombre, últimos números, cuando vence, lo que consideres)". Assumptions: `/cards/[cardId]` for the owner only; details are brand, last four digits, holder, expiry with an expired or expiring-soon note, its account (currency and alias) and the date it was added; below, the movements made with that card, with loading and empty states. Depends on T10 (card on each movement).
 - S8. Existing stored money is never relabeled: the migration keeps each account's stored currency; only the default changes to ARS.
 
 ## Tasks
@@ -29,6 +30,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [x] T8 (S9) delegated: Perfil summary with one screen per change and password change. Commit 46e2334.
 - [ ] T9 (S10, S11) delegated: light/dark theme with a selector in Perfil; logout moves from the bottom bar to the end of Perfil.
 - [ ] T10 (S12) delegated: card on each movement, Home latest 6 with Consultar todos.
+- [ ] T11 (S13) after T10: card detail with its movements.
 - [ ] T7 inline: README, seam check, browser checks.
 
 Route evidence: the parent context is past the long-session backstop, so units are delegated (context reason). T2–T6 depend on T1 and start after it, with disjoint edit surfaces. Risk: T1 item 1 (migration moves stored data) and T3/T4 item 4 (balance updates under locks): independent verifier after T1 and at the end.
@@ -50,3 +52,4 @@ Route evidence: the parent context is past the long-session backstop, so units a
 - L13 (2026-11-03, user): chose "En 6 tramos" for the native review. Slice 1 (72b0f05..7889d63) approved, lineage review-e2bb7aa1f29735a9; slice 2 (7889d63..a293110) approved, lineage review-e6d63ad5096ee71d. Accepted from slice 2: grouped amounts can no longer start with 0 ("0.500" was read as 500) and a cardless account no longer shows its alias twice (2ec79d7). Slice 1 advisories declined with evidence: every getAccount caller passes the currency; old `to/[userId]` links and a recipient deleted after a used key are out of domain.
 - L14 (2026-11-03, user): "Bien, hay algo que cambiar: los últimos movimientos que aparecen en la pantalla de inicio serán 5 o 6 y tendrá un botón de Consultar todos, los registros deben ser los últimos movimientos independientemente de la tarjeta, se detallará en el mismo registro (ejemplo, tarjeta terminada en 8845)"
 - L15 (2026-11-03, user): "Añade un acceso a Tarjetas en la barra de navegación inferior y uno de servicios". Bottom bar is now Inicio, Movimientos, Tarjetas, Servicios, Perfil (inline, components/layout/bottom-nav.tsx).
+- L16 (2026-11-03, user): "En la pantalla de Tarjetas, al hacer click en la tarjeta se podrán consultar movimiento realizados con esa tarjeta y ver los detalles de la misma (nombre, últimos números, cuando vence, lo que consideres)"
