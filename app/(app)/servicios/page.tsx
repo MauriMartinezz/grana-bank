@@ -70,7 +70,9 @@ export default async function ServicesPage() {
               return (
                 <li key={adhesion.id}>
                   <Link
-                    href={`/servicios/${adhesion.id}`}
+                    // Straight to paying the next pending bill; to the service's
+                    // bills when nothing is pending.
+                    href={next ? `/servicios/pagar/${next.id}` : `/servicios/${adhesion.id}`}
                     className="flex items-center justify-between gap-3 bg-surface p-4 transition-colors hover:bg-surface/70 active:bg-surface/60"
                   >
                     <span className="min-w-0">

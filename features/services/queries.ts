@@ -50,7 +50,13 @@ export function getBill(userId: string, billId: string) {
     include: {
       scheduledCard: CARD_FACE,
       adhesion: {
-        select: { id: true, company: true, nickname: true, autoDebitCard: CARD_FACE },
+        select: {
+          id: true,
+          company: true,
+          nickname: true,
+          paymentNumber: true,
+          autoDebitCard: CARD_FACE,
+        },
       },
     },
   });

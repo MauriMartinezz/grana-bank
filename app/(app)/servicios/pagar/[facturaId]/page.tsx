@@ -42,6 +42,9 @@ export default async function PayBillPage({ params }: PageProps<"/servicios/paga
         <p className="font-medium">
           {bill.adhesion.nickname} · {company.name}
         </p>
+        <p className="mt-1 text-sm tracking-wide text-muted">
+          N.º de pago electrónico {bill.adhesion.paymentNumber}
+        </p>
         <p className="mt-1 text-sm text-muted">{bill.period}</p>
         <p className="mt-3 text-3xl font-semibold">{formatMoney(bill.amountCents, bill.currency)}</p>
         <p className="mt-1 text-sm text-muted">
@@ -55,6 +58,9 @@ export default async function PayBillPage({ params }: PageProps<"/servicios/paga
             {automation.text}
           </p>
         )}
+        <Link href={adhesionPath} className="mt-3 inline-flex min-h-11 items-center font-serif text-sm text-garnet">
+          Ver facturas y débito automático
+        </Link>
       </section>
 
       {!pending ? (
