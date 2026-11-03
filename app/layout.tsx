@@ -46,7 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full font-sans">
         {/* The mobile column; in the desktop view the signed-in app widens it. */}
-        <div className="mx-auto min-h-dvh w-full max-w-[430px] desktop:has-[[data-shell=app]]:max-w-[1200px]">
+        <div className="mx-auto min-h-dvh w-full max-w-[430px] desktop:has-[[data-shell=app]]:max-w-none">
           {children}
         </div>
         <ThemeSync />

@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   experimental: {
     agentFeedback: true,
   },
+  // The route indicator overlapped the desktop sidebar; errors still show.
+  devIndicators: false,
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

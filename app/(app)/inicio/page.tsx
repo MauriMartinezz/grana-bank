@@ -113,21 +113,29 @@ export default function HomePage({ searchParams }: PageProps<"/inicio">) {
         </div>
       </header>
 
-      <Suspense fallback={<SelectedAccountSkeleton />}>
-        <SelectedAccount searchParams={searchParams} />
-      </Suspense>
+      {/* One column on mobile; on desktop the account and its shortcuts on the
+          left and the latest movements on the right. */}
+      <div
+        data-layout="wide"
+        className="desktop:grid desktop:grid-cols-2 desktop:items-start desktop:gap-10"
+      >
+        <div>
+          <Suspense fallback={<SelectedAccountSkeleton />}>
+            <SelectedAccount searchParams={searchParams} />
+          </Suspense>
 
-      {/* Shows nothing while loading: it only appears when bills are due. */}
-      <Suspense fallback={null}>
-        <UpcomingBills />
-      </Suspense>
+          {/* Shows nothing while loading: it only appears when bills are due. */}
+          <Suspense fallback={null}>
+            <UpcomingBills />
+          </Suspense>
 
-      {/* Shows nothing while loading or when no promotion applies today. */}
-      <Suspense fallback={null}>
-        <TodayPromotions />
-      </Suspense>
+          {/* Shows nothing while loading or when no promotion applies today. */}
+          <Suspense fallback={null}>
+            <TodayPromotions />
+          </Suspense>
+        </div>
 
-      <section className="mt-6">
+      <section className="mt-6 desktop:mt-4">
         <h2 className="mb-4 font-serif text-xl font-bold">
           Últimos movimientos
         </h2>
@@ -135,6 +143,7 @@ export default function HomePage({ searchParams }: PageProps<"/inicio">) {
           <RecentMovements />
         </Suspense>
       </section>
+      </div>
     </>
   );
 }
