@@ -178,3 +178,8 @@ export function parseTopUpAmount(raw: string): { ok: true; cents: number } | { o
   if (!isTopUpAmount(cents)) return { ok: false, error: MESSAGES.amountRange };
   return { ok: true, cents };
 }
+
+/** The phone company of a URL name such as `claro`, or null when unknown. */
+export function phoneProviderFromSlug(slug: string): TopUpProvider | null {
+  return PROVIDERS_BY_KIND.PHONE.find((provider) => provider.toLowerCase() === slug) ?? null;
+}

@@ -19,6 +19,7 @@ import {
   PROVIDER_NAMES,
   PROVIDERS_BY_KIND,
   type TopUpKind,
+  type TopUpProvider,
 } from "./validation";
 
 const INPUT_CLASS =
@@ -56,10 +57,13 @@ function Field({
  */
 export function TopUpForm({
   kind,
+  provider,
   subeCardId,
   cards,
 }: {
   kind: TopUpKind;
+  /** The company picked on the previous screen; the form asks when absent. */
+  provider?: TopUpProvider;
   /** The SUBE card to top up; only for `kind` SUBE. */
   subeCardId?: string;
   cards: CardOption[];
@@ -85,7 +89,9 @@ export function TopUpForm({
     <form onSubmit={submit} noValidate className="flex flex-col gap-5">
       <input type="hidden" name="kind" value={kind} />
 
-      {providers.length > 1 ? (
+      {provider ? (
+        <input type="hidden" name="provider" value={provider} />
+      ) : providers.length > 1 ? (
         <fieldset>
           <legend className="mb-1.5 text-sm font-medium">Compañía</legend>
           <div className="grid grid-cols-2 gap-2">

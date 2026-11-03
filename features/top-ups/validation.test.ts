@@ -10,6 +10,8 @@ import {
   normalizePhone,
   normalizeSubeNumber,
   parseTopUpAmount,
+  phoneProviderFromSlug,
+  PROVIDERS_BY_KIND,
   validateNickname,
   validateSubeCard,
 } from "./validation";
@@ -192,5 +194,20 @@ describe("isProviderOf", () => {
     expect(isProviderOf("PHONE", "SUBE")).toBe(false);
     expect(isProviderOf("SUBE", "PERSONAL")).toBe(false);
     expect(isProviderOf("PHONE", "NEXTEL")).toBe(false);
+  });
+});
+
+describe("phone company slugs", () => {
+  it("reads each phone company from its URL name", () => {
+    for (const provider of PROVIDERS_BY_KIND.PHONE) {
+      expect(phoneProviderFromSlug(provider.toLowerCase())).toBe(provider);
+    }
+  });
+
+  it("reads nothing for another kind's provider or an unknown name", () => {
+    expect(phoneProviderFromSlug("sube")).toBeNull();
+    expect(phoneProviderFromSlug("directv")).toBeNull();
+    expect(phoneProviderFromSlug("CLARO")).toBeNull();
+    expect(phoneProviderFromSlug("nextel")).toBeNull();
   });
 });
