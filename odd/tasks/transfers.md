@@ -23,9 +23,9 @@ Branch: `feat/transfers` (from `feat/grana-bank-app` at db44268). Delivery strat
 
 - [x] T1 (S1, S2, S3, S12) inline: schema (Contact, transfer link), migration, seed. Commit 98a16cd.
 - [x] T2 (S7, S8, S9, S12) inline: transfer service and amount parsing, with tests. Commit fcbaeb5.
-- [x] T3 (S4, S5, S11, S13) inline: Home quick actions, "Próximamente" screens, contacts screen with favorites, proxy covers the new routes.
-- [ ] T4 (S6, S8, S10) inline: new recipient, amount, confirmation and success screens.
-- [ ] T5 (S2, S3) inline: README demo credentials and flow.
+- [x] T3 (S4, S5, S11, S13) inline: Home quick actions, "Próximamente" screens, contacts screen with favorites, proxy covers the new routes. Commit d08aba8.
+- [x] T4 (S6, S8, S9, S10) inline: new recipient, amount, confirmation and success screens; reused idempotency key with other values is rejected (review advisory).
+- [x] T5 (S2, S3) inline: README demo users, transfer flow and decisions.
 
 Route evidence: no writer reason applies. T3 and T4 depend on T1 and T2, so all tasks run inline. Risk: item 1 (migration) and item 4 (concurrent balance updates) apply to T1 and T2, so they get an independent verifier.
 
@@ -42,3 +42,5 @@ Route evidence: no writer reason applies. T3 and T4 depend on T1 and T2, so all 
 - L9 (2026-11-03, user): "Puede haber un acceso rápido en el Home , se me ocurre debajo de la tarjeta y arriba de últimos movimientos en forma de cards y que vayan 4 accesos directos por fila"
 - L10 (2026-11-03): T3 found that the new private routes were outside the proxy matcher; the existing "covers every private route" test went RED and is GREEN after adding them. Email normalization and validation moved from the login action to `features/auth/email.ts`, shared with the new-recipient lookup; login tests still pass. 99 tests, type check and lint pass.
 - L11 (2026-11-03): Native review granted by the user for db44268..fcbaeb5 (lineage review-bdc40d73d16e11c8, lenses risk, resilience, reliability). The intended-untracked selection rejected every JSON shape tried, so T3 work was stashed while START froze and restored right after.
+- L12 (2026-11-03): Native review approved and acknowledged (lineage review-bdc40d73d16e11c8, authority burned); reviewed boundary is fcbaeb5. Advisories accepted: a reused idempotency key with another amount or recipient now returns IDEMPOTENCY_MISMATCH (RED then GREEN), and the service limit has a test. Declined: per-account reference uniqueness (no code looks movements up by reference), cascade on user deletion (no deletion path; documented), untyped throw for a sender without account or a transaction timeout (the confirm action catches it and the key makes a retry safe).
+- L13 (2026-11-03): T4 action tests RED (missing exports), then GREEN. Production build plus Chromium at 390 px against an isolated seeded database: 40 checks pass with no console errors, covering logged-out redirects, quick actions layout, Próximamente screens, favorite toggle persistence, every new-recipient and amount error, confirm, success, receipt reference, balances of both users, contact saved after the first transfer, and a double tap charging once.
