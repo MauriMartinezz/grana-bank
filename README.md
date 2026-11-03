@@ -2,9 +2,10 @@
 
 [![CI](https://github.com/MauriMartinezz/grana-bank/actions/workflows/ci.yml/badge.svg)](https://github.com/MauriMartinezz/grana-bank/actions/workflows/ci.yml)
 
-**Demo:** _pendiente de despliegue_
+**Demo:** [_LINK_](https://github.com/MauriMartinezz/grana-bank)
 
-Aplicación web de home banking, pensada primero para celular, hecha para un desafío técnico. Un usuario inicia sesión y maneja una cuenta por moneda (pesos y, opcionalmente, dólares): transferencias, compra y venta de dólares, tarjetas, recargas, pago de servicios con programación, categorías, ingresos desde una cuenta de prueba, suscripciones, promociones y notificaciones. Todo corre localmente contra una base PostgreSQL en Docker; no se contacta a ningún banco, red de tarjetas ni empresa real.
+Prueba técnica realizada para el Club Atlético Lanús hecha en NextJS + Postgres simulando una billetera virtual. 
+
 
 ## Documentación
 
@@ -157,31 +158,6 @@ Sin secreto, el botón **Procesar pagos agendados**, al final de Servicios, ejec
 | `docker compose down` | Detiene PostgreSQL y conserva sus datos |
 | `docker compose down -v` | Detiene PostgreSQL y borra sus datos; después hay que correr `db:up`, `db:migrate` y `db:seed` |
 
-## Integración continua
-
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) corre en cada push y en cada pull request, sobre una máquina limpia con PostgreSQL 17:
-
-1. Instala las dependencias con el lockfile exacto (`pnpm install --frozen-lockfile`).
-2. Genera el cliente de Prisma y aplica todas las migraciones sobre una base vacía.
-3. Corre lint, el chequeo de tipos y los tests contra esa base. Los tests crean sus propios datos, así que no hace falta el seed.
-4. Compila para producción (`pnpm build`).
-
-## Despliegue
-
-La demo corre en [Vercel](https://vercel.com) con PostgreSQL en [Neon](https://neon.tech). Neon da dos URLs de conexión: la **con pooler** (el host incluye `-pooler`) es para la app, y la **directa** es para migrar y cargar datos.
-
-1. En Neon, creá un proyecto y copiá las dos URLs.
-2. Desde tu máquina, con la URL directa, creá las tablas y cargá los datos de demo:
-   ```bash
-   DATABASE_URL='<url directa>' pnpm exec prisma migrate deploy
-   DATABASE_URL='<url directa>' SEED_USER_PASSWORD='<contraseña de la consigna>' pnpm db:seed
-   ```
-3. En Vercel, importá el repositorio y cargá las variables de entorno:
-   - `DATABASE_URL`: la URL con pooler.
-   - `CRON_SECRET`: un secreto largo (por ejemplo, `openssl rand -hex 32`).
-4. Desplegá. [`vercel.json`](vercel.json) programa el cron de pagos programados todos los días a las 11:00 UTC (8:00 en Buenos Aires). Vercel lo llama con `Authorization: Bearer $CRON_SECRET`, que es lo que espera `/api/pagos-agendados`.
-
-Las migraciones nuevas se aplican repitiendo el paso 2 con `prisma migrate deploy`; el build de Vercel no toca la base.
 
 ## Probarlo
 
@@ -203,3 +179,15 @@ docs/        Funcionalidades, guía de demo y decisiones técnicas
 odd/tasks/   Documentos de cada funcionalidad: requisitos, tareas y bitácora
 proxy.ts     Redirige al ingreso a quien no tiene cookie de sesión
 ```
+
+
+## Cosas a mejorar / implementar
+- Funcionalidad de pagos recurrentes: hoy en día son meramente demostrativos
+- Registro: hoy en día solo hay usuarios de prueba (para no alargar el tiempo de entrega decidí postergarlo)
+- Recuperar contraseña
+- Conectar a alguna API para obtener un valor actualizado del dólar (hoy covenido y hardcodeado a ARS$1500)
+- Hacer la aplicación instalable mediante webapp
+- Vista de administrador: Dar de alta promociones, decidir qué notificaciones se envían (ejemplo promociones con texto personalizado)
+- Vista que simule pagar con QR (mediante acceso a la cámara)
+- Entorno de pruebas y entorno de test
+- Modificar foto de perfil
