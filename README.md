@@ -21,6 +21,8 @@ Open http://localhost:3000 in a mobile viewport.
 
 After pulling changes that touch `prisma/`, run `pnpm db:migrate` and restart `pnpm dev`: a running server keeps the Prisma client it loaded at start. If routes from another branch still show, stop the server, delete `.next` and start it again.
 
+Scheduled and automatic service payments run when something calls `/api/pagos-agendados` (`GET` or `POST`) with `Authorization: Bearer $CRON_SECRET`, for example a daily cron. While `CRON_SECRET` is unset, the endpoint answers 401 to every request. For a local try: `curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/pagos-agendados`. It answers `{"paid":N,"failed":N}`.
+
 | Command | Purpose |
 |---------|---------|
 | `pnpm test` | Unit and integration tests. The database must be running. |
