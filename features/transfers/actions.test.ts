@@ -132,8 +132,9 @@ describe("reviewAmount", () => {
   it.each([
     ["", "Ingresá un monto."],
     ["0", "Ingresá un monto mayor a cero, con hasta 2 decimales."],
-    ["1.234,56", "Ingresá un monto mayor a cero, con hasta 2 decimales."],
+    ["12.5", "Ingresá un monto mayor a cero, con hasta 2 decimales."],
     ["100,01", `No tenés saldo suficiente. Disponible: ${formatMoney(10000, "ARS")}`],
+    ["1.234,56", `No tenés saldo suficiente. Disponible: ${formatMoney(10000, "ARS")}`],
   ])("rejects %j with a message and keeps the value", async (amount, error) => {
     expect(await reviewAmount(undefined, form({ recipientAccountId, amount }))).toEqual({
       value: amount,
