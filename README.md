@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/MauriMartinezz/grana-bank/actions/workflows/ci.yml/badge.svg)](https://github.com/MauriMartinezz/grana-bank/actions/workflows/ci.yml)
 
+**Demo:** _pendiente de despliegue_
+
 Aplicación web de home banking, pensada primero para celular, hecha para un desafío técnico. Un usuario inicia sesión y maneja una cuenta por moneda (pesos y, opcionalmente, dólares): transferencias, compra y venta de dólares, tarjetas, recargas, pago de servicios con programación, categorías, ingresos desde una cuenta de prueba, suscripciones, promociones y notificaciones. Todo corre localmente contra una base PostgreSQL en Docker; no se contacta a ningún banco, red de tarjetas ni empresa real.
 
 ## Documentación
@@ -21,6 +23,7 @@ Aplicación web de home banking, pensada primero para celular, hecha para un des
 - [Levantarlo localmente](#levantarlo-localmente)
 - [Comandos](#comandos)
 - [Integración continua](#integración-continua)
+- [Despliegue](#despliegue)
 - [Probarlo](#probarlo)
 - [Estructura del proyecto](#estructura-del-proyecto)
 
@@ -162,6 +165,23 @@ Sin secreto, el botón **Procesar pagos agendados**, al final de Servicios, ejec
 2. Genera el cliente de Prisma y aplica todas las migraciones sobre una base vacía.
 3. Corre lint, el chequeo de tipos y los tests contra esa base. Los tests crean sus propios datos, así que no hace falta el seed.
 4. Compila para producción (`pnpm build`).
+
+## Despliegue
+
+La demo corre en [Vercel](https://vercel.com) con PostgreSQL en [Neon](https://neon.tech). Neon da dos URLs de conexión: la **con pooler** (el host incluye `-pooler`) es para la app, y la **directa** es para migrar y cargar datos.
+
+1. En Neon, creá un proyecto y copiá las dos URLs.
+2. Desde tu máquina, con la URL directa, creá las tablas y cargá los datos de demo:
+   ```bash
+   DATABASE_URL='<url directa>' pnpm exec prisma migrate deploy
+   DATABASE_URL='<url directa>' SEED_USER_PASSWORD='<contraseña de la consigna>' pnpm db:seed
+   ```
+3. En Vercel, importá el repositorio y cargá las variables de entorno:
+   - `DATABASE_URL`: la URL con pooler.
+   - `CRON_SECRET`: un secreto largo (por ejemplo, `openssl rand -hex 32`).
+4. Desplegá. [`vercel.json`](vercel.json) programa el cron de pagos programados todos los días a las 11:00 UTC (8:00 en Buenos Aires). Vercel lo llama con `Authorization: Bearer $CRON_SECRET`, que es lo que espera `/api/pagos-agendados`.
+
+Las migraciones nuevas se aplican repitiendo el paso 2 con `prisma migrate deploy`; el build de Vercel no toca la base.
 
 ## Probarlo
 
