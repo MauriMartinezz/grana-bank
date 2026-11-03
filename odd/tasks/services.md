@@ -13,8 +13,8 @@ Branch: `feat/accounts` (after the accounts feature's T13). Delivery strategy: `
 
 ## Tasks
 
-- [ ] T1 (S2) model and migration: service companies, adhesions, simulated bills, movement type; company number validation.
-- [ ] T2 (S2) screens: Servicios list, adhere, bills of an adhesion, pay flow with confirmation and receipt.
+- [x] T1 (S2) model and migration: service companies, adhesions, simulated bills, movement type; company number validation. Route: inline. Commit 019354e.
+- [x] T2 (S2) screens: Servicios list, adhere, bills of an adhesion, pay flow with confirmation and receipt. Route: inline. Commit db6d1eb.
 - [ ] T3 (S3) dollar companies and the Servicios category.
 - [ ] T4 (S4) scheduled and automatic payments.
 
@@ -24,3 +24,4 @@ Route evidence: starts after accounts T13 (BigInt money), because it adds money 
 
 - L1 (2026-11-03, user request): "hay que trabajar en la sección de Servicios, propón ideas para que podamos llegar a una buena sección. Se me ocurre que se pueda programar pagos, que se pida un número de pago electrónico, servicios como AySA, Edesur, Edenor, Metrogas y servicios en dólares, quizá que se puedan agregar categorías para hacer los resúmenes más adelante como habíamos hablado"
 - L2 (2026-11-03, user): "Me parece bien, empieza por donde decís" (layer 1 first).
+- L3 (2026-11-03): resumed after the machine ran out of memory (RAM-backed /tmp held 4.5 GB of old scratch and the pnpm store; cleared on the user's request). Postgres was down and the services migration unapplied; after `docker compose up` and `prisma migrate deploy`: vitest 728/728, tsc and eslint clean. T1 and T2 committed. Risk: items 1 (additive migration) and 2 (proxy guard now covers /servicios/:path*). Verifier: S2 pass, S5 respected, no blockers (advisories: adherir page skips getCurrentUser; key replay after card deletion returns IDEMPOTENCY_MISMATCH; cross-account same-key race returns the generic error, still charged once). Native review (risk, reliability): approved and acknowledged; non-blocking advisories R3-misleading-fixture-comment, R3-movement-direction-unproved, R3-overdraw-assertion-weak. Next: T3.
