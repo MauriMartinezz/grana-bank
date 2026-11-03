@@ -20,6 +20,22 @@ const movements: Array<[MovementType, string, number, string]> = [
   [SUBSCRIPTION, "Netflix", 1999, "2026-10-05T07:00:00Z"],
 ];
 
+/** Accounts that exist only to receive transfers in the demo. */
+const recipients = [
+  {
+    email: "juanperez@clublanus.com",
+    name: "Juan Perez",
+    cardLast4: "4821",
+    balanceCents: 25000,
+  },
+  {
+    email: "martinbozzini@clublanus.com",
+    name: "Martin Bozzini",
+    cardLast4: "7390",
+    balanceCents: 18000,
+  },
+];
+
 async function main() {
   // Read from the environment so the password never lives in the repository.
   const password = process.env.SEED_USER_PASSWORD;
@@ -34,16 +50,47 @@ async function main() {
   });
   const prisma = new PrismaClient({ adapter });
 
-  // Deleting the user cascades to its account and movements,
-  // so running the seed twice leaves the same data.
+  // Deleting the users cascades to their accounts, movements, transfers and
+  // contacts, so running the seed twice leaves the same data.
   const email = "soygranate@clublanus.com";
-  await prisma.user.deleteMany({ where: { email } });
+  await prisma.user.deleteMany({
+    where: { email: { in: [email, ...recipients.map((r) => r.email)] } },
+  });
+
+  // Every seeded user logs in with the same password, so the demo can show
+  // a transfer arriving on the other side.
+  const passwordHash = await hashPassword(password);
+
+  const created = await Promise.all(
+    recipients.map(({ email, name, cardLast4, balanceCents }) =>
+      prisma.user.create({
+        data: {
+          email,
+          name,
+          passwordHash,
+          account: {
+            create: {
+              currency: "USD",
+              balanceCents,
+              cardBrand: "VISA",
+              cardLast4,
+              cardHolder: name,
+              cardExpiry: "08/29",
+            },
+          },
+        },
+      }),
+    ),
+  );
 
   await prisma.user.create({
     data: {
       email,
       name: "Granate",
-      passwordHash: await hashPassword(password),
+      passwordHash,
+      // Only the first recipient starts as a contact; the second one shows
+      // the "new recipient" flow.
+      contacts: { create: { contactId: created[0].id } },
       account: {
         create: {
           currency: "USD",
