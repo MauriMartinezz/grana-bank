@@ -87,7 +87,7 @@ export async function getRecipient(
   accountId: string,
 ): Promise<Recipient | null> {
   const account = await db.account.findFirst({
-    where: { id: accountId, userId: { not: senderId } },
+    where: { id: accountId, userId: { not: senderId }, user: { isTestAccount: false } },
     select: RECIPIENT_SELECT,
   });
   return account && toRecipient(account);
@@ -108,7 +108,7 @@ export async function findRecipientByEmail(
   email: string,
 ): Promise<LookupResult> {
   const user = await db.user.findFirst({
-    where: { email: normalizeEmail(email) },
+    where: { email: normalizeEmail(email), isTestAccount: false },
     select: {
       preferredCurrency: true,
       accounts: { select: RECIPIENT_SELECT, orderBy: { currency: "asc" } },
@@ -127,8 +127,9 @@ export async function findRecipientByAlias(
   senderId: string,
   alias: string,
 ): Promise<LookupResult> {
-  const account = await db.account.findUnique({
-    where: { alias: normalizeAlias(alias) },
+  // The test account is never a recipient.
+  const account = await db.account.findFirst({
+    where: { alias: normalizeAlias(alias), user: { isTestAccount: false } },
     select: RECIPIENT_SELECT,
   });
   return checkRecipient(senderId, account);

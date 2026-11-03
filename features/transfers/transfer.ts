@@ -88,9 +88,10 @@ export async function transfer({
     // safe; the balance is only read under the lock below.
     const target = await tx.account.findUnique({
       where: { id: recipientAccountId },
-      select: { userId: true, currency: true },
+      select: { userId: true, currency: true, user: { select: { isTestAccount: true } } },
     });
-    if (!target) {
+    // The test account only sends deposits; it never receives money.
+    if (!target || target.user.isTestAccount) {
       return { ok: false, error: "RECIPIENT_NOT_FOUND" };
     }
     if (target.userId === senderId) {

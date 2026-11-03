@@ -106,6 +106,9 @@ model User {
   preferredCurrency Currency          @default(ARS) @map("moneda_preferida")
   /// Salted scrypt hash, never the password itself.
   passwordHash      String            @map("hash_contrasena")
+  /// The seeded "Cuenta de prueba" that funds deposits: it never signs in,
+  /// is never found as a recipient and never receives a transfer.
+  isTestAccount     Boolean           @default(false) @map("es_cuenta_prueba")
   /// One per currency at most.
   accounts          Account[]
   sessions          Session[]

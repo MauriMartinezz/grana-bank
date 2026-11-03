@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "../features/auth/password";
 import { defaultCategoryRows } from "../features/categories/names";
+import { TEST_ACCOUNT } from "../features/deposits/test-account";
 import { simulatedBills } from "../features/services/bills";
 import { PrismaClient, MovementType } from "../generated/prisma/client";
 
@@ -101,11 +102,12 @@ async function main() {
     "soy.granate",
     "soy.granate.usd",
     ...recipients.flatMap((r) => r.accounts.map((a) => a.alias)),
+    ...TEST_ACCOUNT.accounts.map((a) => a.alias),
   ];
   await prisma.user.deleteMany({
     where: {
       OR: [
-        { email: { in: [email, ...recipients.map((r) => r.email)] } },
+        { email: { in: [email, TEST_ACCOUNT.email, ...recipients.map((r) => r.email)] } },
         { accounts: { some: { alias: { in: seededAliases } } } },
       ],
     },
@@ -197,6 +199,25 @@ async function main() {
       },
     },
     include: { accounts: { include: { cards: true } } },
+  });
+
+  // The "Cuenta de prueba" that funds Ingresar dinero. It cannot sign in:
+  // the flag keeps it out, and "!" is no valid password hash anyway.
+  await prisma.user.create({
+    data: {
+      email: TEST_ACCOUNT.email,
+      firstName: TEST_ACCOUNT.firstName,
+      lastName: "",
+      passwordHash: "!",
+      isTestAccount: true,
+      accounts: {
+        create: TEST_ACCOUNT.accounts.map(({ currency, alias }) => ({
+          currency,
+          alias,
+          balanceCents: TEST_ACCOUNT.balanceCents,
+        })),
+      },
+    },
   });
 
   // Seeded movements went through their account's card, like a transfer.
