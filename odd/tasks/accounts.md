@@ -17,6 +17,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - S11. "El logout deberá estar al final de la pantalla de Perfil en vez de en la barra inferior". Added to T9 because it touches the same files.
 - S12. "los últimos movimientos que aparecen en la pantalla de inicio serán 5 o 6 y tendrá un botón de Consultar todos, los registros deben ser los últimos movimientos independientemente de la tarjeta, se detallará en el mismo registro (ejemplo, tarjeta terminada en 8845)". Assumptions: Home lists the latest 6 across all accounts; movements record their card (the chosen card for dollar exchange, the account's first card for transfers; existing movements are backfilled with their account's first card); rows show "Tarjeta terminada en 8845", or the account when there is no card.
 - S13. "En la pantalla de Tarjetas, al hacer click en la tarjeta se podrán consultar movimiento realizados con esa tarjeta y ver los detalles de la misma (nombre, últimos números, cuando vence, lo que consideres)". Assumptions: `/cards/[cardId]` for the owner only; details are brand, last four digits, holder, expiry with an expired or expiring-soon note, its account (currency and alias) and the date it was added; below, the movements made with that card, with loading and empty states. Depends on T10 (card on each movement).
+- S14. "Los últimos movimientos serán agrupados por fecha y se podrá filtrar por fecha en la pantalla de todos los movimientos". Assumptions: movement lists (Home and Movimientos share the component) group rows under "Hoy", "Ayer" or the date, in Buenos Aires time; Movimientos adds date filters (Hoy, Últimos 7 días, Este mes, and a Desde/Hasta range) kept in the URL and combined with the search and type filters.
 - S8. Existing stored money is never relabeled: the migration keeps each account's stored currency; only the default changes to ARS.
 
 ## Tasks
@@ -31,6 +32,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [ ] T9 (S10, S11) delegated: light/dark theme with a selector in Perfil; logout moves from the bottom bar to the end of Perfil.
 - [ ] T10 (S12) delegated: card on each movement, Home latest 6 with Consultar todos.
 - [ ] T11 (S13) after T10: card detail with its movements.
+- [ ] T12 (S14) after T11: group movements by date and filter Movimientos by date.
 - [ ] T7 inline: README, seam check, browser checks.
 
 Route evidence: the parent context is past the long-session backstop, so units are delegated (context reason). T2–T6 depend on T1 and start after it, with disjoint edit surfaces. Risk: T1 item 1 (migration moves stored data) and T3/T4 item 4 (balance updates under locks): independent verifier after T1 and at the end.
@@ -53,3 +55,5 @@ Route evidence: the parent context is past the long-session backstop, so units a
 - L14 (2026-11-03, user): "Bien, hay algo que cambiar: los últimos movimientos que aparecen en la pantalla de inicio serán 5 o 6 y tendrá un botón de Consultar todos, los registros deben ser los últimos movimientos independientemente de la tarjeta, se detallará en el mismo registro (ejemplo, tarjeta terminada en 8845)"
 - L15 (2026-11-03, user): "Añade un acceso a Tarjetas en la barra de navegación inferior y uno de servicios". Bottom bar is now Inicio, Movimientos, Tarjetas, Servicios, Perfil (inline, components/layout/bottom-nav.tsx).
 - L16 (2026-11-03, user): "En la pantalla de Tarjetas, al hacer click en la tarjeta se podrán consultar movimiento realizados con esa tarjeta y ver los detalles de la misma (nombre, últimos números, cuando vence, lo que consideres)"
+- L17 (2026-11-03): Review slice 3 (a293110..f4a69cf) approved, lineage review-9cfb33b61e6f3aef; slice 4 (f4a69cf..c1743a2) approved, lineage review-aaf925ebd0055cdd. Accepted: a test for the same-email branch, README notes that Perfil password checks are not rate limited (26b4232); the expiry check moves to Buenos Aires time inside T11. Full-range START offered again by the stop hook was granted by the user but refused twice (budget, then untracked files); the slices cover it.
+- L18 (2026-11-03, user): "Los últimos movimientos serán agrupados por fecha y se podrá filtrar por fecha en la pantalla de todos los movimientos"
