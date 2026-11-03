@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StateMessage } from "@/components/ui/state-message";
 import { AccountSwitcher } from "@/features/account/account-switcher";
 import { BalanceCard } from "@/features/account/balance-card";
-import { NotificationsButton } from "@/features/account/notifications-button";
+import { BellLink, NotificationsButton } from "@/features/account/notifications-button";
 import { QuickActions } from "@/features/account/quick-actions";
 import { listAccounts } from "@/features/account/queries";
 import { pickSelectedAccount } from "@/features/account/selected-account";
@@ -107,7 +107,9 @@ export default function HomePage({ searchParams }: PageProps<"/inicio">) {
           >
             <SearchIcon />
           </Link>
-          <NotificationsButton />
+          <Suspense fallback={<BellLink />}>
+            <NotificationsButton />
+          </Suspense>
         </div>
       </header>
 

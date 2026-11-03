@@ -28,6 +28,7 @@ Mobile-first home banking web app built for a technical challenge. A user signs 
 | Servicios | Adhere services, pay bills in pesos or dollars, schedule a payment or turn on automatic debit |
 | Ingresar dinero | Add money from a demo "Cuenta de prueba" |
 | Promociones | Invented merchants' discounts filtered by weekday and category |
+| Notificaciones | The bell lists money in and out, dollar operations, failed payments and service reminders |
 | Perfil | Personal data, email, aliases, password, preferred currency, categories, light or dark theme |
 
 ## Stack
@@ -162,6 +163,7 @@ A dollar transfer works the same way to `juan.perez.usd`, from the dollar accoun
 - **Servicios:** Granate starts with the Edesur service "Luz depto" (payment number `0012345678`) and two simulated bills. Tapping a service opens the payment of its next bill. **Adherir servicio** lists AySA, Edesur, Edenor and Metrogas (pesos) and Salud Plena and Austral Seguros (two fictional companies billed in dollars). A bill can be scheduled for a day up to its due date, and a service can pay every bill by automatic debit. Home lists the bills that nothing pays by itself, with "Vence en N días".
 - **Categorías:** every user starts with Alquiler, Comida, Servicios, Regalos and Otros; **Perfil → Categorías** adds, renames and deletes them, and the detail of any movement changes its category. Service payments go to Servicios.
 - **Ingresar dinero:** the first quick action on Home adds up to $1.000.000 or USD 10.000 at a time, as a payment received from the Cuenta de prueba. **Programar ingresos** saves a deposit for a weekday or a day of the month; it is a demo, so nothing is deposited.
+- **Notificaciones:** the bell on Home opens the last 30 days of money received and sent, top-ups, service and subscription payments, dollar buys and sells, failed scheduled payments and bill reminders, with an unread count. Each service sets its reminder (the same day, 1, 3 or 7 days before the due date); "Luz depto" starts with 3 days.
 - **Promociones:** Home shows "Promos de hoy"; the list filters by weekday and category. They are informative: no discount is applied to payments.
 
 ## Project structure
@@ -206,6 +208,7 @@ proxy.ts     Redirects visitors with no session cookie to sign-in
 | Scheduled payments | A one-off payment on a chosen day, or an automatic debit on the due date, run daily by `/api/pagos-agendados` (Bearer `CRON_SECRET`) or by the demo button | Each run pays through the same locked, idempotent payment with one key per bill, so overlapping runs pay a bill once; under the bill lock the payment checks that the bill is still scheduled with that card, so a cancel never loses to a run. A payment without balance or card ends as failed with a notice and is not retried until the user schedules again or changes the automatic debit, so it never overdraws and never charges by surprise later. |
 | Categories | Per-user categories on movements, unique by name ignoring case through a lower-case `key` column; a note on the transfer | The category lives on each movement, so it stays private to that side and a later summary can group movements by it. Deleting a category sets its movements to uncategorized (`ON DELETE SET NULL`). Every write checks that both the movement and the category belong to the user. |
 | Deposits | A seeded system user flagged `isTestAccount` sends a regular transfer to the user | Reusing the transfer gives deposits the same locks, idempotency key and movements. The flag keeps the test account out of sign-in, recipient lookups and incoming transfers. |
+| Notifications | Derived from stored movements, exchanges, failed payments and reminder settings; a per-user `notificationsSeenAt` gives the unread count | No money flow writes a notification, so none can be missed or duplicated, and the feed always matches the data. |
 | Top-ups | SUBE (saved cards with a nickname), phone (Personal, Movistar, Claro, Tuenti) and DirecTV, $100 to $50.000 each, paid with a peso card in one transaction that locks the account, with an idempotency key; reference `RC-000001` | Same guarantees as transfers. A SUBE number is 16 digits starting with 6061 (checked again by a database `CHECK`). A phone number is stored as its 10-digit national number: `+54`, the mobile `9`, the trunk `0` and the legacy `15` after the area code are accepted and removed; `11` numbers read `+54 11 1234 5678` and the rest `+54 351 123 4567`. DirecTV accounts have 8 to 12 digits and receipts show only the last four. |
 | Accounts | One account per user and currency (ARS by default, USD optional), each with its own balance, alias and cards | A balance belongs to an account, and cards are ways to use it, as in a bank. Transfers only go between accounts of the same currency. |
 | Money format | Argentine everywhere: `$5.000` for pesos, `USD$12,50` for dollars; inputs accept `1.500,50` and reject `12.5` | One format for reading and typing avoids reading a dot as a decimal point. |
@@ -218,7 +221,7 @@ proxy.ts     Redirects visitors with no session cookie to sign-in
 
 - **Colors:** sampled from PNG exports, so they are close approximations.
 - **"Subscripción":** corrected to "Suscripción", matching "Pago de suscripción" in the same design.
-- **Bell:** the brief gives it no behavior, so it reports that there are no notifications.
+- **Bell:** the brief gives it no behavior; it opens Notificaciones, with the unread count.
 - **Logo:** cropped from a PNG export. Replace `public/logo.png` with the original vector.
 
 ## Known limitations

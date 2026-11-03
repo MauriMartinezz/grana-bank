@@ -160,6 +160,8 @@ async function main() {
           company: "EDESUR",
           paymentNumber: "0012345678",
           nickname: "Luz depto",
+          // Shows a reminder in Notificaciones before this month's bill is due.
+          reminderDays: 3,
           bills: { create: simulatedBills("EDESUR", "0012345678") },
         },
       },

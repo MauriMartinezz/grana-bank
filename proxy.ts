@@ -20,6 +20,7 @@ export const config = {
     "/servicios/:path*",
     "/ingresar-dinero/:path*",
     "/promociones/:path*",
+    "/notificaciones/:path*",
     "/recargas/:path*",
     "/tarjetas/:path*",
     "/dolares/:path*",
