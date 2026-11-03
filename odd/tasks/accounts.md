@@ -40,7 +40,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [x] T13 (S15, S17) delegated: balances and amounts as BigInt end to end; balance card format; verifier follow-ups.
 - [x] T15 (S18) delegated: Spanish route names.
 - [x] T16 (S19) delegated: Spanish database names via @map.
-- [ ] T14 (S16) after T15: ask before saving a new contact.
+- [x] T14 (S16) delegated: ask before saving a new contact.
 - [x] T12 (S14) delegated: group movements by date and filter Movimientos by date.
 - [ ] T7 inline: README, seam check, browser checks.
 
