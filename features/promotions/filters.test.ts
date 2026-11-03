@@ -4,7 +4,9 @@ import {
   cardText,
   daysText,
   discountText,
+  promotionsHref,
   readPromotionFilters,
+  validityText,
 } from "./filters";
 
 describe("buenosAiresWeekday", () => {
@@ -61,5 +63,25 @@ describe("texts", () => {
   it("says which cards apply", () => {
     expect(cardText("VISA")).toBe("Solo Visa");
     expect(cardText(null)).toBe("Todas tus tarjetas");
+  });
+});
+
+describe("promotionsHref", () => {
+  it("keeps the day and the category in the URL", () => {
+    expect(promotionsHref("lunes", "CINE")).toBe("/promociones?dia=lunes&categoria=cine");
+    expect(promotionsHref("todos", null)).toBe("/promociones?dia=todos");
+  });
+
+  it("round-trips through readPromotionFilters", () => {
+    const url = new URL(promotionsHref("sabado", "FARMACIA"), "http://localhost");
+    expect(
+      readPromotionFilters(Object.fromEntries(url.searchParams), 1),
+    ).toEqual({ day: "sabado", weekday: 6, category: "FARMACIA" });
+  });
+});
+
+describe("validityText", () => {
+  it("names the last day without shifting it", () => {
+    expect(validityText(new Date("2026-12-31T00:00:00Z"))).toBe("Hasta el 31 de diciembre");
   });
 });

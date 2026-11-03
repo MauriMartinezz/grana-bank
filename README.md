@@ -57,6 +57,8 @@ A transfer can carry a note, shown to both sides, and a category, private to the
 
 **Ingresar dinero**, a Home quick action, adds up to $1.000.000 or USD 10.000 at a time from the "Cuenta de prueba", a demo account the seed creates (`pnpm db:seed`). It arrives as a payment received. The test account cannot sign in and is never found as a recipient.
 
+**Promociones** lists invented merchants' discounts with their cap ("20% hasta $15.000"), filtered by weekday and category; Home shows "Promos de hoy". They are informative: no discount is applied to payments. The seed loads them, in force from the first day of the current month to the last day of the next one.
+
 Running the seed again resets all three users.
 
 ## Project structure

@@ -28,6 +28,8 @@ describe("proxy", () => {
     "/ingresar-dinero",
     "/ingresar-dinero/confirmar",
     "/ingresar-dinero/comprobante/some-id",
+    "/promociones",
+    "/promociones/some-id",
     "/recargas",
     "/recargas/sube",
     "/recargas/celular/claro",

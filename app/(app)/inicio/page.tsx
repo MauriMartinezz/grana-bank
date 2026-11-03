@@ -18,6 +18,7 @@ import {
   listRecentMovements,
   RECENT_MOVEMENTS,
 } from "@/features/movements/queries";
+import { TodayPromotions } from "@/features/promotions/today-promotions";
 import { UpcomingBills } from "@/features/services/upcoming-bills";
 import { SelectedAccountSkeleton } from "./selected-account-skeleton";
 
@@ -117,6 +118,11 @@ export default function HomePage({ searchParams }: PageProps<"/inicio">) {
       {/* Shows nothing while loading: it only appears when bills are due. */}
       <Suspense fallback={null}>
         <UpcomingBills />
+      </Suspense>
+
+      {/* Shows nothing while loading or when no promotion applies today. */}
+      <Suspense fallback={null}>
+        <TodayPromotions />
       </Suspense>
 
       <section className="mt-6">

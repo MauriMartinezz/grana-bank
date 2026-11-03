@@ -82,3 +82,21 @@ export function daysText(weekdays: number[]) {
 export function cardText(brand: CardBrand | null) {
   return brand ? `Solo ${BRAND_NAMES[brand]}` : "Todas tus tarjetas";
 }
+
+/** The list URL for a day and a category; every category when null. */
+export function promotionsHref(day: DaySlug, category: PromotionCategory | null) {
+  const query = new URLSearchParams({ dia: day });
+  if (category) query.set("categoria", category.toLowerCase());
+  return `/promociones?${query}`;
+}
+
+const VALIDITY_FORMATTER = new Intl.DateTimeFormat("es-AR", {
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
+
+/** `Hasta el 31 de diciembre`, from a date column's UTC midnight. */
+export function validityText(validUntil: Date) {
+  return `Hasta el ${VALIDITY_FORMATTER.format(validUntil)}`;
+}
