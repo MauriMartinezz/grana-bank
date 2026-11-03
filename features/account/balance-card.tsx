@@ -78,10 +78,38 @@ function CardFace({
   );
 }
 
+/** A card in the carousel: brand, number, holder and expiry, linking to its page. */
+function MiniCard({ card, isDefault, label }: { card: Card; isDefault: boolean; label: string }) {
+  return (
+    <Link
+      href={`/tarjetas/${card.id}`}
+      aria-label={`${label}: ${BRAND_LABELS[card.brand]} terminada en ${card.last4}${isDefault ? ", predeterminada" : ""}`}
+      className="block rounded-2xl bg-garnet-fill/90 p-4 text-white shadow-md shadow-black/10"
+    >
+      <span className="flex items-center justify-between">
+        <span className="text-sm font-semibold">{BRAND_LABELS[card.brand]}</span>
+        {isDefault && (
+          <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold">
+            Predeterminada
+          </span>
+        )}
+      </span>
+      <span className="mt-3 block text-lg tracking-wide">**** **** **** {card.last4}</span>
+      <span className="mt-2 flex items-end justify-between text-sm">
+        <span className="truncate font-medium">{card.holder}</span>
+        <span className="shrink-0 text-right leading-tight">
+          <span className="block text-[10px]">Exp. Date</span>
+          {card.expiry}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 /**
- * The selected account's balance on its card. With several cards in the
- * account, every card shows in a horizontal carousel, oldest first; each one
- * opens its own page.
+ * The selected account's balance. With one card (or none) it is the card face
+ * of the design. With several, the balance shows once, since the cards share
+ * it, and the cards follow in a carousel, the default first.
  */
 export function BalanceCard({
   account,
@@ -98,23 +126,35 @@ export function BalanceCard({
 
   const total = account.cards.length;
   return (
-    <div role="region" aria-label={`${label}: ${total} tarjetas`}>
-      {/* CSS scroll snapping: no script, and the next card peeks in. */}
-      <ul className="-mx-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-1 [scrollbar-width:none] desktop:mx-0 desktop:px-0">
-        {account.cards.map((card, index) => (
-          <li key={card.id} className="w-[88%] shrink-0 snap-center">
-            <CardFace
-              account={account}
-              card={card}
-              holderName={holderName}
-              label={`Tarjeta ${index + 1} de ${total}`}
-            />
-          </li>
-        ))}
-      </ul>
-      <p className="mt-2 text-center text-xs text-muted">
-        {total} tarjetas en esta cuenta · deslizá para verlas
-      </p>
+    <div>
+      <section
+        aria-label={label}
+        className="rounded-[28px] bg-garnet-fill p-6 text-white shadow-lg shadow-black/10"
+      >
+        <div className="flex items-center gap-2">
+          <p className="text-sm">Balance</p>
+          <BalanceVisibilityToggle />
+        </div>
+        <p className="mt-1 text-2xl font-medium">
+          <Balance cents={account.balanceCents} currency={account.currency} format={formatBalance} />
+        </p>
+        <p className="mt-1 truncate text-xs text-white/80">Alias: {account.alias}</p>
+        <p className="mt-3 text-xs text-white/80">
+          {total} tarjetas usan este saldo
+        </p>
+      </section>
+
+      <div role="region" aria-label={`Tarjetas de la cuenta en ${account.currency}`} className="mt-3">
+        {/* CSS scroll snapping: no script, and the next card peeks in. The
+            account's cards come with the default one first. */}
+        <ul className="-mx-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-1 [scrollbar-width:none] desktop:mx-0 desktop:px-0">
+          {account.cards.map((card, index) => (
+            <li key={card.id} className="w-[78%] shrink-0 snap-start">
+              <MiniCard card={card} isDefault={index === 0} label={`Tarjeta ${index + 1} de ${total}`} />
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { ACCOUNT_LABELS } from "./account-label";
 import { BrandMark } from "./brand-mark";
 import type { AccountCards } from "./queries";
 import { BRAND_NAMES } from "./validation";
+import { defaultCardId } from "./default-card";
 
 /** The user's cards, one section per account. */
 export function CardList({ accounts }: { accounts: AccountCards[] }) {
@@ -29,7 +30,14 @@ export function CardList({ accounts }: { accounts: AccountCards[] }) {
                     >
                       <BrandMark brand={card.brand} />
                       <span className="min-w-0 flex-1">
-                        <span className="block font-medium tracking-wide">•••• {card.last4}</span>
+                        <span className="block font-medium tracking-wide">
+                          •••• {card.last4}
+                          {card.id === defaultCardId(account.cards, account.defaultCardId) && (
+                            <span className="ml-2 rounded-full bg-garnet-soft px-2 py-0.5 align-middle text-[11px] font-semibold tracking-normal text-garnet">
+                              Predeterminada
+                            </span>
+                          )}
+                        </span>
                         <span className="block truncate text-sm text-muted">{card.holder}</span>
                       </span>
                       <span className="text-right text-xs text-muted">

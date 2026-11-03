@@ -1,3 +1,4 @@
+import { defaultFirst } from "@/features/cards/default-card";
 import { cardOption } from "@/features/exchange/queries";
 import { db } from "@/lib/db";
 
@@ -29,6 +30,7 @@ export async function getPesoPayment(userId: string) {
       currency: true,
       alias: true,
       balanceCents: true,
+      defaultCardId: true,
       cards: {
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
         select: { id: true, brand: true, last4: true },
@@ -36,9 +38,12 @@ export async function getPesoPayment(userId: string) {
     },
   });
   if (!account) return null;
+  // The default card first, so the picker preselects it.
   return {
     balanceCents: account.balanceCents,
-    cards: account.cards.map((card) => cardOption({ ...card, account })),
+    cards: defaultFirst(account.cards, account.defaultCardId).map((card) =>
+      cardOption({ ...card, account }),
+    ),
   };
 }
 

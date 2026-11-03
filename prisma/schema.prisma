@@ -165,6 +165,10 @@ model Account {
   /// Integer cents as a 64-bit BIGINT, so amounts never go through floating
   /// point and a balance is not capped at 32 bits.
   balanceCents    BigInt           @map("saldo_centavos")
+  /// The card picked first to pay from this account; the oldest card when
+  /// empty or removed.
+  defaultCardId   String?          @unique @map("tarjeta_predeterminada_id")
+  defaultCard     Card?            @relation("DefaultCard", fields: [defaultCardId], references: [id], onDelete: SetNull)
   cards           Card[]
   movements       Movement[]
   sent            Transfer[]       @relation("TransferFrom")
@@ -197,6 +201,7 @@ model Card {
   servicePayments ServicePayment[]
   autoDebits      ServiceAdhesion[] @relation("AutoDebitCard")
   subscriptions   Subscription[]
+  defaultOf       Account?          @relation("DefaultCard")
   scheduledBills  ServiceBill[]     @relation("ScheduledBillCard")
 
   @@index([accountId])

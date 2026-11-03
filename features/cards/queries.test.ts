@@ -48,7 +48,13 @@ describe("getOwnCard", () => {
       holder: "Ana Perez",
       expiry: "11/27",
       createdAt: expect.any(Date),
-      account: { currency: "USD", alias: "4444.cardsqueries.test" },
+      // The account's cards and chosen default tell whether this one is the default.
+      account: {
+        currency: "USD",
+        alias: "4444.cardsqueries.test",
+        defaultCardId: null,
+        cards: [{ id: ownerCardId }],
+      },
     });
   });
 

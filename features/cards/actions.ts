@@ -84,3 +84,18 @@ export async function addCard(_previous: AddCardState, formData: FormData): Prom
   revalidatePath("/inicio");
   redirect("/tarjetas");
 }
+
+/** Makes one of the user's cards the default of its account; another user's card changes nothing. */
+export async function setDefaultCard(formData: FormData) {
+  const user = await getCurrentUser();
+  const cardId = String(formData.get("cardId") ?? "");
+  const card = await db.card.findFirst({
+    where: { id: cardId, account: { userId: user.id } },
+    select: { id: true, accountId: true },
+  });
+  if (!card) redirect("/tarjetas");
+
+  await db.account.update({ where: { id: card.accountId }, data: { defaultCardId: card.id } });
+  revalidatePath("/(app)", "layout");
+  redirect(`/tarjetas/${card.id}`);
+}

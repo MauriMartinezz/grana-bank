@@ -1,6 +1,7 @@
 import { fullName } from "@/features/account/name";
 import { isOwnCategory } from "@/features/categories/categories";
 import { validateNote } from "@/features/categories/names";
+import { defaultCardId } from "@/features/cards/default-card";
 import { db } from "@/lib/db";
 import { MAX_TRANSFER_CENTS } from "./amount";
 
@@ -148,14 +149,23 @@ export async function transfer({
     });
     const nameOf = (id: string) => fullName(users.find((user) => user.id === id)!);
 
-    // Each side records its account's first card, read under the locks.
-    const cards = await tx.card.findMany({
-      where: { accountId: { in: [from.id, to.id] } },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      select: { id: true, accountId: true },
-    });
+    // Each side records its account's default card, read under the locks.
+    const [cards, defaults] = await Promise.all([
+      tx.card.findMany({
+        where: { accountId: { in: [from.id, to.id] } },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        select: { id: true, accountId: true },
+      }),
+      tx.account.findMany({
+        where: { id: { in: [from.id, to.id] } },
+        select: { id: true, defaultCardId: true },
+      }),
+    ]);
     const firstCardOf = (accountId: string) =>
-      cards.find((card) => card.accountId === accountId)?.id ?? null;
+      defaultCardId(
+        cards.filter((card) => card.accountId === accountId),
+        defaults.find((account) => account.id === accountId)?.defaultCardId ?? null,
+      );
 
     await tx.account.update({
       where: { id: from.id },

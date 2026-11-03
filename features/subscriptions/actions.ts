@@ -1,5 +1,6 @@
 "use server";
 
+import { defaultCardId } from "@/features/cards/default-card";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/current-user";
@@ -30,11 +31,16 @@ export async function subscribe(_previous: SubscribeState, formData: FormData): 
     });
     if (duplicate) return { error: `Ya tenés una suscripción activa a ${item.merchant}.` };
 
-    const card = await db.card.findFirst({
-      where: { account: { userId: user.id, currency: "ARS" } },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      select: { id: true },
+    // The peso account's default card: the chosen one, else the oldest.
+    const pesos = await db.account.findFirst({
+      where: { userId: user.id, currency: "ARS" },
+      select: {
+        defaultCardId: true,
+        cards: { orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true } },
+      },
     });
+    const cardId = pesos ? defaultCardId(pesos.cards, pesos.defaultCardId) : null;
+    const card = cardId ? { id: cardId } : null;
     if (!card) {
       return { error: "Necesitás una tarjeta en pesos para suscribirte. Agregala en Tarjetas." };
     }

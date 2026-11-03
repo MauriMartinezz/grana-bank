@@ -12,6 +12,7 @@ export function listCardsByAccount(userId: string) {
       id: true,
       currency: true,
       alias: true,
+      defaultCardId: true,
       cards: {
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
         select: { id: true, brand: true, last4: true, holder: true, expiry: true },
@@ -47,7 +48,14 @@ export function getOwnCard(userId: string, cardId: string) {
       holder: true,
       expiry: true,
       createdAt: true,
-      account: { select: { currency: true, alias: true } },
+      account: {
+        select: {
+          currency: true,
+          alias: true,
+          defaultCardId: true,
+          cards: { orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true } },
+        },
+      },
     },
   });
 }
