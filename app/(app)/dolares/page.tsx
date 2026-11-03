@@ -9,6 +9,7 @@ import { OpenAccountForm } from "@/features/exchange/open-account-form";
 import { cardOption } from "@/features/exchange/queries";
 import { ARS_PER_USD } from "@/features/exchange/rate";
 import { formatMoney } from "@/lib/format";
+import { Balance } from "@/features/account/balance";
 
 export const metadata: Metadata = { title: "Dólares" };
 
@@ -34,11 +35,11 @@ export default async function ExchangePage() {
         <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm">
           <div>
             <dt className="text-muted">Tus pesos</dt>
-            <dd className="font-medium">{ars ? formatMoney(ars.balanceCents, "ARS") : "—"}</dd>
+            <dd className="font-medium">{ars ? <Balance cents={ars.balanceCents} currency="ARS" /> : "—"}</dd>
           </div>
           <div>
             <dt className="text-muted">Tus dólares</dt>
-            <dd className="font-medium">{usd ? formatMoney(usd.balanceCents, "USD") : "—"}</dd>
+            <dd className="font-medium">{usd ? <Balance cents={usd.balanceCents} currency="USD" /> : "—"}</dd>
           </div>
         </dl>
       </section>

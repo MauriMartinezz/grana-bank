@@ -12,6 +12,7 @@ import { findTopUpMovementByKey, resolveTarget } from "@/features/top-ups/top-up
 import { PROVIDER_NAMES } from "@/features/top-ups/validation";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
+import { Balance } from "@/features/account/balance";
 
 export const metadata: Metadata = { title: "Confirmar recarga" };
 
@@ -74,7 +75,7 @@ export default async function ConfirmTopUpPage({ searchParams }: PageProps<"/rec
           <div className="flex justify-between gap-6 py-3">
             <dt className="text-muted">Saldo después</dt>
             <dd className={`font-medium ${remaining < 0 ? "text-garnet" : ""}`}>
-              {remaining < 0 ? "Saldo insuficiente" : formatMoney(remaining, "ARS")}
+              {remaining < 0 ? "Saldo insuficiente" : <Balance cents={remaining} currency="ARS" />}
             </dd>
           </div>
         </dl>

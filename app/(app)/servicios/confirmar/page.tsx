@@ -12,6 +12,7 @@ import { findServicePaymentMovementByKey } from "@/features/services/pay-bill";
 import { getBill } from "@/features/services/queries";
 import { getOwnedCard } from "@/features/top-ups/queries";
 import { formatMoney } from "@/lib/format";
+import { Balance } from "@/features/account/balance";
 
 export const metadata: Metadata = { title: "Confirmar pago" };
 
@@ -83,7 +84,7 @@ export default async function ConfirmBillPaymentPage({
           <div className="flex justify-between gap-6 py-3">
             <dt className="text-muted">Saldo después</dt>
             <dd className={`font-medium ${remaining < 0 ? "text-garnet" : ""}`}>
-              {remaining < 0 ? "Saldo insuficiente" : formatMoney(remaining, bill.currency)}
+              {remaining < 0 ? "Saldo insuficiente" : <Balance cents={remaining} currency={bill.currency} />}
             </dd>
           </div>
         </dl>

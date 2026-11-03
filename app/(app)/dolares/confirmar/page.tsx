@@ -9,6 +9,7 @@ import { findExchangeMovementByKey, SIDES } from "@/features/exchange/exchange";
 import { cardOption, getOwnedCards } from "@/features/exchange/queries";
 import { ARS_PER_USD, usdToArsCents } from "@/features/exchange/rate";
 import { formatMoney } from "@/lib/format";
+import { Balance } from "@/features/account/balance";
 
 export const metadata: Metadata = { title: "Confirmar operación" };
 
@@ -89,7 +90,7 @@ export default async function ConfirmExchangePage({
             <dd className={`font-medium ${remaining < 0 ? "text-garnet" : ""}`}>
               {remaining < 0
                 ? "Saldo insuficiente"
-                : formatMoney(remaining, fromCard.account.currency)}
+                : <Balance cents={remaining} currency={fromCard.account.currency} />}
             </dd>
           </div>
         </dl>

@@ -1,6 +1,6 @@
 import { MastercardLogo } from "@/components/icons";
 import { formatBalance } from "@/lib/format";
-import { BALANCE_MASK } from "./balance-privacy";
+import { Balance } from "./balance";
 import { BalanceVisibilityToggle } from "./balance-visibility-toggle";
 import type { AccountWithCards } from "./queries";
 
@@ -35,10 +35,7 @@ export function BalanceCard({
       </div>
       <p className="mt-1 text-2xl font-medium">
         {/* CSS shows one of the two, following data-balance on <html>. */}
-        <span className="balance-amount">{formatBalance(account.balanceCents, account.currency)}</span>
-        <span className="balance-mask" aria-label="Saldo oculto">
-          {BALANCE_MASK}
-        </span>
+        <Balance cents={account.balanceCents} currency={account.currency} format={formatBalance} />
       </p>
       <p className="mt-1 truncate text-xs text-white/80">Alias: {account.alias}</p>
       {card ? (

@@ -8,7 +8,7 @@ import { listCategories } from "@/features/categories/categories";
 import { AmountForm } from "@/features/transfers/amount-form";
 import { getRecipient } from "@/features/transfers/contacts";
 import { RecipientSummary } from "@/features/transfers/recipient-summary";
-import { formatMoney } from "@/lib/format";
+import { Balance } from "@/features/account/balance";
 
 export const metadata: Metadata = { title: "Monto a transferir" };
 
@@ -39,7 +39,7 @@ export default async function TransferAmountPage({
       {account ? (
         <>
           <p className="mt-6 text-sm text-muted">
-            Disponible: {formatMoney(account.balanceCents, account.currency)}
+            Disponible: <Balance cents={account.balanceCents} currency={account.currency} />
           </p>
           <div className="mt-2">
             <AmountForm

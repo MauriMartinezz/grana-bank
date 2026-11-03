@@ -15,6 +15,7 @@ import { getBill, getPaymentCards } from "@/features/services/queries";
 import { dateInputValue, lastScheduleDay } from "@/features/services/schedule";
 import { ScheduleForm } from "@/features/services/schedule-form";
 import { formatMoney } from "@/lib/format";
+import { Balance } from "@/features/account/balance";
 
 export const metadata: Metadata = { title: "Pagar factura" };
 
@@ -129,7 +130,7 @@ async function BillPayment({
     <>
       <p className="mb-5 text-sm text-muted">
         Disponible:{" "}
-        <span className="font-medium text-ink">{formatMoney(payment.balanceCents, currency)}</span>
+        <span className="font-medium text-ink"><Balance cents={payment.balanceCents} currency={currency} /></span>
       </p>
       <PayBillForm billId={billId} cards={payment.cards} />
 

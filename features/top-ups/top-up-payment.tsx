@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { StateMessage } from "@/components/ui/state-message";
-import { formatMoney } from "@/lib/format";
 import { getPesoPayment } from "./queries";
 import { TopUpForm } from "./top-up-form";
 import type { TopUpKind, TopUpProvider } from "./validation";
+import { Balance } from "@/features/account/balance";
 
 /**
  * The top-up form with the peso cards to pay with, or why it cannot show:
@@ -45,7 +45,7 @@ export async function TopUpPayment({
   return (
     <>
       <p className="mb-5 text-sm text-muted">
-        Disponible en pesos: <span className="font-medium text-ink">{formatMoney(payment.balanceCents, "ARS")}</span>
+        Disponible en pesos: <span className="font-medium text-ink"><Balance cents={payment.balanceCents} currency="ARS" /></span>
       </p>
       <TopUpForm kind={kind} provider={provider} subeCardId={subeCardId} cards={payment.cards} />
     </>

@@ -11,6 +11,7 @@ import { getRecipient, isContact } from "@/features/transfers/contacts";
 import { findSentMovementByKey } from "@/features/transfers/transfer";
 import { RecipientSummary } from "@/features/transfers/recipient-summary";
 import { formatMoney } from "@/lib/format";
+import { Balance } from "@/features/account/balance";
 
 export const metadata: Metadata = { title: "Confirmar transferencia" };
 
@@ -72,7 +73,7 @@ export default async function ConfirmTransferPage({
           <div className="flex justify-between gap-6 py-3">
             <dt className="text-muted">Saldo actual</dt>
             <dd className="font-medium">
-              {formatMoney(account.balanceCents, account.currency)}
+              <Balance cents={account.balanceCents} currency={account.currency} />
             </dd>
           </div>
           <div className="flex justify-between gap-6 py-3">
@@ -80,7 +81,7 @@ export default async function ConfirmTransferPage({
             <dd className={`font-medium ${remaining < 0 ? "text-garnet" : ""}`}>
               {remaining < 0
                 ? "Saldo insuficiente"
-                : formatMoney(remaining, account.currency)}
+                : <Balance cents={remaining} currency={account.currency} />}
             </dd>
           </div>
           {note && (

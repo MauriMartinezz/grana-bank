@@ -8,6 +8,7 @@ import { ConfirmDepositForm } from "@/features/deposits/confirm-deposit-form";
 import { findTestAccount } from "@/features/deposits/deposit";
 import { readDepositConfirmation } from "@/features/deposits/test-account";
 import { formatMoney } from "@/lib/format";
+import { Balance } from "@/features/account/balance";
 
 export const metadata: Metadata = { title: "Confirmar ingreso" };
 
@@ -51,7 +52,7 @@ export default async function ConfirmDepositPage({
           </div>
           <div className="flex justify-between gap-6 py-3">
             <dt className="text-muted">Saldo después</dt>
-            <dd className="text-right font-medium">{formatMoney(after, account.currency)}</dd>
+            <dd className="text-right font-medium"><Balance cents={after} currency={account.currency} /></dd>
           </div>
         </dl>
       </section>
