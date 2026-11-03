@@ -38,7 +38,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [ ] T10 (S12) delegated: card on each movement, Home latest 6 with Consultar todos.
 - [x] T11 (S13) delegated: card detail with its movements; expiry in Buenos Aires time.
 - [x] T13 (S15, S17) delegated: balances and amounts as BigInt end to end; balance card format; verifier follow-ups.
-- [ ] T15 (S18) right after T13, before every other queued task: Spanish route names.
+- [x] T15 (S18) delegated: Spanish route names.
 - [ ] T16 (S19) after T15: Spanish database names via @map; Risk item 1.
 - [ ] T14 (S16) after T15: ask before saving a new contact.
 - [ ] T12 (S14) after T15: group movements by date and filter Movimientos by date.
