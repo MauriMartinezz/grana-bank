@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import {
+  findRecipientByAlias,
   findRecipientByEmail,
   getRecipient,
   listContacts,
@@ -31,6 +32,7 @@ function createUser(email: string, name: string, withAccount = true) {
         ? {
             create: {
               balanceCents: 0,
+              alias: email.replace("@", "."),
               cardBrand: "VISA",
               cardLast4: "0000",
               cardHolder: name,
@@ -77,6 +79,7 @@ describe("listContacts", () => {
       userId: zoe.id,
       name: "Zoe",
       email: EMAILS[1],
+      alias: "zoe.contacts.test",
       favorite: true,
     });
   });
@@ -103,7 +106,7 @@ describe("findRecipientByEmail", () => {
   it("finds a user with an account, ignoring case and spaces", async () => {
     expect(await findRecipientByEmail(owner.id, "  ANA@contacts.test ")).toEqual({
       ok: true,
-      recipient: { userId: ana.id, name: "Ana", email: EMAILS[2] },
+      recipient: { userId: ana.id, name: "Ana", email: EMAILS[2], alias: "ana.contacts.test" },
     });
   });
 
@@ -116,12 +119,29 @@ describe("findRecipientByEmail", () => {
   });
 });
 
+describe("findRecipientByAlias", () => {
+  it("finds a user with an account, ignoring case and spaces", async () => {
+    expect(await findRecipientByAlias(owner.id, "  ANA.Contacts.TEST ")).toEqual({
+      ok: true,
+      recipient: { userId: ana.id, name: "Ana", email: EMAILS[2], alias: "ana.contacts.test" },
+    });
+  });
+
+  it.each([
+    ["the sender", "owner.contacts.test", "SELF_TRANSFER"],
+    ["an unknown alias", "nobody.here", "RECIPIENT_NOT_FOUND"],
+  ])("rejects %s", async (_case, alias, error) => {
+    expect(await findRecipientByAlias(owner.id, alias)).toEqual({ ok: false, error });
+  });
+});
+
 describe("getRecipient", () => {
   it("returns a user with an account who is not the sender", async () => {
     expect(await getRecipient(owner.id, zoe.id)).toEqual({
       userId: zoe.id,
       name: "Zoe",
       email: EMAILS[1],
+      alias: "zoe.contacts.test",
     });
     expect(await getRecipient(owner.id, owner.id)).toBeNull();
     expect(await getRecipient(owner.id, noAccount.id)).toBeNull();

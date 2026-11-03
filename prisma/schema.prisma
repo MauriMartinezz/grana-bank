@@ -58,6 +58,9 @@ model Account {
   id           String     @id @default(uuid())
   userId       String     @unique
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Transfer alias: lower case letters, digits and dots, 1 to 40 characters,
+  /// at least one letter. A CHECK constraint enforces it.
+  alias        String     @unique
   /// ISO 4217 code.
   currency     String     @default("USD")
   /// Integer cents, so amounts never go through floating point.

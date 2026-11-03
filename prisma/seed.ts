@@ -25,12 +25,14 @@ const recipients = [
   {
     email: "juanperez@clublanus.com",
     name: "Juan Perez",
+    alias: "juan.perez",
     cardLast4: "4821",
     balanceCents: 25000,
   },
   {
     email: "martinbozzini@clublanus.com",
     name: "Martin Bozzini",
+    alias: "martin.bozzini",
     cardLast4: "7390",
     balanceCents: 18000,
   },
@@ -62,7 +64,7 @@ async function main() {
   const passwordHash = await hashPassword(password);
 
   const created = await Promise.all(
-    recipients.map(({ email, name, cardLast4, balanceCents }) =>
+    recipients.map(({ email, name, alias, cardLast4, balanceCents }) =>
       prisma.user.create({
         data: {
           email,
@@ -70,6 +72,7 @@ async function main() {
           passwordHash,
           account: {
             create: {
+              alias,
               currency: "USD",
               balanceCents,
               cardBrand: "VISA",
@@ -93,6 +96,7 @@ async function main() {
       contacts: { create: { contactId: created[0].id } },
       account: {
         create: {
+          alias: "soy.granate",
           currency: "USD",
           balanceCents: 97885,
           cardBrand: "MASTERCARD",
