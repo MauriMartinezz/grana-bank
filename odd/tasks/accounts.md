@@ -18,6 +18,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - S12. "los últimos movimientos que aparecen en la pantalla de inicio serán 5 o 6 y tendrá un botón de Consultar todos, los registros deben ser los últimos movimientos independientemente de la tarjeta, se detallará en el mismo registro (ejemplo, tarjeta terminada en 8845)". Assumptions: Home lists the latest 6 across all accounts; movements record their card (the chosen card for dollar exchange, the account's first card for transfers; existing movements are backfilled with their account's first card); rows show "Tarjeta terminada en 8845", or the account when there is no card.
 - S13. "En la pantalla de Tarjetas, al hacer click en la tarjeta se podrán consultar movimiento realizados con esa tarjeta y ver los detalles de la misma (nombre, últimos números, cuando vence, lo que consideres)". Assumptions: `/cards/[cardId]` for the owner only; details are brand, last four digits, holder, expiry with an expired or expiring-soon note, its account (currency and alias) and the date it was added; below, the movements made with that card, with loading and empty states. Depends on T10 (card on each movement).
 - S14. "Los últimos movimientos serán agrupados por fecha y se podrá filtrar por fecha en la pantalla de todos los movimientos". Assumptions: movement lists (Home and Movimientos share the component) group rows under "Hoy", "Ayer" or the date, in Buenos Aires time; Movimientos adds date filters (Hoy, Últimos 7 días, Este mes, and a Desde/Hasta range) kept in the URL and combined with the search and type filters.
+- S15. Review slice 5 found that balances are 32-bit integer cents, so an account tops out at $21.474.836,47 and a credit past it fails with a generic error. User decision: "Cambialo a bigint". Balances and stored amounts become BIGINT (widening only, no stored value changes); per-operation limits stay as they are.
 - S8. Existing stored money is never relabeled: the migration keeps each account's stored currency; only the default changes to ARS.
 
 ## Tasks
@@ -32,7 +33,8 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [ ] T9 (S10, S11) delegated: light/dark theme with a selector in Perfil; logout moves from the bottom bar to the end of Perfil.
 - [ ] T10 (S12) delegated: card on each movement, Home latest 6 with Consultar todos.
 - [ ] T11 (S13) after T10: card detail with its movements.
-- [ ] T12 (S14) after T11: group movements by date and filter Movimientos by date.
+- [ ] T13 (S15) after T11: balances and amounts as BigInt end to end; Risk items 1 and 4.
+- [ ] T12 (S14) after T13: group movements by date and filter Movimientos by date.
 - [ ] T7 inline: README, seam check, browser checks.
 
 Route evidence: the parent context is past the long-session backstop, so units are delegated (context reason). T2–T6 depend on T1 and start after it, with disjoint edit surfaces. Risk: T1 item 1 (migration moves stored data) and T3/T4 item 4 (balance updates under locks): independent verifier after T1 and at the end.
@@ -57,3 +59,5 @@ Route evidence: the parent context is past the long-session backstop, so units a
 - L16 (2026-11-03, user): "En la pantalla de Tarjetas, al hacer click en la tarjeta se podrán consultar movimiento realizados con esa tarjeta y ver los detalles de la misma (nombre, últimos números, cuando vence, lo que consideres)"
 - L17 (2026-11-03): Review slice 3 (a293110..f4a69cf) approved, lineage review-9cfb33b61e6f3aef; slice 4 (f4a69cf..c1743a2) approved, lineage review-aaf925ebd0055cdd. Accepted: a test for the same-email branch, README notes that Perfil password checks are not rate limited (26b4232); the expiry check moves to Buenos Aires time inside T11. Full-range START offered again by the stop hook was granted by the user but refused twice (budget, then untracked files); the slices cover it.
 - L18 (2026-11-03, user): "Los últimos movimientos serán agrupados por fecha y se podrá filtrar por fecha en la pantalla de todos los movimientos"
+- L19 (2026-11-03): Review slice 5 (c1743a2..3985118) approved, lineage review-044090fe2fd93542. Its credit-overflow finding was taken to the user with two options (BigInt, or a clear error at the 32-bit limit).
+- L20 (2026-11-03, user): "Cambialo a bigint". Order: T11 (in progress) → T13 → T12, because all three touch movement queries.
