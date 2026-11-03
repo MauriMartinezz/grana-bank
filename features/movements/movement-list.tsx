@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatMoney } from "@/lib/format";
+import { movementSource } from "./movement-source";
 import { MOVEMENT_TYPE_STYLES } from "./movement-type";
 import type { MovementListItem } from "./queries";
 
@@ -25,6 +26,9 @@ export function MovementList({ movements }: { movements: MovementListItem[] }) {
                   {movement.counterparty}
                 </span>
                 <span className="block text-xs text-muted">{label}</span>
+                <span className="block truncate text-xs text-muted">
+                  {movementSource(movement)}
+                </span>
               </span>
               <span className={`text-sm font-semibold ${amountClass}`}>
                 {formatMoney(movement.amountCents, movement.account.currency)}

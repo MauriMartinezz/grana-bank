@@ -4,6 +4,15 @@ import { NO_FILTERS, type MovementFilters } from "./filters";
 
 const MAX_MOVEMENTS = 50;
 
+/** How many movements Home shows, across every account of the user. */
+export const RECENT_MOVEMENTS = 6;
+
+// Only what a row shows: never the holder, expiry or any other card data.
+const MOVEMENT_INCLUDE = {
+  account: { select: { currency: true } },
+  card: { select: { last4: true, brand: true } },
+} as const;
+
 /** `%` and `_` are LIKE wildcards; a search must match them literally. */
 function escapeLikePattern(text: string) {
   return text.replace(/[\\%_]/g, "\\$&");
@@ -31,8 +40,13 @@ export function listMovements(
     },
     orderBy: [{ occurredAt: "desc" }, { id: "asc" }],
     take: limit,
-    include: { account: { select: { currency: true } } },
+    include: MOVEMENT_INCLUDE,
   });
+}
+
+/** The latest movements of every account of the user, for Home. */
+export function listRecentMovements(userId: string) {
+  return listMovements(userId, NO_FILTERS, RECENT_MOVEMENTS);
 }
 
 export type MovementListItem = Awaited<
@@ -42,6 +56,6 @@ export type MovementListItem = Awaited<
 export function getMovement(userId: string, id: string) {
   return db.movement.findFirst({
     where: { id, account: { userId } },
-    include: { account: { select: { currency: true } } },
+    include: MOVEMENT_INCLUDE,
   });
 }

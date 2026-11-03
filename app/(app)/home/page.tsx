@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SearchIcon } from "@/components/icons";
+import { buttonClassName } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StateMessage } from "@/components/ui/state-message";
 import { AccountSwitcher } from "@/features/account/account-switcher";
@@ -11,14 +12,13 @@ import { QuickActions } from "@/features/account/quick-actions";
 import { listAccounts } from "@/features/account/queries";
 import { pickSelectedAccount } from "@/features/account/selected-account";
 import { getCurrentUser } from "@/features/auth/current-user";
-import { NO_FILTERS } from "@/features/movements/filters";
 import { MovementList } from "@/features/movements/movement-list";
 import { MovementListSkeleton } from "@/features/movements/movement-list-skeleton";
-import type { Currency } from "@/generated/prisma/client";
-import { listMovements } from "@/features/movements/queries";
+import {
+  listRecentMovements,
+  RECENT_MOVEMENTS,
+} from "@/features/movements/queries";
 import { SelectedAccountSkeleton } from "./selected-account-skeleton";
-
-const RECENT_MOVEMENTS = 5;
 
 export const metadata: Metadata = { title: "Inicio" };
 
@@ -29,21 +29,18 @@ async function Greeting() {
   return <h1 className="font-serif text-2xl font-bold">{user.name}</h1>;
 }
 
-async function RecentMovements({
-  userId,
-  currency,
-}: {
-  userId: string;
-  currency: Currency;
-}) {
-  const movements = await listMovements(
-    userId,
-    NO_FILTERS,
-    RECENT_MOVEMENTS,
-    currency,
-  );
+// Every account of the user, whatever account the switcher shows: each row
+// says which card or account the movement went through.
+async function RecentMovements() {
+  const user = await getCurrentUser();
+  const movements = await listRecentMovements(user.id);
   return movements.length > 0 ? (
-    <MovementList movements={movements} />
+    <>
+      <MovementList movements={movements} />
+      <Link href="/movements" className={`${buttonClassName} mt-4 w-full`}>
+        Consultar todos
+      </Link>
+    </>
   ) : (
     <StateMessage
       title="Todavía no tenés movimientos"
@@ -86,15 +83,6 @@ async function SelectedAccount({ searchParams }: { searchParams: SearchParams })
       <div className="mt-4">
         <QuickActions />
       </div>
-
-      <section className="mt-6">
-        <h2 className="mb-4 font-serif text-xl font-bold">
-          Últimos movimientos
-        </h2>
-        <Suspense key={account.id} fallback={<MovementListSkeleton />}>
-          <RecentMovements userId={user.id} currency={account.currency} />
-        </Suspense>
-      </section>
     </>
   );
 }
@@ -124,6 +112,15 @@ export default function HomePage({ searchParams }: PageProps<"/home">) {
       <Suspense fallback={<SelectedAccountSkeleton />}>
         <SelectedAccount searchParams={searchParams} />
       </Suspense>
+
+      <section className="mt-6">
+        <h2 className="mb-4 font-serif text-xl font-bold">
+          Últimos movimientos
+        </h2>
+        <Suspense fallback={<MovementListSkeleton rows={RECENT_MOVEMENTS} />}>
+          <RecentMovements />
+        </Suspense>
+      </section>
     </>
   );
 }

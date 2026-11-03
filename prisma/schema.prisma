@@ -110,6 +110,7 @@ model Card {
   /// Formatted as MM/YY.
   expiry    String
   createdAt DateTime  @default(now())
+  movements Movement[]
 
   @@index([accountId])
 }
@@ -150,9 +151,15 @@ model Movement {
   transfer     Transfer?    @relation(fields: [transferId], references: [id], onDelete: SetNull)
   exchangeId   String?
   exchange     Exchange?    @relation(fields: [exchangeId], references: [id], onDelete: SetNull)
+  /// The card the movement went through: the picked card for an exchange,
+  /// the account's first card for a transfer. Empty when the account had no
+  /// card or the card was removed.
+  cardId       String?
+  card         Card?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
 
   @@unique([accountId, reference])
   @@index([accountId, occurredAt(sort: Desc)])
+  @@index([cardId])
 }
 
 /// A dollar buy or sell between two accounts of the same user at a fixed rate.

@@ -309,3 +309,28 @@ describe("findExchangeMovementByKey", () => {
     expect(await findExchangeMovementByKey(user.id, randomUUID())).toBeNull();
   });
 });
+
+describe("exchange cards", () => {
+  it("records the picked card on each side's movement", async () => {
+    // A second peso card, so the test proves the picked one is used.
+    const picked = await db.card.create({
+      data: { accountId: user.ars, brand: "AMEX", last4: "8845", holder: "Test Holder", expiry: "12/30" },
+    });
+
+    const bought = await buy(100, { fromCardId: picked.id });
+    if (!bought.ok) throw new Error(bought.error);
+    const boughtMovements = await db.movement.findMany({ where: { exchangeId: bought.exchangeId } });
+    expect(Object.fromEntries(boughtMovements.map((m) => [m.accountId, m.cardId]))).toEqual({
+      [user.ars]: picked.id,
+      [user.usd]: user.usdCard,
+    });
+
+    const sold = await sell(100, { toCardId: picked.id });
+    if (!sold.ok) throw new Error(sold.error);
+    const soldMovements = await db.movement.findMany({ where: { exchangeId: sold.exchangeId } });
+    expect(Object.fromEntries(soldMovements.map((m) => [m.accountId, m.cardId]))).toEqual({
+      [user.usd]: user.usdCard,
+      [user.ars]: picked.id,
+    });
+  });
+});

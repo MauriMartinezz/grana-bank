@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BackButton } from "@/components/ui/back-button";
 import { getCurrentUser } from "@/features/auth/current-user";
+import { movementSource } from "@/features/movements/movement-source";
 import { MOVEMENT_TYPE_STYLES } from "@/features/movements/movement-type";
 import { getMovement } from "@/features/movements/queries";
 import { formatDateTime, formatMoney } from "@/lib/format";
@@ -46,6 +47,10 @@ export default async function MovementDetailPage({
           <div className="flex justify-between gap-6 py-3">
             <dt className="text-muted">Tipo</dt>
             <dd className="text-right font-medium">{label}</dd>
+          </div>
+          <div className="flex justify-between gap-6 py-3">
+            <dt className="text-muted">Tarjeta</dt>
+            <dd className="text-right font-medium">{movementSource(movement)}</dd>
           </div>
           <div className="flex justify-between gap-6 py-3">
             <dt className="text-muted">Fecha</dt>

@@ -14,6 +14,7 @@ export default function MovementDetailLoading() {
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
         </div>
       </div>
     </div>

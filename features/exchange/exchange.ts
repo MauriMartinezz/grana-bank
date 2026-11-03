@@ -175,11 +175,12 @@ export async function exchange({
       occurredAt: created.createdAt,
     };
 
+    // Each side records the card the user picked for it.
     const debit = await tx.movement.create({
-      data: { ...shared, accountId: fromAccountId, amountCents: debitCents },
+      data: { ...shared, accountId: fromAccountId, cardId: fromCardId, amountCents: debitCents },
     });
     await tx.movement.create({
-      data: { ...shared, accountId: toAccountId, amountCents: creditCents },
+      data: { ...shared, accountId: toAccountId, cardId: toCardId, amountCents: creditCents },
     });
 
     return { ok: true, exchangeId: created.id, movementId: debit.id };

@@ -1,7 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { MovementListSkeleton } from "@/features/movements/movement-list-skeleton";
 
-/** Stands in for the switcher, balance card, quick actions and movements. */
+/** Stands in for the switcher, balance card and quick actions. */
 export function SelectedAccountSkeleton() {
   return (
     <div role="status" aria-label="Cargando cuenta">
@@ -12,8 +11,6 @@ export function SelectedAccountSkeleton() {
           <Skeleton key={i} className="h-[84px] rounded-2xl" />
         ))}
       </div>
-      <Skeleton className="mt-6 mb-4 h-6 w-48" />
-      <MovementListSkeleton />
     </div>
   );
 }

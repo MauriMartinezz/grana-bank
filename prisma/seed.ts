@@ -121,7 +121,7 @@ async function main() {
   const juanPesos = created[0].accounts.find((a) => a.currency === "ARS")!;
 
   const holder = "Soy Granate";
-  await prisma.user.create({
+  const granate = await prisma.user.create({
     data: {
       email,
       firstName: "Soy",
@@ -166,7 +166,18 @@ async function main() {
         ],
       },
     },
+    include: { accounts: { include: { cards: true } } },
   });
+
+  // Seeded movements went through their account's card, like a transfer.
+  for (const { id, cards } of granate.accounts) {
+    if (cards[0]) {
+      await prisma.movement.updateMany({
+        where: { accountId: id },
+        data: { cardId: cards[0].id },
+      });
+    }
+  }
 
   await prisma.$disconnect();
 }

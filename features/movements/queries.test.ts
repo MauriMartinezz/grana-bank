@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { NO_FILTERS } from "./filters";
-import { getMovement, listMovements } from "./queries";
+import { getMovement, listMovements, listRecentMovements, RECENT_MOVEMENTS } from "./queries";
 
 const OWNER_EMAIL = "owner@queries.test";
 const OTHER_EMAIL = "other@queries.test";
@@ -171,5 +171,118 @@ describe("getMovement", () => {
 
   it("returns null for an id that is not a valid identifier", async () => {
     await expect(getMovement(ownerId, "not-a-uuid")).resolves.toBeNull();
+  });
+});
+
+describe("movement cards", () => {
+  const EMAIL = "cards@queries.test";
+
+  afterAll(() => db.user.deleteMany({ where: { email: EMAIL } }));
+
+  it("returns only the brand and last 4 digits of the movement's card", async () => {
+    await db.user.deleteMany({ where: { email: EMAIL } });
+    const user = await db.user.create({
+      data: {
+        email: EMAIL,
+        firstName: "Test",
+        lastName: "",
+        passwordHash: "!",
+        accounts: {
+          create: {
+            currency: "ARS",
+            alias: "cards.queries.test",
+            balanceCents: 0,
+            cards: {
+              create: [{ brand: "VISA", last4: "8845", holder: "Test Holder", expiry: "12/30" }],
+            },
+          },
+        },
+      },
+      include: { accounts: { include: { cards: true } } },
+    });
+    const [account] = user.accounts;
+    const withCard = await db.movement.create({
+      data: {
+        accountId: account.id,
+        cardId: account.cards[0].id,
+        type: "SENT",
+        counterparty: "Con Tarjeta",
+        amountCents: 100,
+        reference: "TEST-CARD-1",
+        occurredAt: new Date("2026-01-02T00:00:00Z"),
+      },
+    });
+    await db.movement.create({
+      data: {
+        accountId: account.id,
+        type: "SENT",
+        counterparty: "Sin Tarjeta",
+        amountCents: 100,
+        reference: "TEST-CARD-2",
+        occurredAt: new Date("2026-01-01T00:00:00Z"),
+      },
+    });
+
+    const movements = await listMovements(user.id);
+    expect(movements.map((m) => m.card)).toEqual([{ last4: "8845", brand: "VISA" }, null]);
+
+    const detail = await getMovement(user.id, withCard.id);
+    expect(detail?.card).toEqual({ last4: "8845", brand: "VISA" });
+  });
+});
+
+describe("listRecentMovements", () => {
+  const EMAIL = "recent@queries.test";
+
+  afterAll(() => db.user.deleteMany({ where: { email: EMAIL } }));
+
+  it("returns the latest 6 movements across every account, newest first", async () => {
+    await db.user.deleteMany({ where: { email: EMAIL } });
+    const movement = (reference: string, day: number) => ({
+      type: "RECEIVED" as const,
+      counterparty: "Test",
+      amountCents: 100,
+      reference,
+      occurredAt: new Date(Date.UTC(2026, 0, day)),
+    });
+    const user = await db.user.create({
+      data: {
+        email: EMAIL,
+        firstName: "Test",
+        lastName: "",
+        passwordHash: "!",
+        accounts: {
+          create: [
+            {
+              currency: "ARS",
+              alias: "recent.queries.test",
+              balanceCents: 0,
+              movements: {
+                create: [1, 3, 5, 7].map((day) => movement(`ARS-${day}`, day)),
+              },
+            },
+            {
+              currency: "USD",
+              alias: "recent.queries.test.usd",
+              balanceCents: 0,
+              movements: {
+                create: [2, 4, 6, 8].map((day) => movement(`USD-${day}`, day)),
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    expect(RECENT_MOVEMENTS).toBe(6);
+    const movements = await listRecentMovements(user.id);
+    expect(movements.map((m) => [m.reference, m.account.currency])).toEqual([
+      ["USD-8", "USD"],
+      ["ARS-7", "ARS"],
+      ["USD-6", "USD"],
+      ["ARS-5", "ARS"],
+      ["USD-4", "USD"],
+      ["ARS-3", "ARS"],
+    ]);
   });
 });

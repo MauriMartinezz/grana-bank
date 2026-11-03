@@ -116,6 +116,15 @@ export async function transfer({
     });
     const nameOf = (id: string) => fullName(users.find((user) => user.id === id)!);
 
+    // Each side records its account's first card, read under the locks.
+    const cards = await tx.card.findMany({
+      where: { accountId: { in: [from.id, to.id] } },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: { id: true, accountId: true },
+    });
+    const firstCardOf = (accountId: string) =>
+      cards.find((card) => card.accountId === accountId)?.id ?? null;
+
     await tx.account.update({
       where: { id: from.id },
       data: { balanceCents: { decrement: amountCents } },
@@ -144,6 +153,7 @@ export async function transfer({
       data: {
         ...shared,
         accountId: from.id,
+        cardId: firstCardOf(from.id),
         type: "SENT",
         counterparty: nameOf(recipientId),
       },
@@ -152,6 +162,7 @@ export async function transfer({
       data: {
         ...shared,
         accountId: to.id,
+        cardId: firstCardOf(to.id),
         type: "RECEIVED",
         counterparty: nameOf(senderId),
       },

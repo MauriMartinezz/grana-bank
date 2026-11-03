@@ -277,3 +277,43 @@ describe("transfer between currencies", () => {
     expect(await snapshot()).toEqual(before);
   });
 });
+
+describe("transfer cards", () => {
+  function addCard(accountId: string, last4: string, createdAt: Date) {
+    return db.card.create({
+      data: { accountId, brand: "VISA", last4, holder: "Test Holder", expiry: "12/30", createdAt },
+    });
+  }
+
+  async function movementsOf(movementId: string) {
+    const sent = await db.movement.findUniqueOrThrow({ where: { id: movementId } });
+    const received = await db.movement.findFirstOrThrow({
+      where: { transferId: sent.transferId, NOT: { id: sent.id } },
+    });
+    return { sent, received };
+  }
+
+  it("records each account's first card on its own movement", async () => {
+    const senderFirst = await addCard(sender.accountId, "1111", new Date("2026-01-01"));
+    await addCard(sender.accountId, "2222", new Date("2026-02-01"));
+    const recipientCard = await addCard(recipient.accountId, "8845", new Date("2026-01-01"));
+
+    const result = await send(100);
+    if (!result.ok) throw new Error(result.error);
+
+    const { sent, received } = await movementsOf(result.movementId);
+    expect(sent.cardId).toBe(senderFirst.id);
+    expect(received.cardId).toBe(recipientCard.id);
+  });
+
+  it("leaves the card empty for an account without cards", async () => {
+    const senderCard = await addCard(sender.accountId, "1111", new Date("2026-01-01"));
+
+    const result = await send(100);
+    if (!result.ok) throw new Error(result.error);
+
+    const { sent, received } = await movementsOf(result.movementId);
+    expect(sent.cardId).toBe(senderCard.id);
+    expect(received.cardId).toBeNull();
+  });
+});
