@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ReceiptIcon } from "@/components/icons";
 import { getCurrentUser } from "@/features/auth/current-user";
 import { formatMoney } from "@/lib/format";
 import { COMPANY_INFO } from "./companies";
@@ -30,10 +31,19 @@ export async function UpcomingBills() {
                 href={`/servicios/pagar/${bill.id}`}
                 className="flex items-center justify-between gap-3 bg-surface p-4 transition-colors hover:bg-surface/70 active:bg-surface/60"
               >
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">{bill.adhesion.nickname}</span>
-                  <span className="block text-sm text-muted">
-                    {COMPANY_INFO[bill.adhesion.company].name}
+                <span className="flex min-w-0 items-center gap-3">
+                  {/* The same tile as a service payment in Movimientos. */}
+                  <span
+                    aria-hidden="true"
+                    className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-soft text-blue"
+                  >
+                    <ReceiptIcon />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{bill.adhesion.nickname}</span>
+                    <span className="block text-sm text-muted">
+                      {COMPANY_INFO[bill.adhesion.company].name}
+                    </span>
                   </span>
                 </span>
                 <span className="shrink-0 text-right text-sm">
