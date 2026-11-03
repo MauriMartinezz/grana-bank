@@ -33,7 +33,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [x] T8 (S9) delegated: Perfil summary with one screen per change and password change. Commit 46e2334.
 - [ ] T9 (S10, S11) delegated: light/dark theme with a selector in Perfil; logout moves from the bottom bar to the end of Perfil.
 - [ ] T10 (S12) delegated: card on each movement, Home latest 6 with Consultar todos.
-- [ ] T11 (S13) after T10: card detail with its movements.
+- [x] T11 (S13) delegated: card detail with its movements; expiry in Buenos Aires time.
 - [ ] T13 (S15) after T11: balances and amounts as BigInt end to end; Risk items 1 and 4.
 - [ ] T14 (S16) after T13: ask before saving a new contact.
 - [ ] T12 (S14) after T13: group movements by date and filter Movimientos by date.
