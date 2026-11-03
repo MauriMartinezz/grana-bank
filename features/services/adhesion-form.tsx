@@ -8,7 +8,6 @@ import {
   COMPANY_INFO,
   NICKNAME_MAX_LENGTH,
   normalizePaymentNumber,
-  SERVICE_COMPANIES,
   type ServiceCompany,
 } from "./companies";
 
@@ -25,12 +24,13 @@ function SubmitButton() {
   );
 }
 
-/** Company, electronic payment number and nickname. The server checks them again. */
-export function AdhesionForm() {
+/**
+ * The electronic payment number and nickname of the company picked on the
+ * previous screen. The server checks them again.
+ */
+export function AdhesionForm({ company }: { company: ServiceCompany }) {
   const [state, action] = useActionState(adhereService, undefined);
-  // Controlled, so the number hint follows the company and a failed submit
-  // keeps what was typed.
-  const [company, setCompany] = useState<ServiceCompany>("AYSA");
+  // Controlled, so the hint follows what is typed and a failed submit keeps it.
   const [number, setNumber] = useState("");
   const errors = state?.errors;
   const { name, numberLength } = COMPANY_INFO[company];
@@ -38,38 +38,14 @@ export function AdhesionForm() {
 
   return (
     <form action={action} noValidate className="flex flex-col">
-      <fieldset>
-        <legend className="mb-1.5 text-sm font-medium">Empresa</legend>
-        <div className="grid grid-cols-2 gap-2">
-          {SERVICE_COMPANIES.map((option) => (
-            <label
-              key={option}
-              className="flex min-h-11 cursor-pointer flex-col items-center justify-center rounded-2xl bg-surface py-1.5 font-serif text-sm has-checked:bg-garnet-fill has-checked:text-white has-focus-visible:outline-2"
-            >
-              <input
-                type="radio"
-                name="company"
-                value={option}
-                checked={company === option}
-                onChange={() => setCompany(option)}
-                className="sr-only"
-              />
-              {COMPANY_INFO[option].name}
-              <span className="text-xs opacity-80">
-                {COMPANY_INFO[option].service}
-                {COMPANY_INFO[option].currency === "USD" && " · en dólares"}
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <input type="hidden" name="company" value={company} />
       {errors?.company && (
         <p role="alert" className={ERROR_CLASS}>
           {errors.company}
         </p>
       )}
 
-      <label htmlFor="paymentNumber" className="mt-5 mb-1.5 text-sm font-medium">
+      <label htmlFor="paymentNumber" className="mb-1.5 text-sm font-medium">
         Número de pago electrónico
       </label>
       <input

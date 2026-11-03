@@ -20,6 +20,7 @@ describe("proxy", () => {
     "/transferir/nuevo",
     "/servicios",
     "/servicios/adherir",
+    "/servicios/adherir/aysa",
     "/servicios/some-id",
     "/servicios/pagar/some-id",
     "/servicios/confirmar",

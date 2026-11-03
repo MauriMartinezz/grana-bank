@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   COMPANY_INFO,
+  companyFromSlug,
+  companySlug,
   isServiceCompany,
   MESSAGES,
   normalizePaymentNumber,
@@ -113,5 +115,21 @@ describe("validateAdhesion", () => {
       ok: false,
       errors: { nickname: "El nombre tiene hasta 40 caracteres." },
     });
+  });
+});
+
+describe("company slugs", () => {
+  it("names each company in the URL and reads it back", () => {
+    expect(companySlug("AYSA")).toBe("aysa");
+    expect(companySlug("SALUD_PLENA")).toBe("salud-plena");
+    for (const company of SERVICE_COMPANIES) {
+      expect(companyFromSlug(companySlug(company))).toBe(company);
+    }
+  });
+
+  it("reads nothing from an unknown slug", () => {
+    expect(companyFromSlug("AYSA")).toBeNull();
+    expect(companyFromSlug("salud_plena")).toBeNull();
+    expect(companyFromSlug("telefono")).toBeNull();
   });
 });

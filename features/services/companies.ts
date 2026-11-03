@@ -89,3 +89,13 @@ export function validateAdhesion(input: {
   if (!company || !paymentNumber || errors.nickname) return { ok: false, errors };
   return { ok: true, adhesion: { company, paymentNumber, nickname } };
 }
+
+/** The company in the adhesion URL: `salud-plena`. */
+export function companySlug(company: ServiceCompany): string {
+  return company.toLowerCase().replaceAll("_", "-");
+}
+
+/** The company of an adhesion URL, or null when the slug is unknown. */
+export function companyFromSlug(slug: string): ServiceCompany | null {
+  return SERVICE_COMPANIES.find((company) => companySlug(company) === slug) ?? null;
+}
