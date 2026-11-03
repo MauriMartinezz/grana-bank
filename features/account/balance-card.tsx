@@ -7,20 +7,23 @@ import type { AccountWithCards } from "./queries";
 
 const BRAND_LABELS = { MASTERCARD: "Mastercard", VISA: "Visa", AMEX: "American Express" };
 
-export function BalanceCard({
+type Card = AccountWithCards["cards"][number];
+
+/** One card face: the account's balance and alias, and the card's details. */
+function CardFace({
   account,
+  card,
   holderName,
+  label,
 }: {
   account: AccountWithCards;
-  /** Shown on the card face when the account has no card yet. */
+  card: Card | undefined;
   holderName: string;
+  label: string;
 }) {
-  // The first card added is the one on the face of the balance card.
-  const card = account.cards[0];
-
   return (
     <section
-      aria-label={`Cuenta en ${account.currency}`}
+      aria-label={label}
       className="relative rounded-[28px] bg-garnet-fill p-6 text-white shadow-lg shadow-black/10"
     >
       {card && (
@@ -72,5 +75,46 @@ export function BalanceCard({
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * The selected account's balance on its card. With several cards in the
+ * account, every card shows in a horizontal carousel, oldest first; each one
+ * opens its own page.
+ */
+export function BalanceCard({
+  account,
+  holderName,
+}: {
+  account: AccountWithCards;
+  /** Shown on the card face when the account has no card yet. */
+  holderName: string;
+}) {
+  const label = `Cuenta en ${account.currency}`;
+  if (account.cards.length <= 1) {
+    return <CardFace account={account} card={account.cards[0]} holderName={holderName} label={label} />;
+  }
+
+  const total = account.cards.length;
+  return (
+    <div role="region" aria-label={`${label}: ${total} tarjetas`}>
+      {/* CSS scroll snapping: no script, and the next card peeks in. */}
+      <ul className="-mx-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-1 [scrollbar-width:none] desktop:mx-0 desktop:px-0">
+        {account.cards.map((card, index) => (
+          <li key={card.id} className="w-[88%] shrink-0 snap-center">
+            <CardFace
+              account={account}
+              card={card}
+              holderName={holderName}
+              label={`Tarjeta ${index + 1} de ${total}`}
+            />
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-center text-xs text-muted">
+        {total} tarjetas en esta cuenta · deslizá para verlas
+      </p>
+    </div>
   );
 }
