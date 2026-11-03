@@ -20,7 +20,7 @@ export function CardList({ accounts }: { accounts: AccountCards[] }) {
             {account.cards.length > 0 ? (
               <ul className="space-y-px overflow-hidden rounded-2xl">
                 {account.cards.map((card) => (
-                  <li key={card.id} className="flex items-center gap-3 bg-white p-4">
+                  <li key={card.id} className="flex items-center gap-3 bg-surface p-4">
                     <BrandMark brand={card.brand} />
                     <div className="min-w-0 flex-1">
                       <p
@@ -39,7 +39,7 @@ export function CardList({ accounts }: { accounts: AccountCards[] }) {
                 ))}
               </ul>
             ) : (
-              <p className="rounded-2xl bg-white p-4 text-sm text-muted">
+              <p className="rounded-2xl bg-surface p-4 text-sm text-muted">
                 Todavía no hay tarjetas en esta cuenta.
               </p>
             )}

@@ -47,7 +47,7 @@ export default async function ConfirmTransferPage({
         <RecipientSummary recipient={recipient} />
       </div>
 
-      <section className="mt-4 rounded-2xl bg-white p-6">
+      <section className="mt-4 rounded-2xl bg-surface p-6">
         <p className="text-center text-sm text-muted">Vas a transferir</p>
         <p className="mt-1 text-center text-3xl font-semibold">
           {formatMoney(amountCents, account.currency)}

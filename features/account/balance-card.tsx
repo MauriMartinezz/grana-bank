@@ -18,7 +18,7 @@ export function BalanceCard({
   return (
     <section
       aria-label={`Cuenta en ${account.currency}`}
-      className="rounded-[28px] bg-garnet p-6 text-white shadow-lg shadow-black/10"
+      className="rounded-[28px] bg-garnet-fill p-6 text-white shadow-lg shadow-black/10"
     >
       <div className="flex items-start justify-between">
         <p className="text-sm">Balance</p>

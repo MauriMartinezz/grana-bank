@@ -27,7 +27,7 @@ export default async function ExchangePage() {
         <h1 className="font-serif text-2xl font-bold">Comprar y vender dólares</h1>
       </header>
 
-      <section aria-label="Cotización y saldos" className="mt-5 rounded-2xl bg-white p-5">
+      <section aria-label="Cotización y saldos" className="mt-5 rounded-2xl bg-surface p-5">
         <p className="text-sm text-muted">Cotización</p>
         <p className="mt-1 text-2xl font-semibold">1 USD = {formatMoney(ARS_PER_USD * 100, "ARS")}</p>
         <p className="mt-1 text-xs text-muted">El mismo valor para comprar y para vender.</p>

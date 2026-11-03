@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
-import { logout } from "@/features/auth/actions";
-import { HomeIcon, ListIcon, LogoutIcon } from "@/components/icons";
+import { HomeIcon, ListIcon } from "@/components/icons";
 import { ProfileIcon } from "@/features/profile/profile-icon";
 
 const LINKS = [
@@ -20,7 +19,7 @@ function NavBar({ pathname }: { pathname: string | null }) {
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-[430px] items-center justify-around rounded-t-3xl bg-white px-6 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.05)]"
+      className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-[430px] items-center justify-around rounded-t-3xl bg-surface px-6 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.05)]"
     >
       {LINKS.map(({ href, label, Icon }) => {
         const isActive = pathname?.startsWith(href) ?? false;
@@ -36,15 +35,6 @@ function NavBar({ pathname }: { pathname: string | null }) {
           </Link>
         );
       })}
-      <form action={logout}>
-        <button
-          type="submit"
-          aria-label="Cerrar sesión"
-          className={`${ITEM_CLASS} text-muted`}
-        >
-          <LogoutIcon />
-        </button>
-      </form>
     </nav>
   );
 }

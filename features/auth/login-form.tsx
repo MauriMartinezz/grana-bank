@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { login } from "./actions";
 
 const INPUT_CLASS =
-  "h-11 w-full rounded-xl border border-line bg-white px-4 text-sm placeholder:font-serif placeholder:text-muted";
+  "h-11 w-full rounded-xl border border-line bg-surface px-4 text-sm placeholder:font-serif placeholder:text-muted";
 
 const ERROR_CLASS = "mt-1.5 text-sm text-garnet";
 

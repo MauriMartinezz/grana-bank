@@ -29,7 +29,7 @@ export default async function MovementDetailPage({
         <h1 className="font-serif text-2xl font-bold">Detalle</h1>
       </header>
 
-      <section className="mt-5 rounded-2xl bg-white p-6">
+      <section className="mt-5 rounded-2xl bg-surface p-6">
         <div className="flex flex-col items-center text-center">
           <span
             className={`flex size-14 items-center justify-center rounded-2xl ${tileClass}`}

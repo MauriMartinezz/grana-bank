@@ -27,7 +27,7 @@ export function ComingSoon({
           {options.map((option) => (
             <li
               key={option}
-              className="flex items-center justify-between rounded-2xl bg-white p-4 text-muted"
+              className="flex items-center justify-between rounded-2xl bg-surface p-4 text-muted"
             >
               <span className="font-medium">{option}</span>
               <span className="rounded-full bg-canvas px-3 py-1 text-xs">

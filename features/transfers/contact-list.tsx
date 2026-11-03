@@ -7,7 +7,7 @@ function ContactGroup({ title, contacts }: { title: string; contacts: Contact[] 
   return (
     <section aria-label={title}>
       <h2 className="mb-2 text-sm text-muted">{title}</h2>
-      <ul className="divide-y divide-line rounded-2xl bg-white">
+      <ul className="divide-y divide-line rounded-2xl bg-surface">
         {contacts.map((contact) => (
           <li key={contact.accountId} className="flex items-center gap-1 pr-2">
             <Link

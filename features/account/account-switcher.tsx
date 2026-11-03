@@ -34,7 +34,7 @@ export function AccountSwitcher({
       role="group"
       aria-label="Elegí la cuenta"
       aria-busy={isPending}
-      className="flex rounded-full bg-black/5 p-1"
+      className="flex rounded-full bg-shade/5 p-1"
     >
       {currencies.map((currency) => {
         const isSelected = currency === selected;
@@ -45,7 +45,7 @@ export function AccountSwitcher({
             aria-pressed={isSelected}
             onClick={() => select(currency)}
             className={`h-11 flex-1 rounded-full text-sm font-semibold transition-colors ${
-              isSelected ? "bg-garnet text-white shadow-sm" : "text-muted"
+              isSelected ? "bg-garnet-fill text-white shadow-sm" : "text-muted"
             }`}
           >
             {currency}

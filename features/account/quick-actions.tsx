@@ -19,7 +19,7 @@ export function QuickActions() {
           <li key={href}>
             <Link
               href={href}
-              className="flex flex-col items-center gap-2 rounded-2xl bg-white px-1 py-3 text-xs font-medium"
+              className="flex flex-col items-center gap-2 rounded-2xl bg-surface px-1 py-3 text-xs font-medium"
             >
               <span className="flex size-10 items-center justify-center rounded-xl bg-garnet-soft text-garnet">
                 <Icon />

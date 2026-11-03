@@ -21,7 +21,7 @@ export default async function TransferSuccessPage({
 
   return (
     <section className="flex flex-col items-center pt-10 text-center">
-      <span className="flex size-16 items-center justify-center rounded-full bg-garnet text-white">
+      <span className="flex size-16 items-center justify-center rounded-full bg-garnet-fill text-white">
         <CheckIcon className="size-8" />
       </span>
       <h1 className="mt-5 font-serif text-2xl font-bold">¡Transferencia enviada!</h1>

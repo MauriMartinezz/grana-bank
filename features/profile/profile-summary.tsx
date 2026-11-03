@@ -31,8 +31,18 @@ export function SummaryRow({
   );
 }
 
+/** One item of the Perfil summary changed right there, without a screen of its own. */
+export function SettingRow({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <li className="flex items-center justify-between gap-4 py-4">
+      <p className="text-sm text-muted">{title}</p>
+      {children}
+    </li>
+  );
+}
+
 export function SummaryList({ children }: { children: ReactNode }) {
-  return <ul className="mt-6 divide-y divide-line rounded-2xl bg-white px-5">{children}</ul>;
+  return <ul className="mt-6 divide-y divide-line rounded-2xl bg-surface px-5">{children}</ul>;
 }
 
 /** The header of every change screen, with Back to the summary. */

@@ -22,9 +22,9 @@ export default async function TransfersPage() {
 
       <Link
         href="/transfers/new"
-        className="mt-5 flex items-center gap-3 rounded-2xl bg-white p-4 font-medium"
+        className="mt-5 flex items-center gap-3 rounded-2xl bg-surface p-4 font-medium"
       >
-        <span className="flex size-11 items-center justify-center rounded-full bg-garnet text-white">
+        <span className="flex size-11 items-center justify-center rounded-full bg-garnet-fill text-white">
           <PlusIcon />
         </span>
         Nuevo destinatario

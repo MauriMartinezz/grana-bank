@@ -57,7 +57,7 @@ export default async function ConfirmExchangePage({
         </h1>
       </header>
 
-      <section className="mt-5 rounded-2xl bg-white p-6">
+      <section className="mt-5 rounded-2xl bg-surface p-6">
         <p className="text-center text-sm text-muted">
           {buying ? "Vas a comprar" : "Vas a vender"}
         </p>

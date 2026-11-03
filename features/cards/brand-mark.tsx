@@ -24,7 +24,7 @@ export function BrandMark({
   if (brand === "VISA") {
     return (
       <span
-        className={`${base} bg-blue font-serif text-sm font-bold tracking-tight text-white italic`}
+        className={`${base} bg-[#2f5d9f] font-serif text-sm font-bold tracking-tight text-white italic`}
         {...props}
       >
         <span aria-hidden="true">VISA</span>
@@ -44,7 +44,7 @@ export function BrandMark({
     );
   }
   return (
-    <span className={`${base} border border-line bg-white text-muted`} {...props}>
+    <span className={`${base} border border-line bg-surface text-muted`} {...props}>
       <CardIcon className="size-5" />
     </span>
   );

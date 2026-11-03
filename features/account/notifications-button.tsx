@@ -19,7 +19,7 @@ export function NotificationsButton() {
       </button>
       <div role="status">
         {isOpen && (
-          <p className="absolute top-12 right-0 z-10 w-max rounded-xl bg-ink px-4 py-2 text-xs text-white shadow-lg">
+          <p className="absolute top-12 right-0 z-10 w-max rounded-xl bg-ink px-4 py-2 text-xs text-surface shadow-lg">
             No tenés notificaciones
           </p>
         )}

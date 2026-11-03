@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Roboto_Slab } from "next/font/google";
+import { ThemeSync } from "@/features/profile/theme-toggle";
+import { themeInitScript } from "@/features/profile/theme";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -25,10 +27,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
+      data-theme="light"
       className={`${jakarta.variable} ${robotoSlab.variable} h-full antialiased`}
+      // The inline script below may switch data-theme before React hydrates.
+      suppressHydrationWarning
     >
+      <head>
+        {/* Applies this device's theme before the first paint, on every page. */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full font-sans">
         <div className="mx-auto min-h-dvh w-full max-w-[430px]">{children}</div>
+        <ThemeSync />
       </body>
     </html>
   );

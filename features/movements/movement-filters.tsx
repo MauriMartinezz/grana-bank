@@ -82,7 +82,7 @@ export function MovementFilters() {
           maxLength={100}
           autoComplete="off"
           enterKeyHint="search"
-          className="h-11 w-full rounded-xl border border-line bg-white pr-11 pl-10 text-sm placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
+          className="h-11 w-full rounded-xl border border-line bg-surface pr-11 pl-10 text-sm placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
         />
         {query && (
           <button

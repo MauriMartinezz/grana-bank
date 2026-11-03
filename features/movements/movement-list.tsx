@@ -13,7 +13,7 @@ export function MovementList({ movements }: { movements: MovementListItem[] }) {
           <li key={movement.id}>
             <Link
               href={`/movements/${movement.id}`}
-              className="flex items-center gap-4 rounded-2xl bg-white p-4 transition-colors hover:bg-white/70 active:bg-white/60"
+              className="flex items-center gap-4 rounded-2xl bg-surface p-4 transition-colors hover:bg-surface/70 active:bg-surface/60"
             >
               <span
                 className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${tileClass}`}

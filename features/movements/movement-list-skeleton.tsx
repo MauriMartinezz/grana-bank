@@ -10,7 +10,7 @@ export function MovementListSkeleton({ rows = 5 }: { rows?: number }) {
       {Array.from({ length: rows }, (_, index) => (
         <div
           key={index}
-          className="flex items-center gap-4 rounded-2xl bg-white p-4"
+          className="flex items-center gap-4 rounded-2xl bg-surface p-4"
         >
           <Skeleton className="size-11 shrink-0 rounded-xl" />
           <div className="flex-1 space-y-2">

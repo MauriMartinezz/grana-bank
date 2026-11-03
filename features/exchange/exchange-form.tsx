@@ -10,7 +10,7 @@ import type { CardOption } from "./queries";
 import { isExchangeAmount, usdToArsCents } from "./rate";
 
 const INPUT_CLASS =
-  "h-11 w-full rounded-xl border border-line bg-white px-4 text-sm placeholder:font-serif placeholder:text-muted";
+  "h-11 w-full rounded-xl border border-line bg-surface px-4 text-sm placeholder:font-serif placeholder:text-muted";
 
 const DIRECTIONS: { value: ExchangeDirection; label: string }[] = [
   { value: "BUY", label: "Comprar" },
@@ -78,11 +78,11 @@ export function ExchangeForm({
     <form onSubmit={submit} noValidate className="flex flex-col gap-5">
       <fieldset>
         <legend className="mb-1.5 text-sm font-medium">¿Qué querés hacer?</legend>
-        <div className="grid grid-cols-2 gap-1 rounded-full bg-white p-1">
+        <div className="grid grid-cols-2 gap-1 rounded-full bg-surface p-1">
           {DIRECTIONS.map((option) => (
             <label
               key={option.value}
-              className="flex min-h-11 cursor-pointer items-center justify-center rounded-full font-serif text-sm has-checked:bg-garnet has-checked:text-white has-focus-visible:outline-2"
+              className="flex min-h-11 cursor-pointer items-center justify-center rounded-full font-serif text-sm has-checked:bg-garnet-fill has-checked:text-white has-focus-visible:outline-2"
             >
               <input
                 type="radio"
