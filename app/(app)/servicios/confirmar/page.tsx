@@ -21,8 +21,8 @@ export const metadata: Metadata = { title: "Confirmar pago" };
 export default async function ConfirmBillPaymentPage({
   searchParams,
 }: PageProps<"/servicios/confirmar">) {
-  const { bill: billParam, card, key } = await searchParams;
-  const confirmation = readBillConfirmation({ bill: billParam, card, key });
+  const { bill: billParam, card, key, note } = await searchParams;
+  const confirmation = readBillConfirmation({ bill: billParam, card, key, note });
   if ("redirectTo" in confirmation) redirect(confirmation.redirectTo);
   const { idempotencyKey, ...draft } = confirmation;
   const payPath = payPathFor(draft.billId);
@@ -87,6 +87,12 @@ export default async function ConfirmBillPaymentPage({
               {remaining < 0 ? "Saldo insuficiente" : <Balance cents={remaining} currency={bill.currency} />}
             </dd>
           </div>
+          {draft.note && (
+            <div className="flex justify-between gap-6 py-3">
+              <dt className="text-muted">Nota</dt>
+              <dd className="min-w-0 text-right font-medium break-words">{draft.note}</dd>
+            </div>
+          )}
         </dl>
       </section>
 

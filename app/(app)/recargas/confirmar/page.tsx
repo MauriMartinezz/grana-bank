@@ -21,8 +21,8 @@ const TARGET_LABELS = { SUBE: "Tarjeta", PHONE: "Número", DIRECTV: "N.º de cli
 // Reads the URL at the top level: the route's loading.tsx is its Suspense
 // boundary, so the shared shell never depends on the query string.
 export default async function ConfirmTopUpPage({ searchParams }: PageProps<"/recargas/confirmar">) {
-  const { kind, provider, target, amount, card, key } = await searchParams;
-  const confirmation = readTopUpConfirmation({ kind, provider, target, amount, card, key });
+  const { kind, provider, target, amount, card, key, note } = await searchParams;
+  const confirmation = readTopUpConfirmation({ kind, provider, target, amount, card, key, note });
   if ("redirectTo" in confirmation) redirect(confirmation.redirectTo);
   const { idempotencyKey, ...draft } = confirmation;
   const formPath = formPathFor(draft.kind, draft.target);
@@ -78,6 +78,14 @@ export default async function ConfirmTopUpPage({ searchParams }: PageProps<"/rec
               {remaining < 0 ? "Saldo insuficiente" : <Balance cents={remaining} currency="ARS" />}
             </dd>
           </div>
+          {draft.note && (
+            <div className="flex justify-between gap-6 py-3">
+              <dt className="text-muted">Nota</dt>
+              <dd className="min-w-0 text-right font-medium break-words">
+                {draft.note}
+              </dd>
+            </div>
+          )}
         </dl>
       </section>
 

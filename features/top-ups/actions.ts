@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { revalidateAccountScreens } from "@/features/account/revalidate";
 import { getCurrentUser } from "@/features/auth/current-user";
+import { validateNote } from "@/features/categories/names";
 import { isCardId } from "@/features/exchange/confirmation";
 import { isIdempotencyKey } from "@/features/transfers/confirmation";
 import { Prisma } from "@/generated/prisma/client";
@@ -42,6 +43,7 @@ const TOP_UP_ERRORS: Record<TopUpError, string> = {
   CARD_NOT_FOUND: "Esta tarjeta ya no está disponible.",
   CURRENCY_MISMATCH: "Elegí una tarjeta de tu cuenta en pesos.",
   IDEMPOTENCY_MISMATCH: "La operación expiró. Volvé a intentarlo.",
+  INVALID_NOTE: "La nota tiene hasta 140 caracteres.",
 };
 const INVALID_KIND = "Elegí qué querés recargar.";
 
@@ -110,6 +112,8 @@ export async function reviewTopUp(
   const amount = parseTopUpAmount(text(formData, "amount"));
   if (!amount.ok) return { error: amount.error };
   if (!isCardId(cardId)) return { error: TOP_UP_ERRORS.CARD_NOT_FOUND };
+  const note = validateNote(text(formData, "note"));
+  if (!note.ok) return { error: note.error };
 
   let target: string;
   try {
@@ -137,7 +141,10 @@ export async function reviewTopUp(
   // confirmation screen, or retrying after an error, reuses it and can never
   // charge twice.
   redirect(
-    confirmationPath({ kind, provider, target, amountCents: amount.cents, cardId }, randomUUID()),
+    confirmationPath(
+      { kind, provider, target, amountCents: amount.cents, cardId, note: note.note },
+      randomUUID(),
+    ),
   );
 }
 
@@ -170,6 +177,7 @@ export async function confirmTopUp(
       amountCents: Number(rawAmount),
       cardId,
       idempotencyKey,
+      note: text(formData, "note"),
     });
   } catch (error) {
     console.error("Top-up failed", error);

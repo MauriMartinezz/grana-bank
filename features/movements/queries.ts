@@ -84,6 +84,8 @@ export function getMovement(userId: string, id: string) {
     include: {
       ...MOVEMENT_INCLUDE,
       transfer: { select: { note: true } },
+      topUp: { select: { note: true } },
+      servicePayment: { select: { note: true } },
       category: { select: { id: true, name: true } },
     },
   });

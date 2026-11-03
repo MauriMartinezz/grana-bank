@@ -1,3 +1,4 @@
+import { validateNote } from "@/features/categories/names";
 import type { Currency, Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { COMPANY_INFO, type ServiceCompany } from "./companies";
@@ -13,7 +14,8 @@ export type PayBillError =
   | "CURRENCY_MISMATCH"
   | "INSUFFICIENT_FUNDS"
   | "IDEMPOTENCY_MISMATCH"
-  | "NOT_SCHEDULED";
+  | "NOT_SCHEDULED"
+  | "INVALID_NOTE";
 
 export type PayBillResult =
   | { ok: true; paymentId: string; movementId: string }
@@ -35,6 +37,11 @@ export type PayBillRequest = {
    * cancelled or changed meanwhile is not paid.
    */
   scheduledOn?: Date;
+  /**
+   * An optional note of up to 140 characters, normalized here. Not compared
+   * on a replay: a repeated key returns the first payment as it was.
+   */
+  note?: string | null;
 };
 
 /**
@@ -87,7 +94,10 @@ export async function payBill({
   cardId,
   idempotencyKey,
   scheduledOn,
+  note = null,
 }: PayBillRequest): Promise<PayBillResult> {
+  const validNote = validateNote(note ?? "");
+  if (!validNote.ok) return { ok: false, error: "INVALID_NOTE" };
   return db.$transaction(async (tx) => {
     // A bill's owner, amount and currency and a card's account never change,
     // so reading them before the locks is safe; the status and the balance
@@ -166,6 +176,7 @@ export async function payBill({
         cardId,
         amountCents: bill.amountCents,
         idempotencyKey,
+        note: validNote.note,
       },
     });
     await tx.serviceBill.update({

@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import { Button } from "@/components/ui/button";
+import { NOTE_MAX_LENGTH } from "@/features/categories/names";
 import type { CardOption } from "@/features/exchange/queries";
 import { formatMoney } from "@/lib/format";
 import { reviewTopUp } from "./actions";
@@ -71,6 +72,7 @@ export function TopUpForm({
   const [state, action, pending] = useActionState(reviewTopUp, undefined);
   const [target, setTarget] = useState("");
   const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
   const providers = PROVIDERS_BY_KIND[kind];
 
   const parsed = parseTopUpAmount(amount);
@@ -165,6 +167,26 @@ export function TopUpForm({
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="flex flex-col">
+        <label htmlFor="note" className="mb-1.5 text-sm font-medium">
+          Nota <span className="font-normal text-muted">(opcional)</span>
+        </label>
+        <textarea
+          id="note"
+          name="note"
+          rows={2}
+          maxLength={NOTE_MAX_LENGTH}
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          placeholder="Por ejemplo: carga del mes"
+          aria-describedby="note-hint"
+          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm placeholder:font-serif placeholder:text-muted"
+        />
+        <p id="note-hint" className="mt-1.5 text-xs text-muted">
+          Solo la ves vos. {[...note].length}/{NOTE_MAX_LENGTH}
+        </p>
       </div>
 
       {state?.error && (

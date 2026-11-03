@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { revalidateAccountScreens } from "@/features/account/revalidate";
 import { getCurrentUser } from "@/features/auth/current-user";
+import { validateNote } from "@/features/categories/names";
 import { isCardId } from "@/features/exchange/confirmation";
 import { normalizeNickname } from "@/features/top-ups/validation";
 import { isIdempotencyKey } from "@/features/transfers/confirmation";
@@ -38,6 +39,7 @@ const PAY_ERRORS: Record<PayBillError, string> = {
   INSUFFICIENT_FUNDS: "No tenés saldo suficiente para pagar esta factura.",
   IDEMPOTENCY_MISMATCH: "La operación expiró. Volvé a intentarlo.",
   NOT_SCHEDULED: "Este pago ya no está programado.",
+  INVALID_NOTE: "La nota tiene hasta 140 caracteres.",
 };
 
 const CURRENCY_NAMES: Record<Currency, string> = { ARS: "pesos", USD: "dólares" };
@@ -83,6 +85,8 @@ export async function reviewBillPayment(
   const cardId = text(formData, "cardId");
   if (!isCardId(billId)) return { error: PAY_ERRORS.BILL_NOT_FOUND };
   if (!isCardId(cardId)) return { error: PAY_ERRORS.CARD_NOT_FOUND };
+  const note = validateNote(text(formData, "note"));
+  if (!note.ok) return { error: note.error };
 
   try {
     const bill = await db.serviceBill.findFirst({
@@ -118,7 +122,7 @@ export async function reviewBillPayment(
   // The key is created here and travels in the URL, so going back to the
   // confirmation screen, or retrying after an error, reuses it and can never
   // charge twice.
-  redirect(confirmationPath({ billId, cardId }, randomUUID()));
+  redirect(confirmationPath({ billId, cardId, note: note.note }, randomUUID()));
 }
 
 export async function confirmBillPayment(
@@ -136,7 +140,13 @@ export async function confirmBillPayment(
 
   let result;
   try {
-    result = await payBill({ userId: user.id, billId, cardId, idempotencyKey });
+    result = await payBill({
+      userId: user.id,
+      billId,
+      cardId,
+      idempotencyKey,
+      note: text(formData, "note"),
+    });
   } catch (error) {
     console.error("Bill payment failed", error);
     // The form keeps its key, so a retry can never charge twice.

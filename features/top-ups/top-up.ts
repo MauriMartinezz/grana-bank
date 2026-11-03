@@ -1,3 +1,4 @@
+import { validateNote } from "@/features/categories/names";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import {
@@ -19,7 +20,8 @@ export type TopUpError =
   | "INSUFFICIENT_FUNDS"
   | "CARD_NOT_FOUND"
   | "CURRENCY_MISMATCH"
-  | "IDEMPOTENCY_MISMATCH";
+  | "IDEMPOTENCY_MISMATCH"
+  | "INVALID_NOTE";
 
 export type TopUpResult =
   | { ok: true; topUpId: string; movementId: string }
@@ -43,6 +45,11 @@ export type TopUpRequest = {
    * the same key with other values is rejected.
    */
   idempotencyKey: string;
+  /**
+   * An optional note of up to 140 characters, normalized here. Not compared
+   * on a replay: a repeated key returns the first top-up as it was.
+   */
+  note?: string | null;
 };
 
 export type ResolvedTarget = {
@@ -146,8 +153,11 @@ export async function topUp({
   amountCents,
   cardId,
   idempotencyKey,
+  note = null,
 }: TopUpRequest): Promise<TopUpResult> {
   if (!isTopUpAmount(amountCents)) return { ok: false, error: "INVALID_AMOUNT" };
+  const validNote = validateNote(note ?? "");
+  if (!validNote.ok) return { ok: false, error: "INVALID_NOTE" };
   const amount = BigInt(amountCents);
 
   return db.$transaction(async (tx) => {
@@ -211,6 +221,7 @@ export async function topUp({
         accountId,
         cardId,
         idempotencyKey,
+        note: validNote.note,
       },
     });
     const movement = await tx.movement.create({

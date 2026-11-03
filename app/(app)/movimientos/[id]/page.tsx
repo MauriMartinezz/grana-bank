@@ -27,6 +27,9 @@ export default async function MovementDetailPage({
 
   const { label, Icon, tileClass, amountClass } =
     MOVEMENT_TYPE_STYLES[movement.type];
+  // A movement belongs to at most one operation, so at most one note exists.
+  const note =
+    movement.transfer?.note ?? movement.topUp?.note ?? movement.servicePayment?.note ?? null;
 
   return (
     <>
@@ -67,12 +70,10 @@ export default async function MovementDetailPage({
             <dt className="text-muted">N.º de operación</dt>
             <dd className="text-right font-medium">{movement.reference}</dd>
           </div>
-          {movement.transfer?.note && (
+          {note && (
             <div className="flex justify-between gap-6 py-3">
               <dt className="text-muted">Nota</dt>
-              <dd className="min-w-0 text-right font-medium break-words">
-                {movement.transfer.note}
-              </dd>
+              <dd className="min-w-0 text-right font-medium break-words">{note}</dd>
             </div>
           )}
           <div className="py-3">

@@ -34,6 +34,7 @@ export function ConfirmTopUpForm({
       <input type="hidden" name="amountCents" value={draft.amountCents} />
       <input type="hidden" name="cardId" value={draft.cardId} />
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+      {draft.note && <input type="hidden" name="note" value={draft.note} />}
       {state?.error && (
         <p role="alert" className="mb-4 text-center text-sm text-garnet">
           {state.error}

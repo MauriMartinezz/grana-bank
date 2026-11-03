@@ -16,7 +16,8 @@ export default async function BillPaymentSuccessPage({
   const { movementId } = await params;
   const user = await getCurrentUser();
   const movement = await getServiceReceipt(user.id, movementId);
-  const bill = movement?.servicePayment?.bill;
+  const payment = movement?.servicePayment;
+  const bill = payment?.bill;
   if (!movement || !bill) notFound();
   const { adhesion } = bill;
 
@@ -32,6 +33,9 @@ export default async function BillPaymentSuccessPage({
       <p className="mt-1 text-sm text-muted">
         {COMPANY_INFO[adhesion.company].name} · {adhesion.nickname} · {bill.period}
       </p>
+      {payment?.note && (
+        <p className="mt-3 max-w-full text-sm break-words">“{payment.note}”</p>
+      )}
       <p className="mt-4 text-sm text-muted">N.º de operación {movement.reference}</p>
 
       <div className="mt-10 w-full space-y-3">

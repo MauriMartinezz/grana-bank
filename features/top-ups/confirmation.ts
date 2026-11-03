@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { validateNote } from "@/features/categories/names";
 import { isCardId } from "@/features/exchange/confirmation";
 import { isIdempotencyKey } from "@/features/transfers/confirmation";
 import {
@@ -18,6 +19,8 @@ export type TopUpDraft = {
   target: string;
   amountCents: number;
   cardId: string;
+  /** The optional note, normalized; absent or null when there is none. */
+  note?: string | null;
 };
 
 /** The form each kind starts from, where "Modificar" and bad URLs go back to. */
@@ -35,6 +38,7 @@ export function confirmationPath(draft: TopUpDraft, idempotencyKey: string) {
     card: draft.cardId,
     key: idempotencyKey,
   });
+  if (draft.note) query.set("note", draft.note);
   return `/recargas/confirmar?${query}`;
 }
 
@@ -56,21 +60,33 @@ export function readTopUpConfirmation(
     amount: SearchParam;
     card: SearchParam;
     key: SearchParam;
+    note?: SearchParam;
   },
   newKey: () => string = randomUUID,
 ): (TopUpDraft & { idempotencyKey: string }) | { redirectTo: string } {
-  const { kind, provider, target, amount, card, key } = params;
+  const { kind, provider, target, amount, card, key, note } = params;
   if (!isTopUpKind(kind)) return { redirectTo: "/recargas" };
   const amountCents = typeof amount === "string" && /^\d{1,12}$/.test(amount) ? Number(amount) : 0;
   if (
     !isProviderOf(kind, provider) ||
     !isTargetShape(kind, target) ||
     !isTopUpAmount(amountCents) ||
-    !isCardId(card)
+    !isCardId(card) ||
+    Array.isArray(note)
   ) {
     return { redirectTo: formPathFor(kind, typeof target === "string" ? target : undefined) };
   }
-  const draft = { kind, provider, target, amountCents, cardId: card };
+  const validNote = validateNote(note ?? "");
+  if (!validNote.ok) return { redirectTo: formPathFor(kind, target) };
+  // Only present with a note, so a URL without one reads as it always did.
+  const draft: TopUpDraft = {
+    kind,
+    provider,
+    target,
+    amountCents,
+    cardId: card,
+    ...(validNote.note ? { note: validNote.note } : {}),
+  };
   if (typeof key !== "string" || !isIdempotencyKey(key)) {
     return { redirectTo: confirmationPath(draft, newKey()) };
   }

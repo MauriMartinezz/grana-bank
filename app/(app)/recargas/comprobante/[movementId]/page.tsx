@@ -39,6 +39,9 @@ export default async function TopUpSuccessPage({
       <p className="mt-1 text-sm text-muted">
         {detail}
       </p>
+      {topUp.note && (
+        <p className="mt-3 max-w-full text-sm break-words">“{topUp.note}”</p>
+      )}
       <p className="mt-4 text-sm text-muted">N.º de operación {movement.reference}</p>
 
       {topUp.kind === "SUBE" && (
