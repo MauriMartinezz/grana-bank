@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
+import { MAX_TRANSFER_CENTS } from "./amount";
 import { transfer } from "./transfer";
 
 const EMAILS = ["sender@transfer.test", "recipient@transfer.test"];
@@ -110,6 +111,7 @@ describe("transfer", () => {
     ["the amount is zero", () => send(0), "INVALID_AMOUNT"],
     ["the amount is negative", () => send(-100), "INVALID_AMOUNT"],
     ["the amount is not an integer", () => send(10.5), "INVALID_AMOUNT"],
+    ["the amount is above the limit", () => send(MAX_TRANSFER_CENTS + 1), "INVALID_AMOUNT"],
     ["the recipient is the sender", () => send(100, sender.id, sender.id), "SELF_TRANSFER"],
     ["the recipient does not exist", () => send(100, sender.id, randomUUID()), "RECIPIENT_NOT_FOUND"],
   ])("rejects when %s and changes nothing", async (_case, run, error) => {
@@ -138,6 +140,28 @@ describe("transfer", () => {
     expect(first.ok).toBe(true);
     expect((await snapshot()).transfers).toBe(1);
     expect(await balanceOf(sender.id)).toBe(9000);
+  });
+
+  it("rejects a reused key with a different amount or recipient", async () => {
+    const third = await createUser("third@transfer.test", "Third", 0);
+    try {
+      const idempotencyKey = randomUUID();
+      const base = { senderId: sender.id, recipientId: recipient.id, amountCents: 1000, idempotencyKey };
+      expect((await transfer(base)).ok).toBe(true);
+      const before = await snapshot();
+
+      expect(await transfer({ ...base, amountCents: 2000 })).toEqual({
+        ok: false,
+        error: "IDEMPOTENCY_MISMATCH",
+      });
+      expect(await transfer({ ...base, recipientId: third.id })).toEqual({
+        ok: false,
+        error: "IDEMPOTENCY_MISMATCH",
+      });
+      expect(await snapshot()).toEqual(before);
+    } finally {
+      await db.user.delete({ where: { id: third.id } });
+    }
   });
 
   it("never takes the balance below zero under concurrent transfers", async () => {

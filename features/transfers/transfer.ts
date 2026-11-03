@@ -5,7 +5,8 @@ export type TransferError =
   | "INVALID_AMOUNT"
   | "INSUFFICIENT_FUNDS"
   | "RECIPIENT_NOT_FOUND"
-  | "SELF_TRANSFER";
+  | "SELF_TRANSFER"
+  | "IDEMPOTENCY_MISMATCH";
 
 export type TransferResult =
   | { ok: true; movementId: string }
@@ -15,7 +16,10 @@ export type TransferRequest = {
   senderId: string;
   recipientId: string;
   amountCents: number;
-  /** Same key, same transfer: a repeated request returns the first result. */
+  /**
+   * Same key, same transfer: a repeated request returns the first result,
+   * and the same key with other values is rejected.
+   */
   idempotencyKey: string;
 };
 
@@ -68,10 +72,18 @@ export async function transfer({
       where: {
         fromAccountId_idempotencyKey: { fromAccountId: from.id, idempotencyKey },
       },
-      select: { movements: { where: { accountId: from.id }, select: { id: true } } },
+      select: {
+        toAccountId: true,
+        amountCents: true,
+        movements: { where: { accountId: from.id }, select: { id: true } },
+      },
     });
     if (existing) {
-      return { ok: true, movementId: existing.movements[0].id };
+      // A key belongs to one confirmation: replaying it with other values
+      // must not report success for a transfer that never happened.
+      return existing.toAccountId === to?.id && existing.amountCents === amountCents
+        ? { ok: true, movementId: existing.movements[0].id }
+        : { ok: false, error: "IDEMPOTENCY_MISMATCH" };
     }
 
     if (!to) {
