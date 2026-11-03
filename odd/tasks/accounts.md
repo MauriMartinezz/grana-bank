@@ -13,6 +13,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - S6. Assumptions for Perfil: changing the email (the login identifier) requires the current password; address and phone are optional; the default photo is an avatar with initials; "Moneda preferida" picks the account shown first on Home and used by email transfers. Perfil is a bottom-navigation destination.
 - S7. Assumption: a USD account is opened from the dollar screen ("Abrir cuenta en dólares"); the seed gives the main user both accounts.
 - S9. "en la pantalla de perfil hay que hacer unos cambios: no pueden aparecer todos los formularios abiertos, por ejemplo, el alias debe decir el alias y luego un botón o tab para modificarlo, lo mismo el mail o si quiero cambiar la contraseña, recién ahí se me debe renviar a una pantalla con los inputs necesarios". Assumptions: changing the password needs the current one, the new one has at least 8 characters and is typed twice, and other sessions are closed.
+- S10. "Vamos a agregar una funcionalidad en la página de Perfil, añadir un tema oscuro además del claro". Assumptions: light stays the default; the choice is per device (stored in the browser and applied before the first paint, so it also covers the login page); colors move to theme tokens.
 - S8. Existing stored money is never relabeled: the migration keeps each account's stored currency; only the default changes to ARS.
 
 ## Tasks
@@ -23,7 +24,8 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [x] T4 (S4, S7) parallel: atomic dollar buy/sell service and screen, USD account opening.
 - [x] T5 (S5) parallel: cards list and add-card form with brand validation.
 - [x] T6 (S1, S6) parallel: Perfil screen and bottom navigation item.
-- [ ] T8 (S9) delegated: Perfil as a summary with one screen per change (personal data, email, alias, password).
+- [x] T8 (S9) delegated: Perfil summary with one screen per change and password change. Commit 46e2334.
+- [ ] T9 (S10) delegated: light/dark theme with a selector in Perfil.
 - [ ] T7 inline: README, seam check, browser checks.
 
 Route evidence: the parent context is past the long-session backstop, so units are delegated (context reason). T2–T6 depend on T1 and start after it, with disjoint edit surfaces. Risk: T1 item 1 (migration moves stored data) and T3/T4 item 4 (balance updates under locks): independent verifier after T1 and at the end.
@@ -37,3 +39,5 @@ Route evidence: the parent context is past the long-session backstop, so units a
 - L5 (2026-11-03, user): "el formato en toda la aplicación será el argentino, por más que sean dólares". Amount input now parses the Argentine format only: dots group thousands, a comma starts the decimals; "12.5" is rejected. Formatting shows `$5.000`, `USD$12,50` (61f9e20).
 - L6 (2026-11-03): Delegated units committed after a parent check of each diff against its surface and a rerun of its tests: T2 61f9e20 (inline), T3 a293110, T6 f4a69cf (with the proxy matcher), T5 c1743a2, T4 3985118. Independent verifier on T1 7889d63: no blockers; S1, S3, S5, S8 pass; balances and currencies identical after the upgrade, money conserved per currency under 20 parallel drains, authorization probes pass. 411 tests pass.
 - L7 (2026-11-03, user): "Bien, sin embargo, en la pantalla de perfil hay que hacer unos cambios: no pueden aparecer todos los formularios abiertos, por ejemplo, el alias debe decir el alias y luego un botón o tab para modificarlo, lo mismo el mail o si quiero cambiar la contraseña, recién ahí se me debe renviar a una pantalla con los inputs necesarios"
+- L8 (2026-11-03): Native review granted by the user for c868b04..8e97d1a, but START refused with `lens_context_budget_exceeded` (5909 lines): no review authority was created. Per the stop table the range must be reviewed as smaller candidates. T8 committed 46e2334 (431 tests). Final independent verifier launched on 46e2334.
+- L9 (2026-11-03, user): "Vamos a agregar una funcionalidad en la página de Perfil, añadir un tema oscuro además del claro"
