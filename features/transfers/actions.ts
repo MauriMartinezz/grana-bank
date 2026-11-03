@@ -9,7 +9,13 @@ import { getCurrentUser } from "@/features/auth/current-user";
 import { formatMoney } from "@/lib/format";
 import { parseAmountToCents } from "./amount";
 import { isIdempotencyKey } from "./confirmation";
-import { findRecipientByEmail, getRecipient, setFavorite } from "./contacts";
+import { isValidAlias, normalizeAlias } from "./alias";
+import {
+  findRecipientByAlias,
+  findRecipientByEmail,
+  getRecipient,
+  setFavorite,
+} from "./contacts";
 import { transfer, type TransferError } from "./transfer";
 
 /** The typed value comes back because React resets the form after an action. */
@@ -19,9 +25,33 @@ export type ConfirmState = { error: string } | undefined;
 const TRANSFER_ERRORS: Record<TransferError, string> = {
   INVALID_AMOUNT: "El monto no es válido. Volvé a ingresarlo.",
   INSUFFICIENT_FUNDS: "No tenés saldo suficiente para esta transferencia.",
-  RECIPIENT_NOT_FOUND: "No encontramos una cuenta con ese email.",
+  RECIPIENT_NOT_FOUND: "Este destinatario ya no está disponible.",
   SELF_TRANSFER: "No podés transferirte a vos mismo.",
   IDEMPOTENCY_MISMATCH: "La operación expiró. Volvé a intentarlo.",
+};
+
+const LOOKUPS = {
+  alias: {
+    normalize: normalizeAlias,
+    isValid: isValidAlias,
+    find: findRecipientByAlias,
+    messages: {
+      empty: "Ingresá el alias del destinatario.",
+      invalid:
+        "El alias tiene hasta 40 caracteres: letras sin tildes, números y puntos, con al menos una letra.",
+      notFound: "No encontramos una cuenta con ese alias.",
+    },
+  },
+  email: {
+    normalize: normalizeEmail,
+    isValid: isValidEmail,
+    find: findRecipientByEmail,
+    messages: {
+      empty: "Ingresá el email del destinatario.",
+      invalid: "Ingresá un email válido.",
+      notFound: "No encontramos una cuenta con ese email.",
+    },
+  },
 };
 
 export async function toggleFavorite(formData: FormData): Promise<{ ok: boolean }> {
@@ -44,19 +74,30 @@ export async function lookupRecipient(
   formData: FormData,
 ): Promise<FieldState> {
   const user = await getCurrentUser();
-  const value = normalizeEmail(String(formData.get("email") ?? ""));
+  // Alias is the default; the screen offers email behind a button.
+  const by = formData.get("by") === "email" ? "email" : "alias";
+  const lookup = LOOKUPS[by];
+  const value = lookup.normalize(String(formData.get(by) ?? ""));
 
-  if (!value) return { value, error: "Ingresá el email del destinatario." };
-  if (!isValidEmail(value)) return { value, error: "Ingresá un email válido." };
+  if (!value) return { value, error: lookup.messages.empty };
+  if (!lookup.isValid(value)) return { value, error: lookup.messages.invalid };
 
   let result;
   try {
-    result = await findRecipientByEmail(user.id, value);
+    result = await lookup.find(user.id, value);
   } catch (error) {
     console.error("Recipient lookup failed", error);
     return { value, error: "No pudimos buscar el destinatario. Probá de nuevo." };
   }
-  if (!result.ok) return { value, error: TRANSFER_ERRORS[result.error] };
+  if (!result.ok) {
+    return {
+      value,
+      error:
+        result.error === "RECIPIENT_NOT_FOUND"
+          ? lookup.messages.notFound
+          : TRANSFER_ERRORS[result.error],
+    };
+  }
 
   redirect(`/transfers/to/${result.recipient.userId}`);
 }
@@ -135,15 +176,7 @@ export async function confirmTransfer(
       error: "No pudimos completar la transferencia. Probá de nuevo: no se va a cobrar dos veces.",
     };
   }
-  if (!result.ok) {
-    // The user picked this recipient from a list, never typed an email here.
-    return {
-      error:
-        result.error === "RECIPIENT_NOT_FOUND"
-          ? "Este destinatario ya no está disponible."
-          : TRANSFER_ERRORS[result.error],
-    };
-  }
+  if (!result.ok) return { error: TRANSFER_ERRORS[result.error] };
 
   revalidatePath("/", "layout");
   redirect(`/transfers/success/${result.movementId}`);

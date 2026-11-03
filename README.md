@@ -31,16 +31,16 @@ Sign in with the credentials from the brief. The seed reads the password from `S
 
 The seed creates two more users who exist to receive transfers. They sign in with the same password as the main user.
 
-| Email | Name | Starts as |
-|-------|------|-----------|
-| `soygranate@clublanus.com` | Granate | Main user from the brief |
-| `juanperez@clublanus.com` | Juan Perez | A contact of Granate |
-| `martinbozzini@clublanus.com` | Martin Bozzini | Not a contact: use "Nuevo destinatario" |
+| Email | Alias | Name | Starts as |
+|-------|-------|------|-----------|
+| `soygranate@clublanus.com` | `soy.granate` | Granate | Main user from the brief |
+| `juanperez@clublanus.com` | `juan.perez` | Juan Perez | A contact of Granate |
+| `martinbozzini@clublanus.com` | `martin.bozzini` | Martin Bozzini | Not a contact: use "Nuevo destinatario" |
 
 To show a transfer from both sides:
 
 1. Sign in as Granate and tap **Transferir**.
-2. Tap **Nuevo destinatario**, enter `martinbozzini@clublanus.com`, an amount, and confirm.
+2. Tap **Nuevo destinatario**, enter the alias `martin.bozzini` (or tap **Transferir por email** and use the email), an amount, and confirm.
 3. Sign out and sign in as Martin Bozzini: the balance and a "Pago recibido" from Granate are there.
 
 Running the seed again resets all three users.
@@ -75,7 +75,7 @@ proxy.ts     Redirects visitors with no session cookie to login
 | Double submit | An idempotency key generated when the confirmation screen renders | Repeating the request returns the first transfer, so a retry never charges twice. The same key with another amount or recipient is rejected. |
 | Transfer reference | Sequential `TRF-000001`, shared by both sides | Sender and recipient see the same operation number, as on a bank receipt. |
 | Contacts | Saved after the first transfer; favorites listed first | The list grows from real use, with no extra "add contact" step. |
-| Recipient lookup | By email | It is the only identifier users have. The lookup tells whether an email has an account, as bank transfers show the recipient's name. |
+| Recipient lookup | By alias by default, by email behind a button | An alias is easy to share and hides the email. Aliases have 1 to 40 characters (letters without accents, digits and dots, with at least one letter) and ignore case: they are stored in lower case, unique, and checked again by a database `CHECK`. The lookup tells whether an alias or email has an account, as bank transfers show the recipient's name. |
 | Quick actions | Transferir, Servicios, Recargas and Tarjetas on Home | Servicios, Recargas and Tarjetas are entry points for planned features and show "Próximamente". |
 
 ## Differences from Figma

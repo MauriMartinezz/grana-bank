@@ -59,9 +59,29 @@ afterAll(async () => {
 });
 
 describe("lookupRecipient", () => {
-  it("goes to the amount screen for an existing user", async () => {
+  it("looks up by alias by default, ignoring case", async () => {
     await expect(
-      lookupRecipient(undefined, form({ email: " RECIPIENT@actions.test " })),
+      lookupRecipient(undefined, form({ alias: " RECIPIENT.Actions.Test " })),
+    ).rejects.toThrow(`REDIRECT:/transfers/to/${recipientId}`);
+  });
+
+  it.each([
+    ["", "Ingresá el alias del destinatario."],
+    ["a".repeat(41), "El alias tiene hasta 40 caracteres: letras sin tildes, números y puntos, con al menos una letra."],
+    ["josé.suárez", "El alias tiene hasta 40 caracteres: letras sin tildes, números y puntos, con al menos una letra."],
+    ["123.456", "El alias tiene hasta 40 caracteres: letras sin tildes, números y puntos, con al menos una letra."],
+    ["nobody.here", "No encontramos una cuenta con ese alias."],
+    ["sender.actions.test", "No podés transferirte a vos mismo."],
+  ])("rejects the alias %j with a message and keeps the value", async (alias, error) => {
+    expect(await lookupRecipient(undefined, form({ alias }))).toEqual({
+      value: alias.trim().toLowerCase(),
+      error,
+    });
+  });
+
+  it("looks up by email when the email option is chosen", async () => {
+    await expect(
+      lookupRecipient(undefined, form({ by: "email", email: " RECIPIENT@actions.test " })),
     ).rejects.toThrow(`REDIRECT:/transfers/to/${recipientId}`);
   });
 
@@ -70,8 +90,8 @@ describe("lookupRecipient", () => {
     ["not-an-email", "Ingresá un email válido."],
     ["nobody@actions.test", "No encontramos una cuenta con ese email."],
     [EMAILS[0], "No podés transferirte a vos mismo."],
-  ])("rejects %j with a message and keeps the value", async (email, error) => {
-    expect(await lookupRecipient(undefined, form({ email }))).toEqual({
+  ])("rejects the email %j with a message and keeps the value", async (email, error) => {
+    expect(await lookupRecipient(undefined, form({ by: "email", email }))).toEqual({
       value: email.trim().toLowerCase(),
       error,
     });
@@ -81,7 +101,7 @@ describe("lookupRecipient", () => {
     const spy = vi.spyOn(db.user, "findFirst").mockRejectedValueOnce(new Error("down"));
     vi.spyOn(console, "error").mockImplementationOnce(() => {});
 
-    expect(await lookupRecipient(undefined, form({ email: EMAILS[1] }))).toEqual({
+    expect(await lookupRecipient(undefined, form({ by: "email", email: EMAILS[1] }))).toEqual({
       value: EMAILS[1],
       error: "No pudimos buscar el destinatario. Probá de nuevo.",
     });
