@@ -1,61 +1,63 @@
-# Demo guide
+# Guía de demo
 
-Everything you need to sign in and try GranaBank after `pnpm db:seed`. Running the seed again resets these users, their data and the promotions.
+Todo lo necesario para iniciar sesión y probar GranaBank después de `pnpm db:seed`. Volver a correr el seed reinicia estos usuarios, sus datos y las promociones.
 
-## Sign in
+## Iniciar sesión
 
-All seeded users share one password: the one you passed as `SEED_USER_PASSWORD` (the challenge brief's password). Open http://localhost:3000 and sign in as the main user:
+Todos los usuarios del seed comparten una contraseña: la que pasaste en `SEED_USER_PASSWORD` (la contraseña de la consigna del desafío). Abrí http://localhost:3000 e iniciá sesión con el usuario principal:
 
 **`soygranate@clublanus.com`**
 
-## Users
+## Usuarios
 
-| User | Email | Accounts (alias · starting balance) | Cards | Role in the demo |
-|------|-------|-------------------------------------|-------|------------------|
-| Soy Granate | `soygranate@clublanus.com` | `soy.granate` · $2.500.000<br>`soy.granate.usd` · USD$250 | Mastercard •••• 1234 (pesos)<br>Visa •••• 5678 (dollars) | Main user: movements, a contact, a SUBE card, a service, subscriptions |
-| Juan Perez | `juanperez@clublanus.com` | `juan.perez` · $250<br>`juan.perez.usd` · USD$0 | Visa •••• 4821 (pesos) | Already a contact of Granate; receives dollar transfers |
-| Martin Bozzini | `martinbozzini@clublanus.com` | `martin.bozzini` · $180 | Visa •••• 7390 (pesos) | Not a contact: shows the "Nuevo destinatario" flow |
-| Cuenta de prueba | `cuenta.prueba@granabank.test` | `cuenta.prueba` · $10.000 millones<br>`cuenta.prueba.usd` · USD$10.000 millones | none | Funds **Ingresar dinero**. It cannot sign in and cannot receive transfers |
+| Usuario | Email | Cuentas (alias · saldo inicial) | Tarjetas | Rol en la demo |
+|---------|-------|---------------------------------|----------|----------------|
+| Soy Granate | `soygranate@clublanus.com` | `soy.granate` · $2.500.000<br>`soy.granate.usd` · USD$250 | Mastercard •••• 1234 (pesos)<br>Visa •••• 5678 (dólares) | Usuario principal: movimientos, un contacto, una tarjeta SUBE, un servicio, suscripciones |
+| Juan Perez | `juanperez@clublanus.com` | `juan.perez` · $250<br>`juan.perez.usd` · USD$0 | Visa •••• 4821 (pesos) | Ya es contacto de Granate; recibe transferencias en dólares |
+| Martin Bozzini | `martinbozzini@clublanus.com` | `martin.bozzini` · $180 | Visa •••• 7390 (pesos) | No es contacto: muestra el flujo de "Nuevo destinatario" |
+| Cuenta de prueba | `cuenta.prueba@granabank.test` | `cuenta.prueba` · $10.000 millones<br>`cuenta.prueba.usd` · USD$10.000 millones | ninguna | Alimenta **Ingresar dinero**. No puede iniciar sesión ni recibir transferencias |
 
-## Where you can send money
+## A quién se le puede enviar dinero
 
-| To | How | Currency |
-|----|-----|----------|
-| Juan Perez | Transferir → his contact card, or alias `juan.perez` | Pesos |
-| Juan Perez | Alias `juan.perez.usd` | Dollars (from Granate's dollar account) |
-| Martin Bozzini | Transferir → **Nuevo destinatario** → alias `martin.bozzini`, or **Transferir por email** with his email | Pesos only |
-| Cuenta de prueba | Not allowed: it is never found as a recipient | — |
+| A quién | Cómo | Moneda |
+|---------|------|--------|
+| Juan Perez | Transferir → su tarjeta de contacto, o alias `juan.perez` | Pesos |
+| Juan Perez | Alias `juan.perez.usd` | Dólares (desde la cuenta en dólares de Granate) |
+| Martin Bozzini | Transferir → **Nuevo destinatario** → alias `martin.bozzini`, o **Transferir por email** con su email | Solo pesos |
+| Cuenta de prueba | No se permite: nunca aparece como destinatario | — |
 
-A transfer only goes between accounts of the same currency. Each one is capped at $1.000.000 (or USD$1.000.000).
+Una transferencia solo va entre cuentas de la misma moneda. Cada una tiene un tope de $1.000.000 (o USD$1.000.000).
 
-## What Granate starts with
+## Con qué empieza Granate
 
-| Area | Seeded data |
-|------|-------------|
-| Movimientos | Payments received and sent, plus subscription charges from Adobe, Figma, Spotify and Netflix |
+| Área | Datos del seed |
+|------|----------------|
+| Movimientos | Pagos recibidos y enviados, más cobros de suscripciones de Adobe, Figma, Spotify y Netflix |
 | Contactos | Juan Perez (pesos) |
-| Recargas | SUBE card "sube de mauri", `6061 2345 6789 0123` |
-| Servicios | Edesur "Luz depto", payment number `0012345678`, last month's and this month's bills, a 3-day reminder |
-| Suscripciones | Adobe, Figma, Spotify and Netflix, active (a demo: nothing charges them) |
+| Recargas | Tarjeta SUBE "sube de mauri", `6061 2345 6789 0123` |
+| Servicios | Edesur "Luz depto", número de pago `0012345678`, las facturas del mes pasado y de este mes, un recordatorio 3 días antes |
+| Suscripciones | Adobe, Figma, Spotify y Netflix, activas (es una demo: nada las cobra) |
 | Categorías | Alquiler, Comida, Servicios, Regalos, Otros |
-| Promociones | 12 promotions of invented merchants, in force this month and the next |
+| Promociones | 12 promociones de comercios inventados, vigentes este mes y el próximo |
 
-## Try these flows
+## Recorridos para probar
 
-1. **A transfer from both sides.** As Granate: Transferir → Nuevo destinatario → `martin.bozzini`, an amount, a note and a category → Confirmar. Sign out, sign in as Martin Bozzini: the balance and a "Pago recibido" with the note are there, and the bell shows it.
-2. **Dollars.** Dólares → Comprar: debits pesos at 1 USD = $1.500 and credits dollars. Then transfer dollars to `juan.perez.usd`.
-3. **Add money.** Ingresar (first quick action on Home) → up to $1.000.000 or USD 10.000 at a time from the Cuenta de prueba. **Programar ingresos** saves a weekly or monthly deposit (demo).
-4. **Pay a service.** Servicios → Luz depto opens the payment of its next bill. Try **Programar el pago** for a day before the due date, or **Débito automático** on the service, then **Procesar pagos agendados** at the bottom of Servicios.
-5. **Adhere a service.** Servicios → Adherir servicio → pick a company. Number lengths: AySA 10, Edesur 10, Edenor 12, Metrogas 11, Salud Plena 8 and Austral Seguros 9 digits (the last two bill in dollars and are paid from the dollar account).
-6. **Top-ups.** Recargas → SUBE, Telefonía (pick the company, then a number such as `11 1234 5678`) or DirecTV (8 to 12 digits). $100 to $50.000 each.
-7. **Cards.** Tarjetas → Agregar tarjeta. Test numbers that pass validation: Visa `4111 1111 1111 1111`, Mastercard `5555 5555 5555 4444`, American Express `3782 822463 10005`, any future expiry and a 3-digit CVV (4 for Amex).
-8. **Privacy.** The eye on the Home balance card hides every balance as `*****` on this device.
-9. **Notifications.** The bell on Home lists money in and out, dollar operations, failed scheduled payments and service reminders.
+1. **Una transferencia desde los dos lados.** Como Granate: Transferir → Nuevo destinatario → `martin.bozzini`, un monto, una nota y una categoría → Confirmar. Cerrá sesión e iniciá sesión como Martin Bozzini: ahí están el saldo y un "Pago recibido" con la nota, y la campana lo muestra.
+2. **Dólares.** Dólares → Comprar: debita pesos a 1 USD = $1.500 y acredita dólares. Después transferí dólares a `juan.perez.usd`.
+3. **Ingresar dinero.** Ingresar (primer acceso rápido de Inicio) → hasta $1.000.000 o USD 10.000 por vez desde la Cuenta de prueba. **Programar ingresos** guarda un ingreso semanal o mensual (demo).
+4. **Pagar un servicio.** Servicios → Luz depto abre el pago de su próxima factura, con una nota opcional. Probá **Programar el pago** para un día antes del vencimiento, o **Débito automático** en el servicio, y después **Procesar pagos agendados** al final de Servicios.
+5. **Adherir un servicio.** Servicios → Adherir servicio → elegí una empresa. Largo de los números: AySA 10, Edesur 10, Edenor 12, Metrogas 11, Salud Plena 8 y Austral Seguros 9 dígitos (las dos últimas facturan en dólares y se pagan desde la cuenta en dólares).
+6. **Recargas.** Recargas → SUBE, Telefonía (elegí la empresa y después un número como `11 1234 5678`) o DirecTV (8 a 12 dígitos). De $100 a $50.000 cada una, con una nota opcional.
+7. **Tarjetas.** Tarjetas → Agregar tarjeta. Números de prueba que pasan la validación: Visa `4111 1111 1111 1111`, Mastercard `5555 5555 5555 4444`, American Express `3782 822463 10005`, cualquier vencimiento futuro y un CVV de 3 dígitos (4 para Amex).
+8. **Varias tarjetas y la predeterminada.** Agregá una segunda tarjeta a la cuenta en pesos. En Inicio, el saldo aparece una vez ("2 tarjetas usan este saldo") y las tarjetas siguen en un carrusel. Tocá la nueva para abrir su página y elegí **Usar como predeterminada para pagar en pesos**: pasa a ser la primera del carrusel, Tarjetas la marca como "Predeterminada" y aparece preseleccionada al pagar.
+9. **Suscripciones.** Perfil → Suscripciones: abrí una para ver el detalle, cambiale la tarjeta o dala de baja, y suscribite a otra desde el catálogo (demo: nada se cobra).
+10. **Privacidad.** El ojo de la tarjeta de saldo de Inicio oculta todos los saldos de la app como `*****` en este dispositivo.
+11. **Notificaciones.** La campana de Inicio lista el dinero que entra y sale, las operaciones con dólares, los pagos programados fallidos y los recordatorios de servicios.
 
-## Reset
+## Reiniciar
 
 ```bash
-SEED_USER_PASSWORD='<password from the brief>' pnpm db:seed
+SEED_USER_PASSWORD='<contraseña de la consigna>' pnpm db:seed
 ```
 
-It deletes and recreates the four users above (matched by email and alias) and reloads the promotions. Other users you created are left as they are.
+Borra y vuelve a crear los cuatro usuarios de arriba (los identifica por email y alias) y recarga las promociones. Los demás usuarios que hayas creado quedan como están.
