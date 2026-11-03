@@ -8,7 +8,8 @@ export function ComingSoon({
   options = [],
 }: {
   title: string;
-  description: string;
+  /** Without it, the screen shows only the options and no notice. */
+  description?: string;
   options?: string[];
 }) {
   return (
@@ -18,9 +19,11 @@ export function ComingSoon({
         <h1 className="font-serif text-2xl font-bold">{title}</h1>
       </header>
 
-      <div className="mt-5">
-        <StateMessage title="Próximamente" description={description} />
-      </div>
+      {description && (
+        <div className="mt-5">
+          <StateMessage title="Próximamente" description={description} />
+        </div>
+      )}
 
       {options.length > 0 && (
         <ul aria-label="Opciones disponibles pronto" className="mt-6 space-y-3">
