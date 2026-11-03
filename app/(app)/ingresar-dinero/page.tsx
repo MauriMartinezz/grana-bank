@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
 import { StateMessage } from "@/components/ui/state-message";
 import { listAccounts } from "@/features/account/queries";
@@ -24,6 +25,12 @@ export default async function DepositPage() {
         <BackButton fallbackHref="/inicio" />
         <h1 className="font-serif text-2xl font-bold">Ingresar dinero</h1>
       </header>
+      <Link
+        href="/ingresar-dinero/programar"
+        className="mt-3 inline-flex min-h-11 items-center font-serif text-sm text-garnet"
+      >
+        Programar ingresos
+      </Link>
 
       {sources.length === 0 ? (
         <div className="mt-6">

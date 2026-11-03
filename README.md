@@ -161,7 +161,7 @@ A dollar transfer works the same way to `juan.perez.usd`, from the dollar accoun
 - **Recargas:** Granate starts with the SUBE card "sube de mauri" (`6061 2345 6789 0123`); Telefonía lists the companies and DirecTV takes a customer number. Each top-up debits the peso account through the chosen card.
 - **Servicios:** Granate starts with the Edesur service "Luz depto" (payment number `0012345678`) and two simulated bills. Tapping a service opens the payment of its next bill. **Adherir servicio** lists AySA, Edesur, Edenor and Metrogas (pesos) and Salud Plena and Austral Seguros (two fictional companies billed in dollars). A bill can be scheduled for a day up to its due date, and a service can pay every bill by automatic debit. Home lists the bills that nothing pays by itself, with "Vence en N días".
 - **Categorías:** every user starts with Alquiler, Comida, Servicios, Regalos and Otros; **Perfil → Categorías** adds, renames and deletes them, and the detail of any movement changes its category. Service payments go to Servicios.
-- **Ingresar dinero:** the first quick action on Home adds up to $1.000.000 or USD 10.000 at a time, as a payment received from the Cuenta de prueba.
+- **Ingresar dinero:** the first quick action on Home adds up to $1.000.000 or USD 10.000 at a time, as a payment received from the Cuenta de prueba. **Programar ingresos** saves a deposit for a weekday or a day of the month; it is a demo, so nothing is deposited.
 - **Promociones:** Home shows "Promos de hoy"; the list filters by weekday and category. They are informative: no discount is applied to payments.
 
 ## Project structure
