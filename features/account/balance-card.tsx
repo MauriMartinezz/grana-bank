@@ -53,7 +53,6 @@ export function BalanceCard({
         </>
       ) : (
         <div className="mt-4">
-          <p className="truncate text-xl tracking-wide">{account.alias}</p>
           <p className="mt-4 font-medium">{holderName}</p>
         </div>
       )}

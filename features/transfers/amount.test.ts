@@ -38,6 +38,9 @@ describe("parseAmountToCents", () => {
     ",5",
     ".500",
     "1..500",
+    "0.500",
+    "01.500",
+    "000.001",
     "Infinity",
   ])("rejects %j", (input) => {
     expect(parseAmountToCents(input)).toBeNull();
