@@ -20,5 +20,7 @@ export const config = {
     "/services",
     "/top-ups",
     "/cards/:path*",
+    "/exchange/:path*",
+    "/profile",
   ],
 };

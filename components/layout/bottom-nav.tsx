@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 import { logout } from "@/features/auth/actions";
 import { HomeIcon, ListIcon, LogoutIcon } from "@/components/icons";
+import { ProfileIcon } from "@/features/profile/profile-icon";
 
 const LINKS = [
   { href: "/home", label: "Inicio", Icon: HomeIcon },
   { href: "/movements", label: "Movimientos", Icon: ListIcon },
+  { href: "/profile", label: "Perfil", Icon: ProfileIcon },
 ];
 
 const ITEM_CLASS =

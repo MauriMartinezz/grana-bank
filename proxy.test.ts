@@ -21,6 +21,9 @@ describe("proxy", () => {
     "/services",
     "/top-ups",
     "/cards",
+    "/cards/new",
+    "/exchange",
+    "/profile",
   ])(
     "redirects %s to login without a session cookie",
     (path) => {
