@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { isValidAlias } from "@/features/transfers/alias";
+import { ALIAS_WORDS } from "@/features/transfers/alias-generator";
 import { db } from "@/lib/db";
 import { openUsdAccount } from "./usd-account";
 
@@ -78,6 +79,8 @@ describe("openUsdAccount", () => {
 
     expect(account.alias).not.toBe(`${ALIAS}.usd`);
     expect(isValidAlias(account.alias)).toBe(true);
+    // A readable default, never a random code.
+    expect(account.alias.split(".").every((word) => ALIAS_WORDS.includes(word))).toBe(true);
   });
 
   it("generates a valid alias when the peso alias plus .usd is too long", async () => {

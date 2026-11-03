@@ -1,14 +1,9 @@
-import { randomBytes } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { isValidAlias } from "@/features/transfers/alias";
+import { generateAlias } from "@/features/transfers/alias-generator";
 import { db } from "@/lib/db";
 
 const MAX_ATTEMPTS = 5;
-
-function generatedAlias() {
-  // "usd." keeps the required letter; 12 hex characters make a clash unlikely.
-  return `usd.${randomBytes(6).toString("hex")}`;
-}
 
 function findUsdAccount(userId: string) {
   return db.account.findUnique({ where: { userId_currency: { userId, currency: "USD" } } });
@@ -17,7 +12,7 @@ function findUsdAccount(userId: string) {
 /**
  * Opens the user's dollar account, empty and without cards, or returns it
  * when it already exists. Its alias is the peso alias plus ".usd" when that
- * is valid and free, otherwise a generated one.
+ * is valid and free, otherwise three random words such as "mate.lluvia.faro".
  *
  * Concurrent calls open a single account: the unique (user, currency) pair
  * rejects the second insert, which then returns the account that won.
@@ -36,7 +31,7 @@ export async function openUsdAccount(userId: string) {
     isValidAlias(preferred) &&
     !(await db.account.findUnique({ where: { alias: preferred }, select: { id: true } }))
       ? preferred
-      : generatedAlias();
+      : generateAlias();
 
   for (let attempt = 1; ; attempt++) {
     try {
@@ -52,7 +47,7 @@ export async function openUsdAccount(userId: string) {
       const opened = await findUsdAccount(userId);
       if (opened) return opened;
       if (attempt >= MAX_ATTEMPTS) throw error;
-      alias = generatedAlias();
+      alias = generateAlias();
     }
   }
 }
