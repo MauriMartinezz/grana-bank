@@ -5,7 +5,7 @@ import { StateMessage } from "@/components/ui/state-message";
 import { BalanceCard } from "@/features/account/balance-card";
 import { NotificationsButton } from "@/features/account/notifications-button";
 import { QuickActions } from "@/features/account/quick-actions";
-import { getAccount } from "@/features/account/queries";
+import { listAccounts } from "@/features/account/queries";
 import { getCurrentUser } from "@/features/auth/current-user";
 import { NO_FILTERS } from "@/features/movements/filters";
 import { MovementList } from "@/features/movements/movement-list";
@@ -17,10 +17,13 @@ export const metadata: Metadata = { title: "Inicio" };
 
 export default async function HomePage() {
   const user = await getCurrentUser();
-  const [account, movements] = await Promise.all([
-    getAccount(user.id),
+  const [accounts, movements] = await Promise.all([
+    listAccounts(user.id),
     listMovements(user.id, NO_FILTERS, RECENT_MOVEMENTS),
   ]);
+  // One account for now: the preferred currency, else the first one.
+  const account =
+    accounts.find((a) => a.currency === user.preferredCurrency) ?? accounts[0];
 
   if (!account) {
     throw new Error(`User ${user.id} has no account.`);

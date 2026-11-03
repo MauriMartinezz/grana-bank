@@ -1,15 +1,17 @@
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { fullName } from "@/features/account/name";
 import { getSessionUser } from "./session";
 
 /**
  * The only place that knows who is using the app. Screens and queries depend
- * on this function, so they never read cookies or sessions themselves.
+ * on this function, so they never read cookies or sessions themselves. The
+ * session already leaves out the password hash.
  */
 export const getCurrentUser = cache(async () => {
   const user = await getSessionUser();
   if (!user) redirect("/login");
-  return user;
+  return { ...user, name: fullName(user) };
 });
 
 /**

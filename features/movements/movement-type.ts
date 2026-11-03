@@ -28,4 +28,10 @@ export const MOVEMENT_TYPE_STYLES: Record<MovementType, MovementTypeStyle> = {
     tileClass: "bg-yellow-soft text-yellow",
     amountClass: "text-yellow",
   },
+  EXCHANGE: {
+    label: "Compra/venta de dólares",
+    Icon: SwapIcon,
+    tileClass: "bg-blue-soft text-blue",
+    amountClass: "text-blue",
+  },
 };

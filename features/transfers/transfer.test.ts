@@ -1,33 +1,48 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import type { Currency } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { MAX_TRANSFER_CENTS } from "./amount";
 import { findSentMovementByKey, transfer } from "./transfer";
 
-const EMAILS = ["sender@transfer.test", "recipient@transfer.test"];
+const EMAILS = [
+  "sender@transfer.test",
+  "recipient@transfer.test",
+  "third@transfer.test",
+  "dollars@transfer.test",
+];
 
-async function createUser(email: string, name: string, balanceCents: number) {
-  return db.user.create({
+type TestUser = { id: string; accountId: string };
+
+/** A user with one account per given currency; the first one is returned. */
+async function createUser(
+  email: string,
+  firstName: string,
+  balanceCents: number,
+  currencies: Currency[] = ["ARS"],
+): Promise<TestUser & { accounts: Record<string, string> }> {
+  const user = await db.user.create({
     data: {
       email,
-      name,
+      firstName,
+      lastName: "Test",
       passwordHash: "!",
-      account: {
-        create: {
+      accounts: {
+        create: currencies.map((currency) => ({
+          currency,
           balanceCents,
-          alias: email.replace("@", "."),
-          cardBrand: "VISA",
-          cardLast4: "0000",
-          cardHolder: name,
-          cardExpiry: "01/30",
-        },
+          alias: `${email.replace("@", ".")}.${currency.toLowerCase()}`,
+        })),
       },
     },
+    include: { accounts: true },
   });
+  const accounts = Object.fromEntries(user.accounts.map((a) => [a.currency, a.id]));
+  return { id: user.id, accountId: accounts[currencies[0]], accounts };
 }
 
-async function balanceOf(userId: string) {
-  const account = await db.account.findUniqueOrThrow({ where: { userId } });
+async function balanceOf(accountId: string) {
+  const account = await db.account.findUniqueOrThrow({ where: { id: accountId } });
   return account.balanceCents;
 }
 
@@ -49,8 +64,8 @@ async function snapshot() {
   };
 }
 
-let sender: { id: string };
-let recipient: { id: string };
+let sender: TestUser;
+let recipient: TestUser;
 
 beforeEach(async () => {
   await db.user.deleteMany({ where: { email: { in: EMAILS } } });
@@ -62,10 +77,10 @@ afterAll(async () => {
   await db.user.deleteMany({ where: { email: { in: EMAILS } } });
 });
 
-function send(amountCents: number, from = sender.id, to = recipient.id) {
+function send(amountCents: number, from = sender.id, to = recipient.accountId) {
   return transfer({
     senderId: from,
-    recipientId: to,
+    recipientAccountId: to,
     amountCents,
     idempotencyKey: randomUUID(),
   });
@@ -76,8 +91,8 @@ describe("transfer", () => {
     const result = await send(2550);
 
     expect(result.ok).toBe(true);
-    expect(await balanceOf(sender.id)).toBe(7450);
-    expect(await balanceOf(recipient.id)).toBe(3050);
+    expect(await balanceOf(sender.accountId)).toBe(7450);
+    expect(await balanceOf(recipient.accountId)).toBe(3050);
 
     const movements = await db.movement.findMany({
       where: { transferId: { not: null }, account: { userId: { in: [sender.id, recipient.id] } } },
@@ -87,8 +102,8 @@ describe("transfer", () => {
     const received = movements.find((m) => m.account.userId === recipient.id);
 
     expect(movements).toHaveLength(2);
-    expect(sent).toMatchObject({ type: "SENT", counterparty: "Recipient", amountCents: 2550 });
-    expect(received).toMatchObject({ type: "RECEIVED", counterparty: "Sender", amountCents: 2550 });
+    expect(sent).toMatchObject({ type: "SENT", counterparty: "Recipient Test", amountCents: 2550 });
+    expect(received).toMatchObject({ type: "RECEIVED", counterparty: "Sender Test", amountCents: 2550 });
     expect(sent?.reference).toMatch(/^TRF-\d{6,}$/);
     expect(received?.reference).toBe(sent?.reference);
     expect(result.ok && result.movementId).toBe(sent?.id);
@@ -97,7 +112,11 @@ describe("transfer", () => {
   it("saves the recipient as a contact without touching an existing favorite", async () => {
     await send(100);
     const [contact] = (await snapshot()).contacts;
-    expect(contact).toMatchObject({ ownerId: sender.id, contactId: recipient.id, favorite: false });
+    expect(contact).toMatchObject({
+      ownerId: sender.id,
+      contactAccountId: recipient.accountId,
+      favorite: false,
+    });
 
     await db.contact.update({ where: { id: contact.id }, data: { favorite: true } });
     await send(100);
@@ -113,7 +132,7 @@ describe("transfer", () => {
     ["the amount is negative", () => send(-100), "INVALID_AMOUNT"],
     ["the amount is not an integer", () => send(10.5), "INVALID_AMOUNT"],
     ["the amount is above the limit", () => send(MAX_TRANSFER_CENTS + 1), "INVALID_AMOUNT"],
-    ["the recipient is the sender", () => send(100, sender.id, sender.id), "SELF_TRANSFER"],
+    ["the recipient is the sender", () => send(100, sender.id, sender.accountId), "SELF_TRANSFER"],
     ["the recipient does not exist", () => send(100, sender.id, randomUUID()), "RECIPIENT_NOT_FOUND"],
   ])("rejects when %s and changes nothing", async (_case, run, error) => {
     const before = await snapshot();
@@ -124,13 +143,13 @@ describe("transfer", () => {
 
   it("allows spending the whole balance", async () => {
     expect((await send(10000)).ok).toBe(true);
-    expect(await balanceOf(sender.id)).toBe(0);
+    expect(await balanceOf(sender.accountId)).toBe(0);
   });
 
   it("creates one transfer when the same request arrives twice", async () => {
     const request = {
       senderId: sender.id,
-      recipientId: recipient.id,
+      recipientAccountId: recipient.accountId,
       amountCents: 1000,
       idempotencyKey: randomUUID(),
     };
@@ -140,7 +159,7 @@ describe("transfer", () => {
     expect(first).toEqual(second);
     expect(first.ok).toBe(true);
     expect((await snapshot()).transfers).toBe(1);
-    expect(await balanceOf(sender.id)).toBe(9000);
+    expect(await balanceOf(sender.accountId)).toBe(9000);
   });
 
   it("finds the sent movement of an already used key, only for its sender", async () => {
@@ -149,7 +168,7 @@ describe("transfer", () => {
 
     const result = await transfer({
       senderId: sender.id,
-      recipientId: recipient.id,
+      recipientAccountId: recipient.accountId,
       amountCents: 100,
       idempotencyKey,
     });
@@ -161,10 +180,15 @@ describe("transfer", () => {
   });
 
   it("rejects a reused key with a different amount or recipient", async () => {
-    const third = await createUser("third@transfer.test", "Third", 0);
+    const third = await createUser(EMAILS[2], "Third", 0);
     try {
       const idempotencyKey = randomUUID();
-      const base = { senderId: sender.id, recipientId: recipient.id, amountCents: 1000, idempotencyKey };
+      const base = {
+        senderId: sender.id,
+        recipientAccountId: recipient.accountId,
+        amountCents: 1000,
+        idempotencyKey,
+      };
       expect((await transfer(base)).ok).toBe(true);
       const before = await snapshot();
 
@@ -172,7 +196,7 @@ describe("transfer", () => {
         ok: false,
         error: "IDEMPOTENCY_MISMATCH",
       });
-      expect(await transfer({ ...base, recipientId: third.id })).toEqual({
+      expect(await transfer({ ...base, recipientAccountId: third.accountId })).toEqual({
         ok: false,
         error: "IDEMPOTENCY_MISMATCH",
       });
@@ -190,19 +214,66 @@ describe("transfer", () => {
       { ok: false, error: "INSUFFICIENT_FUNDS" },
       { ok: false, error: "INSUFFICIENT_FUNDS" },
     ]);
-    expect(await balanceOf(sender.id)).toBe(4000);
-    expect(await balanceOf(recipient.id)).toBe(6500);
+    expect(await balanceOf(sender.accountId)).toBe(4000);
+    expect(await balanceOf(recipient.accountId)).toBe(6500);
   });
 
   it("does not deadlock when two users send to each other at once", async () => {
     const results = await Promise.all(
       Array.from({ length: 6 }, (_, i) =>
-        i % 2 === 0 ? send(100) : send(100, recipient.id, sender.id),
+        i % 2 === 0 ? send(100) : send(100, recipient.id, sender.accountId),
       ),
     );
 
     expect(results.every((r) => r.ok)).toBe(true);
-    expect(await balanceOf(sender.id)).toBe(10000);
-    expect(await balanceOf(recipient.id)).toBe(500);
+    expect(await balanceOf(sender.accountId)).toBe(10000);
+    expect(await balanceOf(recipient.accountId)).toBe(500);
+  });
+});
+
+describe("transfer between currencies", () => {
+  it("moves dollars between USD accounts and leaves the peso accounts alone", async () => {
+    const payer = await createUser(EMAILS[3], "Dollars", 3000, ["ARS", "USD"]);
+    const payee = await db.account.create({
+      data: {
+        userId: recipient.id,
+        currency: "USD",
+        alias: "recipient.transfer.test.usd",
+        balanceCents: 0,
+      },
+    });
+
+    const result = await send(1250, payer.id, payee.id);
+
+    expect(result.ok).toBe(true);
+    expect(await balanceOf(payer.accounts.USD)).toBe(1750);
+    expect(await balanceOf(payee.id)).toBe(1250);
+    expect(await balanceOf(payer.accounts.ARS)).toBe(3000);
+    expect(await balanceOf(recipient.accountId)).toBe(500);
+    const sent = await db.movement.findUniqueOrThrow({
+      where: { id: result.ok ? result.movementId : "" },
+    });
+    expect(sent.accountId).toBe(payer.accounts.USD);
+    expect(await db.contact.findMany({ where: { ownerId: payer.id } })).toMatchObject([
+      { contactAccountId: payee.id },
+    ]);
+  });
+
+  it("rejects a recipient account in a currency the sender has no account in", async () => {
+    const payee = await db.account.create({
+      data: {
+        userId: recipient.id,
+        currency: "USD",
+        alias: "recipient.transfer.test.usd",
+        balanceCents: 0,
+      },
+    });
+    const before = await snapshot();
+
+    expect(await send(100, sender.id, payee.id)).toEqual({
+      ok: false,
+      error: "CURRENCY_MISMATCH",
+    });
+    expect(await snapshot()).toEqual(before);
   });
 });

@@ -11,36 +11,58 @@ enum MovementType {
   SUBSCRIPTION
   RECEIVED
   SENT
+  /// One side of a dollar buy or sell.
+  EXCHANGE
 }
 
 enum CardBrand {
   MASTERCARD
   VISA
+  AMEX
+}
+
+/// ISO 4217 code of the money an account holds.
+enum Currency {
+  ARS
+  USD
+}
+
+/// Seen from the user: BUY spends pesos to get dollars, SELL the opposite.
+enum ExchangeDirection {
+  BUY
+  SELL
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  name         String
+  id                String     @id @default(uuid())
+  email             String     @unique
+  firstName         String
+  /// Empty when the user only gave one name.
+  lastName          String
+  address           String?
+  phone             String?
+  /// The account shown first and used by email transfers.
+  preferredCurrency Currency   @default(ARS)
   /// Salted scrypt hash, never the password itself.
-  passwordHash String
-  account      Account?
-  sessions     Session[]
-  contacts     Contact[] @relation("ContactOwner")
-  contactOf    Contact[] @relation("ContactUser")
+  passwordHash      String
+  /// One per currency at most.
+  accounts          Account[]
+  sessions          Session[]
+  contacts          Contact[]  @relation("ContactOwner")
+  exchanges         Exchange[]
 }
 
-/// A user the owner can transfer to. Saved after the first transfer.
+/// An account the owner can transfer to. Saved after the first transfer.
 model Contact {
-  id        String   @id @default(uuid())
-  ownerId   String
-  owner     User     @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  contactId String
-  contact   User     @relation("ContactUser", fields: [contactId], references: [id], onDelete: Cascade)
-  favorite  Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id               String   @id @default(uuid())
+  ownerId          String
+  owner            User     @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  contactAccountId String
+  contactAccount   Account  @relation(fields: [contactAccountId], references: [id], onDelete: Cascade)
+  favorite         Boolean  @default(false)
+  createdAt        DateTime @default(now())
 
-  @@unique([ownerId, contactId])
+  @@unique([ownerId, contactAccountId])
 }
 
 model Session {
@@ -55,24 +77,41 @@ model Session {
 }
 
 model Account {
-  id           String     @id @default(uuid())
-  userId       String     @unique
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String     @id @default(uuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Transfer alias: lower case letters, digits and dots, 1 to 40 characters,
   /// at least one letter. A CHECK constraint enforces it.
-  alias        String     @unique
-  /// ISO 4217 code.
-  currency     String     @default("USD")
+  alias         String     @unique
+  currency      Currency   @default(ARS)
   /// Integer cents, so amounts never go through floating point.
-  balanceCents Int
-  cardBrand    CardBrand
-  cardLast4    String
-  cardHolder   String
+  balanceCents  Int
+  cards         Card[]
+  movements     Movement[]
+  sent          Transfer[] @relation("TransferFrom")
+  received      Transfer[] @relation("TransferTo")
+  contactOf     Contact[]
+  exchangesFrom Exchange[] @relation("ExchangeFrom")
+  exchangesTo   Exchange[] @relation("ExchangeTo")
+
+  @@unique([userId, currency])
+}
+
+/// A card linked to an account. Only what the card face shows is stored:
+/// never the full number or the security code. CHECK constraints enforce it.
+model Card {
+  id        String    @id @default(uuid())
+  accountId String
+  account   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  brand     CardBrand
+  /// The last 4 digits of the card number.
+  last4     String
+  holder    String
   /// Formatted as MM/YY.
-  cardExpiry   String
-  movements    Movement[]
-  sent         Transfer[] @relation("TransferFrom")
-  received     Transfer[] @relation("TransferTo")
+  expiry    String
+  createdAt DateTime  @default(now())
+
+  @@index([accountId])
 }
 
 model Transfer {
@@ -109,7 +148,34 @@ model Movement {
   occurredAt   DateTime
   transferId   String?
   transfer     Transfer?    @relation(fields: [transferId], references: [id], onDelete: SetNull)
+  exchangeId   String?
+  exchange     Exchange?    @relation(fields: [exchangeId], references: [id], onDelete: SetNull)
 
   @@unique([accountId, reference])
   @@index([accountId, occurredAt(sort: Desc)])
+}
+
+/// A dollar buy or sell between two accounts of the same user at a fixed rate.
+model Exchange {
+  id             String            @id @default(uuid())
+  /// Sequential, so the operation number is readable and never collides.
+  number         Int               @unique @default(autoincrement())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  direction      ExchangeDirection
+  /// Integer cents of each side, always positive.
+  usdCents       Int
+  arsCents       Int
+  /// Whole pesos per dollar, for example 1500.
+  rateArsPerUsd  Int
+  fromAccountId  String
+  fromAccount    Account           @relation("ExchangeFrom", fields: [fromAccountId], references: [id], onDelete: Cascade)
+  toAccountId    String
+  toAccount      Account           @relation("ExchangeTo", fields: [toAccountId], references: [id], onDelete: Cascade)
+  /// Same role as in Transfer: a repeated request creates one exchange.
+  idempotencyKey String
+  createdAt      DateTime          @default(now())
+  movements      Movement[]
+
+  @@unique([userId, idempotencyKey])
 }

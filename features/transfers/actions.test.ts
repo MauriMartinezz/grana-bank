@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Currency } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { formatMoney } from "@/lib/format";
 
 const current = vi.hoisted(() => ({ user: { id: "", name: "" } }));
 
@@ -18,7 +20,9 @@ const { confirmTransfer, lookupRecipient, reviewAmount, toggleFavorite } =
   await import("./actions");
 
 const EMAILS = ["sender@actions.test", "recipient@actions.test"];
-let recipientId: string;
+let recipientAccountId: string;
+let senderAccountId: string;
+let recipientUserId: string;
 
 function form(fields: Record<string, string>) {
   const data = new FormData();
@@ -26,32 +30,31 @@ function form(fields: Record<string, string>) {
   return data;
 }
 
-async function createUser(email: string, name: string, balanceCents: number) {
+async function createUser(email: string, firstName: string, balanceCents: number) {
   return db.user.create({
     data: {
       email,
-      name,
+      firstName,
+      lastName: "",
       passwordHash: "!",
-      account: {
-        create: {
-          balanceCents,
-          alias: email.replace("@", "."),
-          cardBrand: "VISA",
-          cardLast4: "0000",
-          cardHolder: name,
-          cardExpiry: "01/30",
-        },
-      },
+      accounts: { create: { balanceCents, alias: email.replace("@", ".") } },
     },
+    include: { accounts: true },
   });
+}
+
+function openAccount(userId: string, currency: Currency, alias: string, balanceCents = 0) {
+  return db.account.create({ data: { userId, currency, alias, balanceCents } });
 }
 
 beforeEach(async () => {
   await db.user.deleteMany({ where: { email: { in: EMAILS } } });
   const sender = await createUser(EMAILS[0], "Sender", 10000);
   const recipient = await createUser(EMAILS[1], "Recipient", 0);
-  current.user = { id: sender.id, name: sender.name };
-  recipientId = recipient.id;
+  current.user = { id: sender.id, name: sender.firstName };
+  senderAccountId = sender.accounts[0].id;
+  recipientAccountId = recipient.accounts[0].id;
+  recipientUserId = recipient.id;
 });
 
 afterAll(async () => {
@@ -62,7 +65,7 @@ describe("lookupRecipient", () => {
   it("looks up by alias by default, ignoring case", async () => {
     await expect(
       lookupRecipient(undefined, form({ alias: " RECIPIENT.Actions.Test " })),
-    ).rejects.toThrow(`REDIRECT:/transfers/to/${recipientId}`);
+    ).rejects.toThrow(`REDIRECT:/transfers/to/${recipientAccountId}`);
   });
 
   it.each([
@@ -82,7 +85,7 @@ describe("lookupRecipient", () => {
   it("looks up by email when the email option is chosen", async () => {
     await expect(
       lookupRecipient(undefined, form({ by: "email", email: " RECIPIENT@actions.test " })),
-    ).rejects.toThrow(`REDIRECT:/transfers/to/${recipientId}`);
+    ).rejects.toThrow(`REDIRECT:/transfers/to/${recipientAccountId}`);
   });
 
   it.each([
@@ -112,14 +115,14 @@ describe("lookupRecipient", () => {
 describe("reviewAmount", () => {
   it("goes to the confirmation screen with the amount in cents and a fresh key", async () => {
     const redirectTo = async () =>
-      (await reviewAmount(undefined, form({ recipientId, amount: "25,50" })).catch(
+      (await reviewAmount(undefined, form({ recipientAccountId, amount: "25,50" })).catch(
         (error: Error) => error.message,
       )) as string;
     const first = await redirectTo();
     const second = await redirectTo();
 
     const pattern = new RegExp(
-      `^REDIRECT:/transfers/to/${recipientId}/confirm\\?amount=2550&key=[0-9a-f-]{36}$`,
+      `^REDIRECT:/transfers/to/${recipientAccountId}/confirm\\?amount=2550&key=[0-9a-f-]{36}$`,
     );
     expect(first).toMatch(pattern);
     expect(second).toMatch(pattern);
@@ -130,12 +133,32 @@ describe("reviewAmount", () => {
     ["", "Ingresá un monto."],
     ["0", "Ingresá un monto mayor a cero, con hasta 2 decimales."],
     ["1.234,56", "Ingresá un monto mayor a cero, con hasta 2 decimales."],
-    ["100,01", "No tenés saldo suficiente. Disponible: $100"],
+    ["100,01", `No tenés saldo suficiente. Disponible: ${formatMoney(10000, "ARS")}`],
   ])("rejects %j with a message and keeps the value", async (amount, error) => {
-    expect(await reviewAmount(undefined, form({ recipientId, amount }))).toEqual({
+    expect(await reviewAmount(undefined, form({ recipientAccountId, amount }))).toEqual({
       value: amount,
       error,
     });
+  });
+
+  it("checks the balance of the sender's account in the recipient's currency", async () => {
+    await openAccount(current.user.id, "USD", "sender.actions.test.usd", 500);
+    const usd = await openAccount(recipientUserId, "USD", "recipient.actions.test.usd");
+
+    expect(
+      await reviewAmount(undefined, form({ recipientAccountId: usd.id, amount: "6" })),
+    ).toEqual({
+      value: "6",
+      error: `No tenés saldo suficiente. Disponible: ${formatMoney(500, "USD")}`,
+    });
+  });
+
+  it("rejects a recipient account in a currency the sender has no account in", async () => {
+    const usd = await openAccount(recipientUserId, "USD", "recipient.actions.test.usd");
+
+    expect(
+      await reviewAmount(undefined, form({ recipientAccountId: usd.id, amount: "1" })),
+    ).toEqual({ value: "1", error: "No tenés una cuenta en esa moneda." });
   });
 });
 
@@ -143,7 +166,7 @@ describe("confirmTransfer", () => {
   function confirm(amountCents: string, idempotencyKey: string = randomUUID()) {
     return confirmTransfer(
       undefined,
-      form({ recipientId, amountCents, idempotencyKey }),
+      form({ recipientAccountId, amountCents, idempotencyKey }),
     );
   }
 
@@ -151,7 +174,7 @@ describe("confirmTransfer", () => {
     const result = confirm("2550");
     await expect(result).rejects.toThrow(/^REDIRECT:\/transfers\/success\/[0-9a-f-]{36}$/);
 
-    const sender = await db.account.findUniqueOrThrow({ where: { userId: current.user.id } });
+    const sender = await db.account.findUniqueOrThrow({ where: { id: senderAccountId } });
     expect(sender.balanceCents).toBe(7450);
   });
 
@@ -162,7 +185,7 @@ describe("confirmTransfer", () => {
   ])("rejects %j with a message and moves no money", async (amountCents, error) => {
     expect(await confirm(amountCents)).toEqual({ error });
 
-    const sender = await db.account.findUniqueOrThrow({ where: { userId: current.user.id } });
+    const sender = await db.account.findUniqueOrThrow({ where: { id: senderAccountId } });
     expect(sender.balanceCents).toBe(10000);
   });
 
@@ -172,16 +195,27 @@ describe("confirmTransfer", () => {
     const second = await confirm("100", key.toUpperCase()).catch((error: Error) => error.message);
 
     expect(second).toBe(first);
-    const sender = await db.account.findUniqueOrThrow({ where: { userId: current.user.id } });
+    const sender = await db.account.findUniqueOrThrow({ where: { id: senderAccountId } });
     expect(sender.balanceCents).toBe(9900);
   });
 
   it("says the recipient is no longer available when their account is gone", async () => {
-    await db.account.delete({ where: { userId: recipientId } });
+    await db.account.delete({ where: { id: recipientAccountId } });
 
     expect(await confirm("100")).toEqual({
       error: "Este destinatario ya no está disponible.",
     });
+  });
+
+  it("says the sender has no account in the recipient's currency", async () => {
+    const usd = await openAccount(recipientUserId, "USD", "recipient.actions.test.usd");
+
+    expect(
+      await confirmTransfer(
+        undefined,
+        form({ recipientAccountId: usd.id, amountCents: "100", idempotencyKey: randomUUID() }),
+      ),
+    ).toEqual({ error: "No tenés una cuenta en esa moneda." });
   });
 
   it("rejects a missing idempotency key", async () => {
@@ -203,16 +237,18 @@ describe("confirmTransfer", () => {
 
 describe("toggleFavorite", () => {
   it("marks and unmarks a contact as favorite", async () => {
-    await db.contact.create({ data: { ownerId: current.user.id, contactId: recipientId } });
+    await db.contact.create({
+      data: { ownerId: current.user.id, contactAccountId: recipientAccountId },
+    });
 
     const favorite = async () =>
       (await db.contact.findFirstOrThrow({ where: { ownerId: current.user.id } }))
         .favorite;
 
-    await toggleFavorite(form({ contactUserId: recipientId, favorite: "true" }));
+    await toggleFavorite(form({ contactAccountId: recipientAccountId, favorite: "true" }));
     expect(await favorite()).toBe(true);
 
-    await toggleFavorite(form({ contactUserId: recipientId, favorite: "false" }));
+    await toggleFavorite(form({ contactAccountId: recipientAccountId, favorite: "false" }));
     expect(await favorite()).toBe(false);
   });
 
@@ -220,7 +256,7 @@ describe("toggleFavorite", () => {
     const spy = vi.spyOn(db.contact, "updateMany").mockRejectedValueOnce(new Error("down"));
     vi.spyOn(console, "error").mockImplementationOnce(() => {});
 
-    expect(await toggleFavorite(form({ contactUserId: recipientId, favorite: "true" }))).toEqual({
+    expect(await toggleFavorite(form({ contactAccountId: recipientAccountId, favorite: "true" }))).toEqual({
       ok: false,
     });
     spy.mockRestore();

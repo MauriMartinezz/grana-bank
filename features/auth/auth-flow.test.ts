@@ -54,7 +54,8 @@ beforeAll(async () => {
   const user = await db.user.create({
     data: {
       email: EMAIL,
-      name: "Owner",
+      firstName: "Owner",
+      lastName: "Flow",
       passwordHash: await hashPassword(PASSWORD),
     },
   });
@@ -202,7 +203,13 @@ describe("getCurrentUser", () => {
     await expect(signIn()).rejects.toThrow("REDIRECT:");
 
     const user = await getCurrentUser();
-    expect(user).toMatchObject({ id: userId, email: EMAIL });
+    expect(user).toMatchObject({
+      id: userId,
+      email: EMAIL,
+      firstName: "Owner",
+      lastName: "Flow",
+      name: "Owner Flow",
+    });
     expect(user).not.toHaveProperty("passwordHash");
   });
 

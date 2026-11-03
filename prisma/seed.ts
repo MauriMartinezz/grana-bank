@@ -20,23 +20,60 @@ const movements: Array<[MovementType, string, number, string]> = [
   [SUBSCRIPTION, "Netflix", 1999, "2026-10-05T07:00:00Z"],
 ];
 
-/** Accounts that exist only to receive transfers in the demo. */
-const recipients = [
+type SeedAccount = {
+  currency: "ARS" | "USD";
+  alias: string;
+  balanceCents: number;
+  card?: { brand: "MASTERCARD" | "VISA"; last4: string; expiry: string };
+};
+
+/** People who exist to receive transfers in the demo. */
+const recipients: Array<{
+  email: string;
+  firstName: string;
+  lastName: string;
+  accounts: SeedAccount[];
+}> = [
   {
     email: "juanperez@clublanus.com",
-    name: "Juan Perez",
-    alias: "juan.perez",
-    cardLast4: "4821",
-    balanceCents: 25000,
+    firstName: "Juan",
+    lastName: "Perez",
+    accounts: [
+      {
+        currency: "ARS",
+        alias: "juan.perez",
+        balanceCents: 25000,
+        card: { brand: "VISA", last4: "4821", expiry: "08/29" },
+      },
+      // Lets the demo show a transfer in dollars.
+      { currency: "USD", alias: "juan.perez.usd", balanceCents: 0 },
+    ],
   },
   {
     email: "martinbozzini@clublanus.com",
-    name: "Martin Bozzini",
-    alias: "martin.bozzini",
-    cardLast4: "7390",
-    balanceCents: 18000,
+    firstName: "Martin",
+    lastName: "Bozzini",
+    accounts: [
+      {
+        currency: "ARS",
+        alias: "martin.bozzini",
+        balanceCents: 18000,
+        card: { brand: "VISA", last4: "7390", expiry: "08/29" },
+      },
+    ],
   },
 ];
+
+function accountData({ currency, alias, balanceCents, card }: SeedAccount, holder: string) {
+  return {
+    currency,
+    alias,
+    balanceCents,
+    cards: card && {
+      create: { brand: card.brand, last4: card.last4, holder, expiry: card.expiry },
+    },
+  };
+}
 
 async function main() {
   // Read from the environment so the password never lives in the repository.
@@ -52,8 +89,8 @@ async function main() {
   });
   const prisma = new PrismaClient({ adapter });
 
-  // Deleting the users cascades to their accounts, movements, transfers and
-  // contacts, so running the seed twice leaves the same data.
+  // Deleting the users cascades to their accounts, cards, movements,
+  // transfers, exchanges and contacts, so running the seed twice leaves the same data.
   const email = "soygranate@clublanus.com";
   await prisma.user.deleteMany({
     where: { email: { in: [email, ...recipients.map((r) => r.email)] } },
@@ -64,57 +101,69 @@ async function main() {
   const passwordHash = await hashPassword(password);
 
   const created = await Promise.all(
-    recipients.map(({ email, name, alias, cardLast4, balanceCents }) =>
+    recipients.map(({ email, firstName, lastName, accounts }) =>
       prisma.user.create({
         data: {
           email,
-          name,
+          firstName,
+          lastName,
           passwordHash,
-          account: {
-            create: {
-              alias,
-              currency: "USD",
-              balanceCents,
-              cardBrand: "VISA",
-              cardLast4,
-              cardHolder: name,
-              cardExpiry: "08/29",
-            },
-          },
-        },
-      }),
-    ),
-  );
-
-  await prisma.user.create({
-    data: {
-      email,
-      name: "Granate",
-      passwordHash,
-      // Only the first recipient starts as a contact; the second one shows
-      // the "new recipient" flow.
-      contacts: { create: { contactId: created[0].id } },
-      account: {
-        create: {
-          alias: "soy.granate",
-          currency: "USD",
-          balanceCents: 97885,
-          cardBrand: "MASTERCARD",
-          cardLast4: "1234",
-          cardHolder: "Soy Granate",
-          cardExpiry: "02/30",
-          movements: {
-            create: movements.map(
-              ([type, counterparty, amountCents, occurredAt], index) => ({
-                type,
-                counterparty,
-                amountCents,
-                reference: `GB-${String(100001 + index)}`,
-                occurredAt: new Date(occurredAt),
-              }),
+          accounts: {
+            create: accounts.map((account) =>
+              accountData(account, `${firstName} ${lastName}`),
             ),
           },
         },
+        include: { accounts: true },
+      }),
+    ),
+  );
+  const juanPesos = created[0].accounts.find((a) => a.currency === "ARS")!;
+
+  const holder = "Soy Granate";
+  await prisma.user.create({
+    data: {
+      email,
+      firstName: "Soy",
+      lastName: "Granate",
+      passwordHash,
+      // Only Juan's peso account starts as a contact; Martin shows the
+      // "new recipient" flow.
+      contacts: { create: { contactAccountId: juanPesos.id } },
+      accounts: {
+        create: [
+          {
+            ...accountData(
+              {
+                currency: "ARS",
+                alias: "soy.granate",
+                balanceCents: 97885,
+                card: { brand: "MASTERCARD", last4: "1234", expiry: "02/30" },
+              },
+              holder,
+            ),
+            movements: {
+              create: movements.map(
+                ([type, counterparty, amountCents, occurredAt], index) => ({
+                  type,
+                  counterparty,
+                  amountCents,
+                  reference: `GB-${String(100001 + index)}`,
+                  occurredAt: new Date(occurredAt),
+                }),
+              ),
+            },
+          },
+          accountData(
+            {
+              currency: "USD",
+              alias: "soy.granate.usd",
+              balanceCents: 25000,
+              card: { brand: "VISA", last4: "5678", expiry: "11/29" },
+            },
+            holder,
+          ),
+        ],
       },
     },
   });

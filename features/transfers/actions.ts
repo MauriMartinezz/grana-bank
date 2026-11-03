@@ -27,6 +27,7 @@ const TRANSFER_ERRORS: Record<TransferError, string> = {
   INSUFFICIENT_FUNDS: "No tenés saldo suficiente para esta transferencia.",
   RECIPIENT_NOT_FOUND: "Este destinatario ya no está disponible.",
   SELF_TRANSFER: "No podés transferirte a vos mismo.",
+  CURRENCY_MISMATCH: "No tenés una cuenta en esa moneda.",
   IDEMPOTENCY_MISMATCH: "La operación expiró. Volvé a intentarlo.",
 };
 
@@ -56,11 +57,11 @@ const LOOKUPS = {
 
 export async function toggleFavorite(formData: FormData): Promise<{ ok: boolean }> {
   const user = await getCurrentUser();
-  const contactUserId = String(formData.get("contactUserId") ?? "");
+  const contactAccountId = String(formData.get("contactAccountId") ?? "");
   const favorite = formData.get("favorite") === "true";
 
   try {
-    await setFavorite(user.id, contactUserId, favorite);
+    await setFavorite(user.id, contactAccountId, favorite);
   } catch (error) {
     console.error("Favorite update failed", error);
     return { ok: false };
@@ -99,7 +100,7 @@ export async function lookupRecipient(
     };
   }
 
-  redirect(`/transfers/to/${result.recipient.userId}`);
+  redirect(`/transfers/to/${result.recipient.accountId}`);
 }
 
 export async function reviewAmount(
@@ -107,7 +108,7 @@ export async function reviewAmount(
   formData: FormData,
 ): Promise<FieldState> {
   const user = await getCurrentUser();
-  const recipientId = String(formData.get("recipientId") ?? "");
+  const recipientAccountId = String(formData.get("recipientAccountId") ?? "");
   const value = String(formData.get("amount") ?? "");
 
   if (!value.trim()) return { value, error: "Ingresá un monto." };
@@ -117,15 +118,17 @@ export async function reviewAmount(
   }
 
   try {
-    const [account, recipient] = await Promise.all([
-      getAccount(user.id),
-      getRecipient(user.id, recipientId),
-    ]);
+    const recipient = await getRecipient(user.id, recipientAccountId);
     if (!recipient) {
-      return { value, error: "Este destinatario ya no está disponible." };
+      return { value, error: TRANSFER_ERRORS.RECIPIENT_NOT_FOUND };
+    }
+    // The money leaves the sender's account in the recipient's currency.
+    const account = await getAccount(user.id, recipient.currency);
+    if (!account) {
+      return { value, error: TRANSFER_ERRORS.CURRENCY_MISMATCH };
     }
     // Checked again when the transfer runs; this only spares a wasted step.
-    if (account && account.balanceCents < amountCents) {
+    if (account.balanceCents < amountCents) {
       return {
         value,
         error: `No tenés saldo suficiente. Disponible: ${formatMoney(account.balanceCents, account.currency)}`,
@@ -140,7 +143,7 @@ export async function reviewAmount(
   // confirmation screen, or retrying after an error, reuses it and can never
   // charge twice.
   redirect(
-    `/transfers/to/${recipientId}/confirm?amount=${amountCents}&key=${randomUUID()}`,
+    `/transfers/to/${recipientAccountId}/confirm?amount=${amountCents}&key=${randomUUID()}`,
   );
 }
 
@@ -149,7 +152,7 @@ export async function confirmTransfer(
   formData: FormData,
 ): Promise<ConfirmState> {
   const user = await getCurrentUser();
-  const recipientId = String(formData.get("recipientId") ?? "");
+  const recipientAccountId = String(formData.get("recipientAccountId") ?? "");
   const rawAmount = String(formData.get("amountCents") ?? "");
   // Lower case, so the same key in another case is the same transfer.
   const idempotencyKey = String(formData.get("idempotencyKey") ?? "").toLowerCase();
@@ -165,7 +168,7 @@ export async function confirmTransfer(
   try {
     result = await transfer({
       senderId: user.id,
-      recipientId,
+      recipientAccountId,
       amountCents: Number(rawAmount),
       idempotencyKey,
     });

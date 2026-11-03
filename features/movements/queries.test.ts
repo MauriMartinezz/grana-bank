@@ -13,16 +13,13 @@ function createUser(email: string, reference: string, counterparty: string) {
   return db.user.create({
     data: {
       email,
-      name: "Test",
+      firstName: "Test",
+      lastName: "",
       passwordHash: "!",
-      account: {
+      accounts: {
         create: {
           balanceCents: 0,
           alias: email.replace("@", "."),
-          cardBrand: "VISA",
-          cardLast4: "0000",
-          cardHolder: "Test",
-          cardExpiry: "01/30",
           movements: {
             create: [
               {
@@ -44,7 +41,7 @@ function createUser(email: string, reference: string, counterparty: string) {
         },
       },
     },
-    include: { account: { include: { movements: true } } },
+    include: { accounts: { include: { movements: true } } },
   });
 }
 
@@ -59,7 +56,7 @@ beforeAll(async () => {
   ownerId = (await createUser(OWNER_EMAIL, "TEST-OWNER", "Juan Perez")).id;
   const other = await createUser(OTHER_EMAIL, "TEST-OTHER", "Solo Otro");
   otherId = other.id;
-  otherMovementId = other.account!.movements[0].id;
+  otherMovementId = other.accounts[0].movements[0].id;
 });
 
 afterAll(cleanUp);
@@ -111,6 +108,38 @@ describe("listMovements", () => {
       1,
     );
     expect(movements).toHaveLength(1);
+  });
+});
+
+describe("listMovements with two accounts", () => {
+  it("returns the movements of every account of the user, with each currency", async () => {
+    const usd = await db.account.create({
+      data: {
+        userId: ownerId,
+        currency: "USD",
+        alias: "owner.queries.test.usd",
+        balanceCents: 0,
+        movements: {
+          create: {
+            type: "RECEIVED",
+            counterparty: "Dolar Amigo",
+            amountCents: 300,
+            reference: "TEST-OWNER-USD-1",
+            occurredAt: new Date("2026-03-01T00:00:00Z"),
+          },
+        },
+      },
+    });
+    try {
+      const movements = await listMovements(ownerId);
+      expect(movements.map((m) => [m.reference, m.account.currency])).toEqual([
+        ["TEST-OWNER-USD-1", "USD"],
+        ["TEST-OWNER-2", "ARS"],
+        ["TEST-OWNER-1", "ARS"],
+      ]);
+    } finally {
+      await db.account.delete({ where: { id: usd.id } });
+    }
   });
 });
 

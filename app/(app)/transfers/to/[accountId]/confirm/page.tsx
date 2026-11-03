@@ -16,9 +16,9 @@ export const metadata: Metadata = { title: "Confirmar transferencia" };
 export default async function ConfirmTransferPage({
   params,
   searchParams,
-}: PageProps<"/transfers/to/[userId]/confirm">) {
-  const [{ userId }, { amount, key }] = await Promise.all([params, searchParams]);
-  const confirmation = readConfirmation(userId, amount, key);
+}: PageProps<"/transfers/to/[accountId]/confirm">) {
+  const [{ accountId }, { amount, key }] = await Promise.all([params, searchParams]);
+  const confirmation = readConfirmation(accountId, amount, key);
   if ("redirectTo" in confirmation) redirect(confirmation.redirectTo);
   const { amountCents, idempotencyKey } = confirmation;
 
@@ -28,19 +28,18 @@ export default async function ConfirmTransferPage({
   const done = await findSentMovementByKey(user.id, idempotencyKey);
   if (done) redirect(`/transfers/success/${done}`);
 
-  const [recipient, account] = await Promise.all([
-    getRecipient(user.id, userId),
-    getAccount(user.id),
-  ]);
+  const recipient = await getRecipient(user.id, accountId);
   if (!recipient) notFound();
-  if (!account) throw new Error(`User ${user.id} has no account.`);
+  // Without an account in this currency, the amount step explains why.
+  const account = await getAccount(user.id, recipient.currency);
+  if (!account) redirect(`/transfers/to/${accountId}`);
 
   const remaining = account.balanceCents - amountCents;
 
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref={`/transfers/to/${userId}`} />
+        <BackButton fallbackHref={`/transfers/to/${accountId}`} />
         <h1 className="font-serif text-2xl font-bold">Revisá la transferencia</h1>
       </header>
 
@@ -73,12 +72,12 @@ export default async function ConfirmTransferPage({
 
       <div className="mt-8 space-y-3">
         <ConfirmForm
-          recipientId={recipient.userId}
+          recipientAccountId={recipient.accountId}
           amountCents={amountCents}
           idempotencyKey={idempotencyKey}
         />
         <Link
-          href={`/transfers/to/${userId}`}
+          href={`/transfers/to/${accountId}`}
           className="flex min-h-12 items-center justify-center font-serif text-sm text-garnet"
         >
           Modificar monto

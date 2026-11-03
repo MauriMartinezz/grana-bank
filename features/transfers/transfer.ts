@@ -1,3 +1,4 @@
+import { fullName } from "@/features/account/name";
 import { db } from "@/lib/db";
 import { MAX_TRANSFER_CENTS } from "./amount";
 
@@ -6,6 +7,7 @@ export type TransferError =
   | "INSUFFICIENT_FUNDS"
   | "RECIPIENT_NOT_FOUND"
   | "SELF_TRANSFER"
+  | "CURRENCY_MISMATCH"
   | "IDEMPOTENCY_MISMATCH";
 
 export type TransferResult =
@@ -14,7 +16,8 @@ export type TransferResult =
 
 export type TransferRequest = {
   senderId: string;
-  recipientId: string;
+  /** The money leaves the sender's account in this account's currency. */
+  recipientAccountId: string;
   amountCents: number;
   /**
    * Same key, same transfer: a repeated request returns the first result,
@@ -30,16 +33,18 @@ function referenceFor(transferNumber: number) {
 }
 
 /**
- * Moves money between two users' accounts in one database transaction.
+ * Moves money between two accounts of the same currency in one database
+ * transaction. The sender pays from their account in the recipient
+ * account's currency.
  *
- * Both account rows are locked in id order before anything is read, so
+ * Both account rows are locked in id order before any balance is read, so
  * concurrent transfers from the same account run one after another (the
  * balance check always sees the latest balance) and two users sending to
  * each other cannot deadlock.
  */
 export async function transfer({
   senderId,
-  recipientId,
+  recipientAccountId,
   amountCents,
   idempotencyKey,
 }: TransferRequest): Promise<TransferResult> {
@@ -50,22 +55,34 @@ export async function transfer({
   ) {
     return { ok: false, error: "INVALID_AMOUNT" };
   }
-  if (senderId === recipientId) {
-    return { ok: false, error: "SELF_TRANSFER" };
-  }
 
   return db.$transaction(async (tx) => {
+    // Owner and currency never change, so reading them before the lock is
+    // safe; the balance is only read under the lock below.
+    const target = await tx.account.findUnique({
+      where: { id: recipientAccountId },
+      select: { userId: true, currency: true },
+    });
+    if (!target) {
+      return { ok: false, error: "RECIPIENT_NOT_FOUND" };
+    }
+    if (target.userId === senderId) {
+      return { ok: false, error: "SELF_TRANSFER" };
+    }
+
     const locked = await tx.$queryRaw<LockedAccount[]>`
       SELECT "id", "userId", "balanceCents" FROM "Account"
-      WHERE "userId" IN (${senderId}, ${recipientId})
+      WHERE "id" = ${recipientAccountId}
+        OR ("userId" = ${senderId} AND "currency" = ${target.currency}::"Currency")
       ORDER BY "id"
       FOR UPDATE`;
 
     const from = locked.find((account) => account.userId === senderId);
-    const to = locked.find((account) => account.userId === recipientId);
+    const to = locked.find((account) => account.id === recipientAccountId);
     if (!from) {
-      throw new Error(`User ${senderId} has no account.`);
+      return { ok: false, error: "CURRENCY_MISMATCH" };
     }
+    const recipientId = target.userId;
 
     // Checked after the lock, so a concurrent duplicate sees the first commit.
     const existing = await tx.transfer.findUnique({
@@ -95,9 +112,9 @@ export async function transfer({
 
     const users = await tx.user.findMany({
       where: { id: { in: [senderId, recipientId] } },
-      select: { id: true, name: true },
+      select: { id: true, firstName: true, lastName: true },
     });
-    const nameOf = (id: string) => users.find((user) => user.id === id)!.name;
+    const nameOf = (id: string) => fullName(users.find((user) => user.id === id)!);
 
     await tx.account.update({
       where: { id: from.id },
@@ -142,8 +159,10 @@ export async function transfer({
 
     // Keeps an existing contact as it is, including its favorite flag.
     await tx.contact.upsert({
-      where: { ownerId_contactId: { ownerId: senderId, contactId: recipientId } },
-      create: { ownerId: senderId, contactId: recipientId },
+      where: {
+        ownerId_contactAccountId: { ownerId: senderId, contactAccountId: to.id },
+      },
+      create: { ownerId: senderId, contactAccountId: to.id },
       update: {},
     });
 

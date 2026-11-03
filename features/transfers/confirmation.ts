@@ -15,18 +15,18 @@ type SearchParam = string | string[] | undefined;
  * in the URL, so every render of one confirmation uses the same key.
  */
 export function readConfirmation(
-  recipientId: string,
+  recipientAccountId: string,
   amount: SearchParam,
   key: SearchParam,
   newKey: () => string = randomUUID,
 ): { amountCents: number; idempotencyKey: string } | { redirectTo: string } {
   const cents = typeof amount === "string" && /^\d{1,12}$/.test(amount) ? Number(amount) : 0;
   if (cents <= 0 || cents > MAX_TRANSFER_CENTS) {
-    return { redirectTo: `/transfers/to/${recipientId}` };
+    return { redirectTo: `/transfers/to/${recipientAccountId}` };
   }
   if (typeof key !== "string" || !isIdempotencyKey(key)) {
     return {
-      redirectTo: `/transfers/to/${recipientId}/confirm?amount=${cents}&key=${newKey()}`,
+      redirectTo: `/transfers/to/${recipientAccountId}/confirm?amount=${cents}&key=${newKey()}`,
     };
   }
   return { amountCents: cents, idempotencyKey: key.toLowerCase() };

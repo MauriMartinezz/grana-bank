@@ -17,11 +17,11 @@ function SubmitButton() {
 }
 
 export function ConfirmForm({
-  recipientId,
+  recipientAccountId,
   amountCents,
   idempotencyKey,
 }: {
-  recipientId: string;
+  recipientAccountId: string;
   amountCents: number;
   idempotencyKey: string;
 }) {
@@ -29,7 +29,7 @@ export function ConfirmForm({
 
   return (
     <form action={action}>
-      <input type="hidden" name="recipientId" value={recipientId} />
+      <input type="hidden" name="recipientAccountId" value={recipientAccountId} />
       <input type="hidden" name="amountCents" value={amountCents} />
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
       {state?.error && (
