@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 import { COMPANY_INFO, type ServiceCompany } from "./companies";
 import { scheduledRun } from "./schedule";
 
+/** The key of the default category every service payment is filed under. */
+const SERVICES_CATEGORY_KEY = "servicios";
+
 export type PayBillError =
   | "BILL_NOT_FOUND"
   | "ALREADY_PAID"
@@ -170,10 +173,17 @@ export async function payBill({
       // A paid bill carries no failure of an earlier scheduled attempt.
       data: { status: "PAID", paidAt: payment.createdAt, failedAt: null, failureReason: null },
     });
+    // Filed under the user's Servicios category, editable later; none when
+    // the user renamed or deleted it.
+    const servicios = await tx.category.findUnique({
+      where: { userId_key: { userId, key: SERVICES_CATEGORY_KEY } },
+      select: { id: true },
+    });
     const movement = await tx.movement.create({
       data: {
         accountId,
         cardId,
+        categoryId: servicios?.id ?? null,
         servicePaymentId: payment.id,
         type: "SERVICE_PAYMENT",
         counterparty: counterpartyFor(bill.adhesion.company, bill.adhesion.nickname),

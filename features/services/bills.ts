@@ -5,7 +5,7 @@
  * always shows the same bills. Relative imports only: the seed uses it too.
  */
 import { createHash } from "node:crypto";
-import type { ServiceCompany } from "./companies";
+import { COMPANY_INFO, type ServiceCompany } from "./companies";
 import { buenosAiresDate } from "./due-date";
 
 const MONTHS = [
@@ -23,9 +23,8 @@ const MONTHS = [
   "Diciembre",
 ];
 
-/** Whole pesos from $8.000 to $60.000. */
-const MIN_PESOS = 8_000;
-const MAX_PESOS = 60_000;
+/** Whole units of the company's currency: $8.000 to $60.000, or USD 40 to 250. */
+const AMOUNT_RANGE = { ARS: { min: 8_000, max: 60_000 }, USD: { min: 40, max: 250 } } as const;
 /** Due between the 10th and the 20th of the billed month. */
 const FIRST_DUE_DAY = 10;
 const LAST_DUE_DAY = 20;
@@ -33,7 +32,7 @@ const LAST_DUE_DAY = 20;
 export type SimulatedBill = {
   period: string;
   amountCents: bigint;
-  currency: "ARS";
+  currency: "ARS" | "USD";
   dueDate: Date;
 };
 
@@ -44,12 +43,14 @@ export function periodLabel(year: number, month: number) {
 
 function billFor(company: ServiceCompany, paymentNumber: string, year: number, month: number) {
   const hash = createHash("sha256").update(`${company}:${paymentNumber}:${year}-${month}`).digest();
-  const pesos = MIN_PESOS + (hash.readUInt32BE(0) % (MAX_PESOS - MIN_PESOS + 1));
+  const { currency } = COMPANY_INFO[company];
+  const { min, max } = AMOUNT_RANGE[currency];
+  const units = min + (hash.readUInt32BE(0) % (max - min + 1));
   const day = FIRST_DUE_DAY + (hash.readUInt32BE(4) % (LAST_DUE_DAY - FIRST_DUE_DAY + 1));
   return {
     period: periodLabel(year, month),
-    amountCents: BigInt(pesos) * BigInt(100),
-    currency: "ARS" as const,
+    amountCents: BigInt(units) * BigInt(100),
+    currency,
     dueDate: new Date(Date.UTC(year, month - 1, day)),
   };
 }

@@ -9,14 +9,35 @@ import {
 } from "./companies";
 
 describe("service companies", () => {
-  it("lists AySA, Edesur, Edenor and Metrogas with their simulated number lengths", () => {
-    expect(SERVICE_COMPANIES).toEqual(["AYSA", "EDESUR", "EDENOR", "METROGAS"]);
+  it("lists the peso companies and the dollar ones with their simulated number lengths", () => {
+    expect(SERVICE_COMPANIES).toEqual([
+      "AYSA",
+      "EDESUR",
+      "EDENOR",
+      "METROGAS",
+      "SALUD_PLENA",
+      "AUSTRAL_SEGUROS",
+    ]);
     expect(COMPANY_INFO).toEqual({
-      AYSA: { name: "AySA", service: "Agua", numberLength: 10 },
-      EDESUR: { name: "Edesur", service: "Luz", numberLength: 10 },
-      EDENOR: { name: "Edenor", service: "Luz", numberLength: 12 },
-      METROGAS: { name: "Metrogas", service: "Gas", numberLength: 11 },
+      AYSA: { name: "AySA", service: "Agua", numberLength: 10, currency: "ARS" },
+      EDESUR: { name: "Edesur", service: "Luz", numberLength: 10, currency: "ARS" },
+      EDENOR: { name: "Edenor", service: "Luz", numberLength: 12, currency: "ARS" },
+      METROGAS: { name: "Metrogas", service: "Gas", numberLength: 11, currency: "ARS" },
+      SALUD_PLENA: { name: "Salud Plena", service: "Prepaga", numberLength: 8, currency: "USD" },
+      AUSTRAL_SEGUROS: {
+        name: "Austral Seguros",
+        service: "Seguro",
+        numberLength: 9,
+        currency: "USD",
+      },
     });
+  });
+
+  it("checks the dollar companies' number lengths", () => {
+    expect(normalizePaymentNumber("SALUD_PLENA", "1234 5678")).toBe("12345678");
+    expect(normalizePaymentNumber("SALUD_PLENA", "123456789")).toBeNull();
+    expect(normalizePaymentNumber("AUSTRAL_SEGUROS", "123-456-789")).toBe("123456789");
+    expect(normalizePaymentNumber("AUSTRAL_SEGUROS", "12345678")).toBeNull();
   });
 
   it.each([

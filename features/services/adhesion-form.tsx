@@ -55,7 +55,10 @@ export function AdhesionForm() {
                 className="sr-only"
               />
               {COMPANY_INFO[option].name}
-              <span className="text-xs opacity-80">{COMPANY_INFO[option].service}</span>
+              <span className="text-xs opacity-80">
+                {COMPANY_INFO[option].service}
+                {COMPANY_INFO[option].currency === "USD" && " · en dólares"}
+              </span>
             </label>
           ))}
         </div>

@@ -132,3 +132,25 @@ describe("orderBills", () => {
     ]);
   });
 });
+
+describe("dollar bills", () => {
+  it("bills a dollar company in USD, from 40 to 250 dollars", () => {
+    for (const [company, number] of [
+      ["SALUD_PLENA", "12345678"],
+      ["AUSTRAL_SEGUROS", "123456789"],
+    ] as const) {
+      for (let month = 1; month <= 12; month++) {
+        for (const bill of simulatedBills(company, number, new Date(Date.UTC(2026, month - 1, 15, 15)))) {
+          expect(bill.currency).toBe("USD");
+          expect(bill.amountCents % BigInt(100)).toBe(BigInt(0));
+          expect(bill.amountCents >= BigInt(4_000) && bill.amountCents <= BigInt(25_000)).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("keeps billing the peso companies in pesos", () => {
+    const [bill] = simulatedBills("EDESUR", "0012345678", new Date("2026-11-03T15:00:00Z"));
+    expect(bill.currency).toBe("ARS");
+  });
+});

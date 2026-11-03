@@ -4,23 +4,40 @@
  */
 import { NICKNAME_MAX_LENGTH, normalizeNickname } from "@/features/top-ups/validation";
 
-export type ServiceCompany = "AYSA" | "EDESUR" | "EDENOR" | "METROGAS";
+export type ServiceCompany =
+  | "AYSA"
+  | "EDESUR"
+  | "EDENOR"
+  | "METROGAS"
+  | "SALUD_PLENA"
+  | "AUSTRAL_SEGUROS";
 
-export const SERVICE_COMPANIES: readonly ServiceCompany[] = ["AYSA", "EDESUR", "EDENOR", "METROGAS"];
+export const SERVICE_COMPANIES: readonly ServiceCompany[] = [
+  "AYSA",
+  "EDESUR",
+  "EDENOR",
+  "METROGAS",
+  "SALUD_PLENA",
+  "AUSTRAL_SEGUROS",
+];
 
 /**
  * The electronic payment number lengths are simulated: plausible fixed
  * lengths, not the companies' real formats. A database CHECK keeps the same
- * lengths.
+ * lengths. A company bills in one currency, and its bills are paid from a
+ * card of that currency. The dollar companies are fictional, so no real
+ * company is shown billing in dollars.
  */
 export const COMPANY_INFO: Record<
   ServiceCompany,
-  { name: string; service: string; numberLength: number }
+  { name: string; service: string; numberLength: number; currency: "ARS" | "USD" }
 > = {
-  AYSA: { name: "AySA", service: "Agua", numberLength: 10 },
-  EDESUR: { name: "Edesur", service: "Luz", numberLength: 10 },
-  EDENOR: { name: "Edenor", service: "Luz", numberLength: 12 },
-  METROGAS: { name: "Metrogas", service: "Gas", numberLength: 11 },
+  AYSA: { name: "AySA", service: "Agua", numberLength: 10, currency: "ARS" },
+  EDESUR: { name: "Edesur", service: "Luz", numberLength: 10, currency: "ARS" },
+  EDENOR: { name: "Edenor", service: "Luz", numberLength: 12, currency: "ARS" },
+  METROGAS: { name: "Metrogas", service: "Gas", numberLength: 11, currency: "ARS" },
+  SALUD_PLENA: { name: "Salud Plena", service: "Prepaga", numberLength: 8, currency: "USD" },
+  AUSTRAL_SEGUROS: { name: "Austral Seguros", service: "Seguro", numberLength: 9, currency: "USD" },
 };
 
 export { NICKNAME_MAX_LENGTH };
