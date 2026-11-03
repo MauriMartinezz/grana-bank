@@ -37,9 +37,13 @@ export function validateCategoryName(
   return { ok: true, name, key: categoryKey(name) };
 }
 
-/** A note with its outer spaces trimmed, or null when it is empty. */
+/**
+ * A note with its outer spaces trimmed and its line breaks as `\n`, or null
+ * when it is empty. A form submission sends a textarea's breaks as CRLF, which
+ * would count twice against the limit the form's counter shows.
+ */
 export function normalizeNote(input: string): string | null {
-  const note = input.trim();
+  const note = input.replace(/\r\n?/g, "\n").trim();
   return note === "" ? null : note;
 }
 

@@ -48,6 +48,16 @@ describe("validateNote", () => {
   });
 });
 
+describe("normalizeNote", () => {
+  it("counts a submitted line break once, as the form's counter does", () => {
+    // A form submission turns every line break of a textarea into CRLF.
+    const typed = `${"a".repeat(69)}\n${"b".repeat(70)}`;
+    const submitted = typed.replace(/\n/g, "\r\n");
+
+    expect(validateNote(submitted)).toEqual({ ok: true, note: typed });
+  });
+});
+
 describe("defaultCategoryRows", () => {
   it("suggests Alquiler, Comida, Servicios, Regalos and Otros", () => {
     expect(defaultCategoryRows()).toEqual([
