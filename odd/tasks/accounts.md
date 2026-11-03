@@ -12,16 +12,18 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - S5. From cards.md: "deben poder añadirse más tarjetas, a la hora de crear el formulario para dar de alta una tarjeta, debe validarse si es Visa, Master o American Express, no es necesario conectarse a una API o algo por el estilo pero algo básico para mostrar como pensamos el producto". Local validation: prefix, length, Luhn, expiry not in the past, CVV length per brand. Only brand, last 4 digits, holder and expiry are stored; the full number and CVV never are.
 - S6. Assumptions for Perfil: changing the email (the login identifier) requires the current password; address and phone are optional; the default photo is an avatar with initials; "Moneda preferida" picks the account shown first on Home and used by email transfers. Perfil is a bottom-navigation destination.
 - S7. Assumption: a USD account is opened from the dollar screen ("Abrir cuenta en dólares"); the seed gives the main user both accounts.
+- S9. "en la pantalla de perfil hay que hacer unos cambios: no pueden aparecer todos los formularios abiertos, por ejemplo, el alias debe decir el alias y luego un botón o tab para modificarlo, lo mismo el mail o si quiero cambiar la contraseña, recién ahí se me debe renviar a una pantalla con los inputs necesarios". Assumptions: changing the password needs the current one, the new one has at least 8 characters and is typed twice, and other sessions are closed.
 - S8. Existing stored money is never relabeled: the migration keeps each account's stored currency; only the default changes to ARS.
 
 ## Tasks
 
 - [x] T1 (S1, S3, S5, S8) delegated: schema migration (Currency enum, accounts per user and currency, Card model from the account card columns, contacts point at accounts, first and last name, profile fields, EXCHANGE movement type), seed, existing queries and tests adapted.
-- [ ] T2 (S2) parallel: ARS/USD money formatting and every screen using the account currency.
-- [ ] T3 (S3, S6) parallel: Home account switcher by preferred currency; transfers restricted to the same currency.
-- [ ] T4 (S4, S7) parallel: atomic dollar buy/sell service and screen, USD account opening.
-- [ ] T5 (S5) parallel: cards list and add-card form with brand validation.
-- [ ] T6 (S1, S6) parallel: Perfil screen and bottom navigation item.
+- [x] T2 (S2) parallel: ARS/USD money formatting and every screen using the account currency.
+- [x] T3 (S3, S6) parallel: Home account switcher by preferred currency; transfers restricted to the same currency.
+- [x] T4 (S4, S7) parallel: atomic dollar buy/sell service and screen, USD account opening.
+- [x] T5 (S5) parallel: cards list and add-card form with brand validation.
+- [x] T6 (S1, S6) parallel: Perfil screen and bottom navigation item.
+- [ ] T8 (S9) delegated: Perfil as a summary with one screen per change (personal data, email, alias, password).
 - [ ] T7 inline: README, seam check, browser checks.
 
 Route evidence: the parent context is past the long-session backstop, so units are delegated (context reason). T2–T6 depend on T1 and start after it, with disjoint edit surfaces. Risk: T1 item 1 (migration moves stored data) and T3/T4 item 4 (balance updates under locks): independent verifier after T1 and at the end.
@@ -33,3 +35,5 @@ Route evidence: the parent context is past the long-session backstop, so units a
 - L3 (2026-11-03, user): chose "1": the balance belongs to the account, and cards belong to an account.
 - L4 (2026-11-03): T1 by a delegated writer: RED 12 of 17 transfer tests, then GREEN; 178 tests, tsc, eslint and a scratch production build pass. Migration upgrade check in a throwaway database kept accounts, movements, transfers and users identical by md5, created 3 cards, split names, remapped contacts (a contact of a user without account is dropped) and left no drift. The dev database is migrated. Writer decisions: upgraded users keep `preferredCurrency` equal to their existing account currency; transfer route segment renamed to `to/[accountId]`; CURRENCY_MISMATCH reads "No tenés una cuenta en esa moneda.". Parent check: diff inside the allowed surfaces, 178 tests rerun.
 - L5 (2026-11-03, user): "el formato en toda la aplicación será el argentino, por más que sean dólares". Amount input now parses the Argentine format only: dots group thousands, a comma starts the decimals; "12.5" is rejected. Formatting shows `$5.000`, `USD$12,50` (61f9e20).
+- L6 (2026-11-03): Delegated units committed after a parent check of each diff against its surface and a rerun of its tests: T2 61f9e20 (inline), T3 a293110, T6 f4a69cf (with the proxy matcher), T5 c1743a2, T4 dfollowing commit. Independent verifier on T1 7889d63: no blockers; S1, S3, S5, S8 pass; balances and currencies identical after the upgrade, money conserved per currency under 20 parallel drains, authorization probes pass. 411 tests pass.
+- L7 (2026-11-03, user): "Bien, sin embargo, en la pantalla de perfil hay que hacer unos cambios: no pueden aparecer todos los formularios abiertos, por ejemplo, el alias debe decir el alias y luego un botón o tab para modificarlo, lo mismo el mail o si quiero cambiar la contraseña, recién ahí se me debe renviar a una pantalla con los inputs necesarios"
