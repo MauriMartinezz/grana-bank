@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { CardIcon, PlusIcon, ReceiptIcon, SwapIcon, TopUpIcon } from "@/components/icons";
+import { CardIcon, PlusIcon, ReceiptIcon, SwapIcon, TagIcon, TopUpIcon } from "@/components/icons";
 import { DollarIcon } from "@/features/exchange/icons";
 
-// Four per row; the fifth and sixth start a second row.
+// Four per row; the rest start a second row. Labels are one word, so each
+// stays on one centered line.
 // Ingresar dinero first: it funds every other operation in the demo.
 const ACTIONS = [
   { href: "/ingresar-dinero", label: "Ingresar", Icon: PlusIcon },
@@ -11,6 +12,7 @@ const ACTIONS = [
   { href: "/recargas", label: "Recargas", Icon: TopUpIcon },
   { href: "/tarjetas", label: "Tarjetas", Icon: CardIcon },
   { href: "/dolares", label: "Dólares", Icon: DollarIcon },
+  { href: "/promociones", label: "Promos", Icon: TagIcon },
 ];
 
 export function QuickActions() {
