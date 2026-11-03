@@ -14,7 +14,7 @@ vi.mock("@/features/auth/current-user", () => ({
   getCurrentUser: async () => current.user,
 }));
 
-const { cancelScheduledPayment, processMyScheduledPayments, saveAutoDebit, scheduleBillPayment } =
+const { cancelScheduledPayment, processMyScheduledPayments, saveAutoDebit, saveReminder, scheduleBillPayment } =
   await import("./actions");
 const { adhereService } = await import("./adhesions");
 
@@ -305,5 +305,37 @@ describe("processMyScheduledPayments", () => {
     expect(await processMyScheduledPayments()).toEqual({
       notice: "1 pago no se pudo hacer. Revisá el aviso en el servicio.",
     });
+  });
+});
+
+describe("saveReminder", () => {
+  it("sets the reminder days of the user's service, and turns it off", async () => {
+    expect(await saveReminder(undefined, form({ adhesionId: adhesion, reminderDays: "3" }))).toEqual({
+      notice: "Te vamos a avisar 3 días antes del vencimiento.",
+    });
+    expect(
+      (await db.serviceAdhesion.findUniqueOrThrow({ where: { id: adhesion } })).reminderDays,
+    ).toBe(3);
+    expect(await saveReminder(undefined, form({ adhesionId: adhesion, reminderDays: "0" }))).toEqual({
+      notice: "Te vamos a avisar el día del vencimiento.",
+    });
+    expect(await saveReminder(undefined, form({ adhesionId: adhesion, reminderDays: "" }))).toEqual({
+      notice: "Recordatorios desactivados.",
+    });
+    expect(
+      (await db.serviceAdhesion.findUniqueOrThrow({ where: { id: adhesion } })).reminderDays,
+    ).toBeNull();
+  });
+
+  it("rejects another choice and another user's service", async () => {
+    expect(await saveReminder(undefined, form({ adhesionId: adhesion, reminderDays: "5" }))).toEqual({
+      error: "Elegí cuándo avisarte.",
+    });
+    expect(
+      await saveReminder(undefined, form({ adhesionId: strangerAdhesion, reminderDays: "1" })),
+    ).toEqual({ error: "Este servicio ya no está disponible." });
+    expect(
+      (await db.serviceAdhesion.findUniqueOrThrow({ where: { id: strangerAdhesion } })).reminderDays,
+    ).toBeNull();
   });
 });

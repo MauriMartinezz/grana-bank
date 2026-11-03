@@ -5,6 +5,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { StateMessage } from "@/components/ui/state-message";
 import { getCurrentUser } from "@/features/auth/current-user";
 import { AutoDebitForm } from "@/features/services/auto-debit-form";
+import { ReminderForm } from "@/features/services/reminder-form";
 import { billAutomation } from "@/features/services/bill-automation";
 import { COMPANY_INFO } from "@/features/services/companies";
 import { dueLabel, formatDueDate } from "@/features/services/due-date";
@@ -40,6 +41,10 @@ export default async function AdhesionPage({ params }: PageProps<"/servicios/[ad
         <p className="mt-1 text-sm tracking-wide text-muted">
           N.º de pago electrónico {adhesion.paymentNumber}
         </p>
+      </section>
+
+      <section aria-label="Recordatorio" className="mt-4 rounded-2xl bg-surface p-5">
+        <ReminderForm adhesionId={adhesion.id} selected={adhesion.reminderDays} />
       </section>
 
       {payment && payment.cards.length > 0 && (

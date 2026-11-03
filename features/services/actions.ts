@@ -298,3 +298,37 @@ export async function processMyScheduledPayments(): Promise<NoticeState> {
   revalidateAccountScreens();
   return { notice: processNotice(summary) };
 }
+
+const REMINDER_DAYS = [0, 1, 3, 7] as const;
+
+function reminderNotice(days: number | null) {
+  if (days === null) return "Recordatorios desactivados.";
+  if (days === 0) return "Te vamos a avisar el día del vencimiento.";
+  return `Te vamos a avisar ${days === 1 ? "1 día" : `${days} días`} antes del vencimiento.`;
+}
+
+/**
+ * Sets when the bills of a service remind the user in Notificaciones: the
+ * same day, 1, 3 or 7 days before the due date, or never with an empty value.
+ */
+export async function saveReminder(_previous: NoticeState, formData: FormData): Promise<NoticeState> {
+  const user = await getCurrentUser();
+  const adhesionId = text(formData, "adhesionId");
+  const raw = text(formData, "reminderDays");
+  const days = raw === "" ? null : REMINDER_DAYS.find((value) => String(value) === raw);
+  if (days === undefined) return { error: "Elegí cuándo avisarte." };
+
+  try {
+    const { count } = await db.serviceAdhesion.updateMany({
+      where: { id: adhesionId, userId: user.id },
+      data: { reminderDays: days },
+    });
+    if (count === 0) return { error: "Este servicio ya no está disponible." };
+  } catch (error) {
+    console.error("Reminder change failed", error);
+    return { error: "No pudimos guardar el recordatorio. Probá de nuevo." };
+  }
+
+  revalidateAccountScreens();
+  return { notice: reminderNotice(days) };
+}
