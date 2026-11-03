@@ -19,6 +19,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - S13. "En la pantalla de Tarjetas, al hacer click en la tarjeta se podrán consultar movimiento realizados con esa tarjeta y ver los detalles de la misma (nombre, últimos números, cuando vence, lo que consideres)". Assumptions: `/cards/[cardId]` for the owner only; details are brand, last four digits, holder, expiry with an expired or expiring-soon note, its account (currency and alias) and the date it was added; below, the movements made with that card, with loading and empty states. Depends on T10 (card on each movement).
 - S14. "Los últimos movimientos serán agrupados por fecha y se podrá filtrar por fecha en la pantalla de todos los movimientos". Assumptions: movement lists (Home and Movimientos share the component) group rows under "Hoy", "Ayer" or the date, in Buenos Aires time; Movimientos adds date filters (Hoy, Últimos 7 días, Este mes, and a Desde/Hasta range) kept in the URL and combined with the search and type filters.
 - S15. Review slice 5 found that balances are 32-bit integer cents, so an account tops out at $21.474.836,47 and a credit past it fails with a generic error. User decision: "Cambialo a bigint". Balances and stored amounts become BIGINT (widening only, no stored value changes); per-operation limits stay as they are.
+- S16. "En la pantalla de transferencias preguntar si se desea guardar el contacto antes de guardarlo por defecto". Assumptions: the confirmation step offers an unchecked "Guardar a <nombre> en mis contactos" only when the recipient account is not a contact yet; the transfer saves the contact only when it is checked, in the same transaction; existing contacts and favorites are untouched.
 - S8. Existing stored money is never relabeled: the migration keeps each account's stored currency; only the default changes to ARS.
 
 ## Tasks
@@ -34,6 +35,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [ ] T10 (S12) delegated: card on each movement, Home latest 6 with Consultar todos.
 - [ ] T11 (S13) after T10: card detail with its movements.
 - [ ] T13 (S15) after T11: balances and amounts as BigInt end to end; Risk items 1 and 4.
+- [ ] T14 (S16) after T13: ask before saving a new contact.
 - [ ] T12 (S14) after T13: group movements by date and filter Movimientos by date.
 - [ ] T7 inline: README, seam check, browser checks.
 
@@ -61,3 +63,4 @@ Route evidence: the parent context is past the long-session backstop, so units a
 - L18 (2026-11-03, user): "Los últimos movimientos serán agrupados por fecha y se podrá filtrar por fecha en la pantalla de todos los movimientos"
 - L19 (2026-11-03): Review slice 5 (c1743a2..3985118) approved, lineage review-044090fe2fd93542. Its credit-overflow finding was taken to the user with two options (BigInt, or a clear error at the 32-bit limit).
 - L20 (2026-11-03, user): "Cambialo a bigint". Order: T11 (in progress) → T13 → T12, because all three touch movement queries.
+- L21 (2026-11-03, user): "En la pantalla de transferencias preguntar si se desea guardar el contacto antes de guardarlo por defecto". Queued after T13 (both touch the transfer service); T12 and T14 can then run in parallel.
