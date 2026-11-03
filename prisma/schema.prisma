@@ -15,6 +15,8 @@ enum MovementType {
   EXCHANGE
   /// A SUBE, phone or DirecTV top-up paid from a peso card.
   TOP_UP
+  /// A utility bill paid from a card of the bill's currency.
+  SERVICE_PAYMENT
 
   @@map("tipo_movimiento")
 }
@@ -65,25 +67,44 @@ enum TopUpProvider {
   @@map("proveedor_recarga")
 }
 
+/// A utility company whose bills can be paid with an electronic payment number.
+enum ServiceCompany {
+  AYSA
+  EDESUR
+  EDENOR
+  METROGAS
+
+  @@map("empresa_servicio")
+}
+
+enum ServiceBillStatus {
+  PENDING
+  PAID
+
+  @@map("estado_factura")
+}
+
 model User {
-  id                String     @id @default(uuid())
-  email             String     @unique
-  firstName         String     @map("nombre")
+  id                String            @id @default(uuid())
+  email             String            @unique
+  firstName         String            @map("nombre")
   /// Empty when the user only gave one name.
-  lastName          String     @map("apellido")
-  address           String?    @map("direccion")
-  phone             String?    @map("telefono")
+  lastName          String            @map("apellido")
+  address           String?           @map("direccion")
+  phone             String?           @map("telefono")
   /// The account shown first and used by email transfers.
-  preferredCurrency Currency   @default(ARS) @map("moneda_preferida")
+  preferredCurrency Currency          @default(ARS) @map("moneda_preferida")
   /// Salted scrypt hash, never the password itself.
-  passwordHash      String     @map("hash_contrasena")
+  passwordHash      String            @map("hash_contrasena")
   /// One per currency at most.
   accounts          Account[]
   sessions          Session[]
-  contacts          Contact[]  @relation("ContactOwner")
+  contacts          Contact[]         @relation("ContactOwner")
   exchanges         Exchange[]
   subeCards         SubeCard[]
   topUps            TopUp[]
+  serviceAdhesions  ServiceAdhesion[]
+  servicePayments   ServicePayment[]
 
   @@map("usuarios")
 }
@@ -115,24 +136,25 @@ model Session {
 }
 
 model Account {
-  id            String     @id @default(uuid())
-  userId        String     @map("usuario_id")
-  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String           @id @default(uuid())
+  userId          String           @map("usuario_id")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Transfer alias: lower case letters, digits and dots, 1 to 40 characters,
   /// at least one letter. A CHECK constraint enforces it.
-  alias         String     @unique
-  currency      Currency   @default(ARS) @map("moneda")
+  alias           String           @unique
+  currency        Currency         @default(ARS) @map("moneda")
   /// Integer cents as a 64-bit BIGINT, so amounts never go through floating
   /// point and a balance is not capped at 32 bits.
-  balanceCents  BigInt     @map("saldo_centavos")
-  cards         Card[]
-  movements     Movement[]
-  sent          Transfer[] @relation("TransferFrom")
-  received      Transfer[] @relation("TransferTo")
-  contactOf     Contact[]
-  exchangesFrom Exchange[] @relation("ExchangeFrom")
-  exchangesTo   Exchange[] @relation("ExchangeTo")
-  topUps        TopUp[]
+  balanceCents    BigInt           @map("saldo_centavos")
+  cards           Card[]
+  movements       Movement[]
+  sent            Transfer[]       @relation("TransferFrom")
+  received        Transfer[]       @relation("TransferTo")
+  contactOf       Contact[]
+  exchangesFrom   Exchange[]       @relation("ExchangeFrom")
+  exchangesTo     Exchange[]       @relation("ExchangeTo")
+  topUps          TopUp[]
+  servicePayments ServicePayment[]
 
   @@unique([userId, currency])
   @@map("cuentas")
@@ -141,18 +163,19 @@ model Account {
 /// A card linked to an account. Only what the card face shows is stored:
 /// never the full number or the security code. CHECK constraints enforce it.
 model Card {
-  id        String     @id @default(uuid())
-  accountId String     @map("cuenta_id")
-  account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  brand     CardBrand  @map("marca")
+  id              String           @id @default(uuid())
+  accountId       String           @map("cuenta_id")
+  account         Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  brand           CardBrand        @map("marca")
   /// The last 4 digits of the card number.
-  last4     String     @map("ultimos_4")
-  holder    String     @map("titular")
+  last4           String           @map("ultimos_4")
+  holder          String           @map("titular")
   /// Formatted as MM/YY.
-  expiry    String     @map("vencimiento")
-  createdAt DateTime   @default(now()) @map("creado_en")
-  movements Movement[]
-  topUps    TopUp[]
+  expiry          String           @map("vencimiento")
+  createdAt       DateTime         @default(now()) @map("creado_en")
+  movements       Movement[]
+  topUps          TopUp[]
+  servicePayments ServicePayment[]
 
   @@index([accountId])
   @@map("tarjetas")
@@ -179,29 +202,31 @@ model Transfer {
 }
 
 model Movement {
-  id           String       @id @default(uuid())
-  accountId    String       @map("cuenta_id")
-  account      Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  type         MovementType @map("tipo")
+  id               String          @id @default(uuid())
+  accountId        String          @map("cuenta_id")
+  account          Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  type             MovementType    @map("tipo")
   /// Person or service on the other side of the movement.
-  counterparty String       @map("contraparte")
+  counterparty     String          @map("contraparte")
   /// Integer cents, always positive. The direction comes from `type`.
-  amountCents  BigInt       @map("monto_centavos")
+  amountCents      BigInt          @map("monto_centavos")
   /// Operation number shown on the detail screen. Both sides of a transfer
   /// share it, so it is unique per account.
-  reference    String       @map("referencia")
-  occurredAt   DateTime     @map("ocurrido_en")
-  transferId   String?      @map("transferencia_id")
-  transfer     Transfer?    @relation(fields: [transferId], references: [id], onDelete: SetNull)
-  exchangeId   String?      @map("operacion_cambio_id")
-  exchange     Exchange?    @relation(fields: [exchangeId], references: [id], onDelete: SetNull)
+  reference        String          @map("referencia")
+  occurredAt       DateTime        @map("ocurrido_en")
+  transferId       String?         @map("transferencia_id")
+  transfer         Transfer?       @relation(fields: [transferId], references: [id], onDelete: SetNull)
+  exchangeId       String?         @map("operacion_cambio_id")
+  exchange         Exchange?       @relation(fields: [exchangeId], references: [id], onDelete: SetNull)
   /// The card the movement went through: the picked card for an exchange,
   /// the account's first card for a transfer. Empty when the account had no
   /// card or the card was removed.
-  cardId       String?      @map("tarjeta_id")
-  card         Card?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
-  topUpId      String?      @map("recarga_id")
-  topUp        TopUp?       @relation(fields: [topUpId], references: [id], onDelete: SetNull)
+  cardId           String?         @map("tarjeta_id")
+  card             Card?           @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  topUpId          String?         @map("recarga_id")
+  topUp            TopUp?          @relation(fields: [topUpId], references: [id], onDelete: SetNull)
+  servicePaymentId String?         @map("pago_servicio_id")
+  servicePayment   ServicePayment? @relation(fields: [servicePaymentId], references: [id], onDelete: SetNull)
 
   @@unique([accountId, reference])
   @@index([accountId, occurredAt(sort: Desc)])
@@ -279,4 +304,73 @@ model TopUp {
   @@index([accountId])
   @@index([cardId])
   @@map("recargas")
+}
+
+/// A utility service the user adhered with its electronic payment number. A
+/// CHECK constraint keeps the number as digits of the company's length.
+model ServiceAdhesion {
+  id            String         @id @default(uuid())
+  userId        String         @map("usuario_id")
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company       ServiceCompany @map("empresa")
+  /// The electronic payment number printed on the bill, digits only.
+  paymentNumber String         @map("numero_pago")
+  /// A reminder name such as "Luz depto", up to 40 characters.
+  nickname      String         @map("apodo")
+  createdAt     DateTime       @default(now()) @map("creado_en")
+  bills         ServiceBill[]
+
+  @@unique([userId, company, paymentNumber])
+  @@map("adhesiones_servicio")
+}
+
+/// A simulated bill of an adhered service. Paid at most once: the payment
+/// that settles it is unique per bill, and a CHECK constraint keeps the
+/// status and the payment date together.
+model ServiceBill {
+  id          String            @id @default(uuid())
+  adhesionId  String            @map("adhesion_id")
+  adhesion    ServiceAdhesion   @relation(fields: [adhesionId], references: [id], onDelete: Cascade)
+  /// The billed month as shown, for example "Noviembre 2026".
+  period      String            @map("periodo")
+  /// Integer cents, always positive.
+  amountCents BigInt            @map("monto_centavos")
+  currency    Currency          @default(ARS) @map("moneda")
+  /// A calendar date, without time of day.
+  dueDate     DateTime          @map("vence_el") @db.Date
+  status      ServiceBillStatus @default(PENDING) @map("estado")
+  paidAt      DateTime?         @map("pagada_en")
+  payment     ServicePayment?
+
+  @@unique([adhesionId, period])
+  @@map("facturas_servicio")
+}
+
+/// The payment of one service bill with a card of the bill's currency.
+model ServicePayment {
+  id             String      @id @default(uuid())
+  /// Sequential, so the operation number is readable and never collides.
+  number         Int         @unique @default(autoincrement()) @map("numero")
+  userId         String      @map("usuario_id")
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Unique, so a bill can never be paid twice.
+  billId         String      @unique @map("factura_id")
+  bill           ServiceBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  /// The account that paid.
+  accountId      String      @map("cuenta_id")
+  account        Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  /// The card picked to pay. Empty when the card was removed later.
+  cardId         String?     @map("tarjeta_id")
+  card           Card?       @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  /// Integer cents, always positive: the bill's amount.
+  amountCents    BigInt      @map("monto_centavos")
+  /// Same role as in Transfer: a repeated request creates one payment.
+  idempotencyKey String      @map("clave_idempotencia")
+  createdAt      DateTime    @default(now()) @map("creado_en")
+  movements      Movement[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([accountId])
+  @@index([cardId])
+  @@map("pagos_servicio")
 }

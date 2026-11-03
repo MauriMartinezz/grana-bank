@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "../features/auth/password";
+import { simulatedBills } from "../features/services/bills";
 import { PrismaClient, MovementType } from "../generated/prisma/client";
 
 const { SUBSCRIPTION, RECEIVED, SENT } = MovementType;
@@ -90,8 +91,9 @@ async function main() {
   const prisma = new PrismaClient({ adapter });
 
   // Deleting the users cascades to their accounts, cards, movements,
-  // transfers, exchanges, contacts, SUBE cards and top-ups, so running the
-  // seed twice leaves the same data. Users are matched by email and by seeded alias, so a seeded
+  // transfers, exchanges, contacts, SUBE cards, top-ups and adhered services
+  // with their bills and payments, so running the seed twice leaves the same
+  // data. Users are matched by email and by seeded alias, so a seeded
   // user who changed their email in Perfil is replaced too.
   const email = "soygranate@clublanus.com";
   const seededAliases = [
@@ -144,6 +146,16 @@ async function main() {
       contacts: { create: { contactAccountId: juanPesos.id } },
       // One saved SUBE card, so Recargas shows the list and the top-up flow.
       subeCards: { create: { number: "6061234567890123", nickname: "sube de mauri" } },
+      // One adhered service with its two simulated pending bills, so
+      // Servicios shows bills to pay.
+      serviceAdhesions: {
+        create: {
+          company: "EDESUR",
+          paymentNumber: "0012345678",
+          nickname: "Luz depto",
+          bills: { create: simulatedBills("EDESUR", "0012345678") },
+        },
+      },
       accounts: {
         create: [
           {
