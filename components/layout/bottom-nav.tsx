@@ -3,16 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
-import { CardIcon, HomeIcon, ListIcon, ReceiptIcon } from "@/components/icons";
-import { ProfileIcon } from "@/features/profile/profile-icon";
-
-const LINKS = [
-  { href: "/inicio", label: "Inicio", Icon: HomeIcon },
-  { href: "/movimientos", label: "Movimientos", Icon: ListIcon },
-  { href: "/tarjetas", label: "Tarjetas", Icon: CardIcon },
-  { href: "/servicios", label: "Servicios", Icon: ReceiptIcon },
-  { href: "/perfil", label: "Perfil", Icon: ProfileIcon },
-];
+import { NAV_LINKS, isActiveLink } from "@/components/layout/nav-links";
 
 const ITEM_CLASS =
   "flex min-h-12 min-w-12 items-center justify-center rounded-xl";
@@ -21,10 +12,10 @@ function NavBar({ pathname }: { pathname: string | null }) {
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-[430px] items-center justify-around rounded-t-3xl bg-surface px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.05)]"
+      className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-[430px] items-center justify-around rounded-t-3xl bg-surface px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.05)] desktop:hidden"
     >
-      {LINKS.map(({ href, label, Icon }) => {
-        const isActive = pathname?.startsWith(href) ?? false;
+      {NAV_LINKS.map(({ href, label, Icon }) => {
+        const isActive = isActiveLink(pathname, href);
         return (
           <Link
             key={href}
@@ -47,6 +38,7 @@ function ActiveNavBar() {
 
 // On dynamic routes the pathname is only known at request time, so the bar
 // is prerendered without an active item and completes while streaming.
+// Hidden in the desktop view, where the sidebar takes its place.
 export function BottomNav() {
   return (
     <Suspense fallback={<NavBar pathname={null} />}>

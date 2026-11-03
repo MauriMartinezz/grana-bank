@@ -11,6 +11,7 @@ import { SettingRow, SummaryList, SummaryRow } from "@/features/profile/profile-
 import { SavedNotice } from "@/features/profile/saved-notice";
 import { ThemeToggle } from "@/features/profile/theme-toggle";
 import { savedMessage } from "@/features/profile/validation";
+import { ViewToggle } from "@/features/profile/view-toggle";
 
 export const metadata: Metadata = { title: "Perfil" };
 
@@ -75,6 +76,9 @@ export default async function ProfilePage({ searchParams }: PageProps<"/perfil">
         </SummaryRow>
         <SettingRow title="Tema">
           <ThemeToggle />
+        </SettingRow>
+        <SettingRow title="Vista">
+          <ViewToggle />
         </SettingRow>
       </SummaryList>
 

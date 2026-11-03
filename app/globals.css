@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+/*
+ * The desktop view, chosen per device in Perfil and set as data-view on <html>
+ * before the first paint: "desktop" always, "auto" (the default) from the lg
+ * breakpoint, "mobile" never. Use it as `desktop:` in class names.
+ */
+@custom-variant desktop {
+  :root[data-view="desktop"] & {
+    @slot;
+  }
+  @media (width >= 64rem) {
+    :root:not([data-view="mobile"]) & {
+      @slot;
+    }
+  }
+}
+
 @theme inline {
   --font-sans: var(--font-jakarta);
   --font-serif: var(--font-roboto-slab);
