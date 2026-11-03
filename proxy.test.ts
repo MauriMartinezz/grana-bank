@@ -19,6 +19,11 @@ describe("proxy", () => {
     "/transferir",
     "/transferir/nuevo",
     "/servicios",
+    "/servicios/adherir",
+    "/servicios/some-id",
+    "/servicios/pagar/some-id",
+    "/servicios/confirmar",
+    "/servicios/comprobante/some-id",
     "/recargas",
     "/recargas/sube",
     "/recargas/sube/nueva",
@@ -55,6 +60,22 @@ describe("proxy", () => {
       expect(
         config.matcher.some((pattern) => pattern.startsWith(`/${route.name}`)),
       ).toBe(true);
+    }
+  });
+
+  it("covers the nested screens of every private route that has them", () => {
+    const root = path.join(__dirname, "app/(app)");
+    const nested = readdirSync(root, { withFileTypes: true }).filter(
+      (entry) =>
+        entry.isDirectory() &&
+        readdirSync(path.join(root, entry.name), { withFileTypes: true }).some((child) =>
+          child.isDirectory(),
+        ),
+    );
+
+    expect(nested.length).toBeGreaterThan(0);
+    for (const route of nested) {
+      expect(config.matcher).toContain(`/${route.name}/:path*`);
     }
   });
 });
