@@ -8,6 +8,7 @@ export function RecipientSummary({ recipient }: { recipient: Recipient }) {
       <div className="min-w-0">
         <p className="text-xs text-muted">Destinatario</p>
         <p className="truncate font-medium">{recipient.name}</p>
+        <p className="truncate text-sm text-muted">Alias: {recipient.alias}</p>
         <p className="truncate text-sm text-muted">{recipient.email}</p>
       </div>
     </div>

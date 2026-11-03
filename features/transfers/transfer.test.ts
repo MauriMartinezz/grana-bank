@@ -15,6 +15,7 @@ async function createUser(email: string, name: string, balanceCents: number) {
       account: {
         create: {
           balanceCents,
+          alias: email.replace("@", "."),
           cardBrand: "VISA",
           cardLast4: "0000",
           cardHolder: name,

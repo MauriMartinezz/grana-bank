@@ -18,6 +18,7 @@ function createUser(email: string, reference: string, counterparty: string) {
       account: {
         create: {
           balanceCents: 0,
+          alias: email.replace("@", "."),
           cardBrand: "VISA",
           cardLast4: "0000",
           cardHolder: "Test",

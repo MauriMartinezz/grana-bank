@@ -19,7 +19,7 @@ function ContactGroup({ title, contacts }: { title: string; contacts: Contact[] 
               <span className="min-w-0">
                 <span className="block truncate font-medium">{contact.name}</span>
                 <span className="block truncate text-sm text-muted">
-                  {contact.email}
+                  {contact.alias}
                 </span>
               </span>
             </Link>
