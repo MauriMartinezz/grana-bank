@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   detectBrand,
+  buenosAiresMonth,
+  expiryStatus,
   formatCardNumber,
   isLuhnValid,
   normalizeCardNumber,
@@ -146,11 +148,19 @@ describe("validateCard", () => {
   });
 
   it("keeps a card valid until the last day of its month", () => {
-    const lastDay = new Date(2027, 2, 31, 23, 59, 59);
-    const nextMonth = new Date(2027, 3, 1);
+    const lastDay = new Date("2027-03-31T23:59:59-03:00");
+    const nextMonth = new Date("2027-04-01T00:00:00-03:00");
     const card = { ...VALID, expiry: "03/27" };
     expect(validateCard(card, lastDay).ok).toBe(true);
     expect(validateCard(card, nextMonth).ok).toBe(false);
+  });
+
+  it("uses the Buenos Aires calendar month, whatever the server time zone", () => {
+    const card = { ...VALID, expiry: "11/26" };
+    // 22:00 on 30 November in Buenos Aires, already 1 December in UTC.
+    expect(validateCard(card, new Date("2026-12-01T01:00:00Z")).ok).toBe(true);
+    // Midnight on 1 December in Buenos Aires.
+    expect(validateCard(card, new Date("2026-12-01T03:00:00Z")).ok).toBe(false);
   });
 
   it.each([
@@ -190,5 +200,40 @@ describe("validateCard", () => {
         cvv: "El código de seguridad tiene 4 dígitos.",
       },
     });
+  });
+});
+
+describe("buenosAiresMonth", () => {
+  it("counts months in the Buenos Aires calendar", () => {
+    expect(buenosAiresMonth(new Date("2026-12-01T02:59:59Z"))).toBe(2026 * 12 + 10);
+    expect(buenosAiresMonth(new Date("2026-12-01T03:00:00Z"))).toBe(2026 * 12 + 11);
+    expect(buenosAiresMonth(new Date("2027-01-01T02:00:00Z"))).toBe(2026 * 12 + 11);
+  });
+});
+
+describe("expiryStatus", () => {
+  // 22:00 on 30 November 2026 in Buenos Aires, 1 December in UTC.
+  const now = new Date("2026-12-01T01:00:00Z");
+
+  it.each([
+    ["10/26", "expired"],
+    ["11/26", "expiring"],
+    ["12/26", "expiring"],
+    ["01/27", "valid"],
+    ["12/30", "valid"],
+  ])("reports %j as %s", (expiry, status) => {
+    expect(expiryStatus(expiry, now)).toBe(status);
+  });
+
+  it("rolls the next month over the year", () => {
+    const december = new Date("2026-12-15T12:00:00-03:00");
+    expect(expiryStatus("01/27", december)).toBe("expiring");
+    expect(expiryStatus("02/27", december)).toBe("valid");
+    expect(expiryStatus("11/26", december)).toBe("expired");
+  });
+
+  it("returns null for an expiry that is not MM/YY", () => {
+    expect(expiryStatus("13/26", now)).toBeNull();
+    expect(expiryStatus("1126", now)).toBeNull();
   });
 });

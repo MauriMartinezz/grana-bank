@@ -1,7 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { NO_FILTERS } from "./filters";
-import { getMovement, listMovements, listRecentMovements, RECENT_MOVEMENTS } from "./queries";
+import {
+  getMovement,
+  listCardMovements,
+  listMovements,
+  listRecentMovements,
+  RECENT_MOVEMENTS,
+} from "./queries";
 
 const OWNER_EMAIL = "owner@queries.test";
 const OTHER_EMAIL = "other@queries.test";
@@ -284,5 +290,79 @@ describe("listRecentMovements", () => {
       ["USD-4", "USD"],
       ["ARS-3", "ARS"],
     ]);
+  });
+});
+
+describe("listCardMovements", () => {
+  const EMAILS = ["cardowner@queries.test", "cardother@queries.test"];
+
+  afterAll(() => db.user.deleteMany({ where: { email: { in: EMAILS } } }));
+
+  function createCardUser(email: string) {
+    return db.user.create({
+      data: {
+        email,
+        firstName: "Test",
+        lastName: "",
+        passwordHash: "!",
+        accounts: {
+          create: {
+            currency: "ARS",
+            alias: email.replace("@", "."),
+            balanceCents: 0,
+            cards: {
+              create: [
+                { brand: "VISA", last4: "8845", holder: "Test Holder", expiry: "12/30" },
+                { brand: "AMEX", last4: "0005", holder: "Test Holder", expiry: "12/30" },
+              ],
+            },
+          },
+        },
+      },
+      include: { accounts: { include: { cards: { orderBy: { last4: "desc" } } } } },
+    });
+  }
+
+  function movement(accountId: string, cardId: string | null, reference: string, day: number) {
+    return db.movement.create({
+      data: {
+        accountId,
+        cardId,
+        type: "SENT",
+        counterparty: reference,
+        amountCents: 100,
+        reference,
+        occurredAt: new Date(Date.UTC(2026, 0, day)),
+      },
+    });
+  }
+
+  it("returns only that card's movements, newest first, with the card face", async () => {
+    await db.user.deleteMany({ where: { email: { in: EMAILS } } });
+    const owner = await createCardUser(EMAILS[0]);
+    const [account] = owner.accounts;
+    const [visa, amex] = account.cards;
+    await movement(account.id, visa.id, "VISA-1", 1);
+    await movement(account.id, visa.id, "VISA-3", 3);
+    await movement(account.id, amex.id, "AMEX-2", 2);
+    await movement(account.id, null, "NONE-4", 4);
+
+    const movements = await listCardMovements(owner.id, visa.id);
+    expect(movements.map((m) => m.reference)).toEqual(["VISA-3", "VISA-1"]);
+    expect(movements[0].card).toEqual({ last4: "8845", brand: "VISA" });
+    expect(movements[0].account).toEqual({ currency: "ARS" });
+
+    expect(await listCardMovements(owner.id, visa.id, 1)).toHaveLength(1);
+  });
+
+  it("never returns another user's movements, even with a valid card id", async () => {
+    const other = await createCardUser(EMAILS[1]);
+    const [account] = other.accounts;
+    await movement(account.id, account.cards[0].id, "OTHER-1", 5);
+    const owner = await db.user.findUniqueOrThrow({ where: { email: EMAILS[0] } });
+
+    await expect(listCardMovements(owner.id, account.cards[0].id)).resolves.toEqual([]);
+    const own = await listCardMovements(other.id, account.cards[0].id);
+    expect(own.map((m) => m.reference)).toEqual(["OTHER-1"]);
   });
 });

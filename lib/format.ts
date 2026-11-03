@@ -39,3 +39,15 @@ const dateFormatter = new Intl.DateTimeFormat(LOCALE_DATE, {
 export function formatDateTime(date: Date): string {
   return dateFormatter.format(date);
 }
+
+const dayFormatter = new Intl.DateTimeFormat(LOCALE_DATE, {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: TIME_ZONE,
+});
+
+/** The calendar date alone: `9 de marzo de 2026`. */
+export function formatDate(date: Date): string {
+  return dayFormatter.format(date);
+}

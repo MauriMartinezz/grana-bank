@@ -128,16 +128,50 @@ function checkHolder(holder: string) {
   if (holder.length > HOLDER_MAX_LENGTH) return MESSAGES.holderTooLong;
 }
 
+// Card months follow the Argentine calendar, not the server's time zone.
+const monthFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "numeric",
+  timeZone: "America/Argentina/Buenos_Aires",
+});
+
+/** The month of `date` in Buenos Aires, counted as `year * 12 + monthIndex`. */
+export function buenosAiresMonth(date: Date) {
+  const parts = monthFormatter.formatToParts(date);
+  const part = (type: "year" | "month") =>
+    Number(parts.find((p) => p.type === type)?.value);
+  return part("year") * 12 + (part("month") - 1);
+}
+
+/** The expiry month as `year * 12 + monthIndex`, or null when it is not MM/YY. */
+function expiryMonth(expiry: string) {
+  const match = /^(\d{2})\/(\d{2})$/.exec(expiry);
+  if (!match) return null;
+  const month = Number(match[1]);
+  if (month < 1 || month > 12) return null;
+  return (2000 + Number(match[2])) * 12 + (month - 1);
+}
+
+export type ExpiryStatus = "expired" | "expiring" | "valid";
+
+/**
+ * Whether a card is past its expiry month, expires in the current or the next
+ * month, or later, in the Buenos Aires calendar. Null when not MM/YY.
+ */
+export function expiryStatus(expiry: string, now: Date = new Date()): ExpiryStatus | null {
+  const expires = expiryMonth(expiry);
+  if (expires === null) return null;
+  const current = buenosAiresMonth(now);
+  if (expires < current) return "expired";
+  return expires <= current + 1 ? "expiring" : "valid";
+}
+
 /** A card is valid through the last day of its expiry month. */
 function checkExpiry(expiry: string, now: Date) {
   if (!expiry) return MESSAGES.expiryEmpty;
-  const match = /^(\d{2})\/(\d{2})$/.exec(expiry);
-  if (!match) return MESSAGES.expiryFormat;
-  const month = Number(match[1]);
-  if (month < 1 || month > 12) return MESSAGES.expiryMonth;
-  const year = 2000 + Number(match[2]);
-  const currentMonths = now.getFullYear() * 12 + now.getMonth();
-  if (year * 12 + (month - 1) < currentMonths) return MESSAGES.expired;
+  if (!/^\d{2}\/\d{2}$/.test(expiry)) return MESSAGES.expiryFormat;
+  if (expiryMonth(expiry) === null) return MESSAGES.expiryMonth;
+  if (expiryStatus(expiry, now) === "expired") return MESSAGES.expired;
 }
 
 function checkCvv(cvv: string, brand: CardBrand | null) {

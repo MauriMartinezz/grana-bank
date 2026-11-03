@@ -44,6 +44,19 @@ export function listMovements(
   });
 }
 
+/**
+ * The movements made with one card, newest first. Scoped by `account.userId`
+ * as well, so another user's card id returns nothing.
+ */
+export function listCardMovements(userId: string, cardId: string, limit = MAX_MOVEMENTS) {
+  return db.movement.findMany({
+    where: { cardId, account: { userId } },
+    orderBy: [{ occurredAt: "desc" }, { id: "asc" }],
+    take: limit,
+    include: MOVEMENT_INCLUDE,
+  });
+}
+
 /** The latest movements of every account of the user, for Home. */
 export function listRecentMovements(userId: string) {
   return listMovements(userId, NO_FILTERS, RECENT_MOVEMENTS);
