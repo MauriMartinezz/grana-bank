@@ -35,6 +35,31 @@ export const WEEKDAY_NAMES = [
   "domingos",
 ] as const;
 
+const DAY_ERRORS: Record<DepositFrequency, string> = {
+  WEEKLY: "Elegí un día de la semana.",
+  MONTHLY: "Elegí un día del 1 al 31.",
+};
+
+export function parseFrequency(value: string): DepositFrequency | null {
+  return value === "WEEKLY" || value === "MONTHLY" ? value : null;
+}
+
+/**
+ * A day that fits the frequency (1 to 7 weekly, 1 to 31 monthly), or null.
+ * Shared by scheduled deposits and scheduled top-ups.
+ */
+export function parseScheduleDay(frequency: DepositFrequency | null, raw: string): number | null {
+  if (!frequency || !/^\d{1,2}$/.test(raw)) return null;
+  const day = Number(raw);
+  const last = frequency === "WEEKLY" ? 7 : 31;
+  return day >= 1 && day <= last ? day : null;
+}
+
+/** The day's error for a frequency. */
+export function scheduleDayError(frequency: DepositFrequency) {
+  return DAY_ERRORS[frequency];
+}
+
 export function validateDepositSchedule(input: {
   currency: string;
   amount: string;
@@ -52,15 +77,13 @@ export function validateDepositSchedule(input: {
     errors.amount = `Podés ingresar hasta ${formatMoney(MAX_DEPOSIT_CENTS[currency], currency)} por vez.`;
   }
 
-  const frequency =
-    input.frequency === "WEEKLY" || input.frequency === "MONTHLY" ? input.frequency : null;
+  const frequency = parseFrequency(input.frequency);
   if (!frequency) errors.frequency = "Elegí cada cuánto.";
 
-  const day = /^\d{1,2}$/.test(input.day) ? Number(input.day) : 0;
-  if (frequency === "WEEKLY" && (day < 1 || day > 7)) errors.day = "Elegí un día de la semana.";
-  if (frequency === "MONTHLY" && (day < 1 || day > 31)) errors.day = "Elegí un día del 1 al 31.";
+  const day = parseScheduleDay(frequency, input.day);
+  if (frequency && day === null) errors.day = DAY_ERRORS[frequency];
 
-  if (!currency || amountCents === null || !frequency || Object.keys(errors).length > 0) {
+  if (!currency || amountCents === null || !frequency || day === null || Object.keys(errors).length > 0) {
     return { ok: false, errors };
   }
   return { ok: true, schedule: { currency, amountCents, frequency, day } };

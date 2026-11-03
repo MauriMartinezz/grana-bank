@@ -120,6 +120,7 @@ model User {
   servicePayments   ServicePayment[]
   categories        Category[]
   depositSchedules  DepositSchedule[]
+  topUpSchedules    TopUpSchedule[]
 
   @@map("usuarios")
 }
@@ -287,13 +288,14 @@ model Exchange {
 /// A SUBE transport card the user saved to top it up. A CHECK constraint keeps
 /// the number as 16 digits starting with 6061, stored without spaces.
 model SubeCard {
-  id        String   @id @default(uuid())
-  userId    String   @map("usuario_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  number    String   @map("numero")
+  id        String          @id @default(uuid())
+  userId    String          @map("usuario_id")
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  number    String          @map("numero")
   /// A reminder name such as "sube de mauri", up to 40 characters.
-  nickname  String   @map("apodo")
-  createdAt DateTime @default(now()) @map("creado_en")
+  nickname  String          @map("apodo")
+  createdAt DateTime        @default(now()) @map("creado_en")
+  schedules TopUpSchedule[]
 
   @@unique([userId, number])
   @@map("tarjetas_sube")
@@ -463,26 +465,46 @@ model Promotion {
   @@map("promociones")
 }
 
-enum DepositFrequency {
+/// How often a scheduled deposit or top-up repeats.
+enum ScheduleFrequency {
   WEEKLY
   MONTHLY
 
-  @@map("frecuencia_ingreso")
+  @@map("frecuencia_programada")
 }
 
 /// A scheduled deposit, a demo: it is saved and listed, but nothing runs it.
 model DepositSchedule {
-  id          String           @id @default(uuid())
-  userId      String           @map("usuario_id")
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  currency    Currency         @map("moneda")
+  id          String            @id @default(uuid())
+  userId      String            @map("usuario_id")
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currency    Currency          @map("moneda")
   /// Integer cents, within the deposit caps.
-  amountCents BigInt           @map("monto_centavos")
-  frequency   DepositFrequency @map("frecuencia")
+  amountCents BigInt            @map("monto_centavos")
+  frequency   ScheduleFrequency @map("frecuencia")
   /// 1 (Monday) to 7 (Sunday) weekly, 1 to 31 monthly.
-  day         Int              @map("dia")
-  createdAt   DateTime         @default(now()) @map("creado_en")
+  day         Int               @map("dia")
+  createdAt   DateTime          @default(now()) @map("creado_en")
 
   @@index([userId])
   @@map("ingresos_programados")
+}
+
+/// A scheduled SUBE top-up, a demo: it is saved and listed, but nothing runs it.
+model TopUpSchedule {
+  id          String            @id @default(uuid())
+  userId      String            @map("usuario_id")
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subeCardId  String            @map("tarjeta_sube_id")
+  subeCard    SubeCard          @relation(fields: [subeCardId], references: [id], onDelete: Cascade)
+  /// Integer cents, $100 to $50.000 like any top-up.
+  amountCents BigInt            @map("monto_centavos")
+  frequency   ScheduleFrequency @map("frecuencia")
+  /// 1 (Monday) to 7 (Sunday) weekly, 1 to 31 monthly.
+  day         Int               @map("dia")
+  createdAt   DateTime          @default(now()) @map("creado_en")
+
+  @@index([userId])
+  @@index([subeCardId])
+  @@map("recargas_programadas")
 }
