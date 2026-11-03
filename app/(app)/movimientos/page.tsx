@@ -22,7 +22,7 @@ async function FilteredResults({
   // A new key per search brings the skeleton back while the new data loads.
   return (
     <Suspense
-      key={`${filters.type}:${filters.query}`}
+      key={`${filters.type}:${filters.from}:${filters.to}:${filters.query}`}
       fallback={<MovementListSkeleton rows={LIST_SKELETON_ROWS} />}
     >
       <MovementResults filters={filters} />
@@ -34,7 +34,7 @@ export default function MovementsPage({ searchParams }: PageProps<"/movimientos"
   return (
     <>
       <h1 className="mb-5 font-serif text-2xl font-bold">Movimientos</h1>
-      <Suspense fallback={<Skeleton className="h-[100px]" />}>
+      <Suspense fallback={<Skeleton className="h-[188px]" />}>
         <MovementFilters />
       </Suspense>
       <div className="mt-5">

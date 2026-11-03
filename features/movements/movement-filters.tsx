@@ -2,19 +2,35 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { io } from "next/cache";
+import { use, useEffect, useRef, useState, useTransition } from "react";
 import { CloseIcon, SearchIcon } from "@/components/icons";
-import { TYPE_FILTERS } from "./filters";
+import { dateFilterPresets, TYPE_FILTERS } from "./filters";
 
 const SEARCH_DELAY_MS = 300;
 
-function buildHref(query: string, type: string | null) {
+/** What the URL holds: `?q=&type=&desde=&hasta=`. Empty values are left out. */
+type UrlFilters = {
+  q: string;
+  type: string | null;
+  desde: string;
+  hasta: string;
+};
+
+function buildHref({ q, type, desde, hasta }: UrlFilters) {
   const params = new URLSearchParams();
-  if (query) params.set("q", query);
+  if (q) params.set("q", q);
   if (type) params.set("type", type);
+  if (desde) params.set("desde", desde);
+  if (hasta) params.set("hasta", hasta);
   const search = params.toString();
   return search ? `/movimientos?${search}` : "/movimientos";
 }
+
+const chipClassName = (isActive: boolean) =>
+  `flex min-h-11 items-center rounded-full border px-3 text-sm font-medium whitespace-nowrap ${
+    isActive ? "border-garnet bg-garnet-soft text-garnet" : "border-transparent text-muted"
+  }`;
 
 // Filters live in the URL: they survive a reload and the way back from a
 // movement detail, and the server does the filtering.
@@ -23,6 +39,13 @@ export function MovementFilters() {
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get("q") ?? "";
   const urlType = searchParams.get("type");
+  const urlFrom = searchParams.get("desde") ?? "";
+  const urlTo = searchParams.get("hasta") ?? "";
+
+  // The presets end today: read the clock at request time, not in the shell.
+  use(io());
+  const presets = dateFilterPresets(new Date());
+  const today = presets[0].to;
 
   const [query, setQuery] = useState(urlQuery);
   const [appliedQuery, setAppliedQuery] = useState(urlQuery);
@@ -38,16 +61,19 @@ export function MovementFilters() {
     setQuery(urlQuery);
   }
 
-  function navigate(nextQuery: string, nextType: string | null) {
+  const current: UrlFilters = { q: query.trim(), type: urlType, desde: urlFrom, hasta: urlTo };
+
+  function navigate(next: Partial<UrlFilters>) {
+    const filters = { ...current, ...next };
     clearTimeout(timer.current);
-    setAppliedQuery(nextQuery);
+    setAppliedQuery(filters.q);
     startTransition(() => {
-      router.replace(buildHref(nextQuery, nextType), { scroll: false });
+      router.replace(buildHref(filters), { scroll: false });
     });
   }
 
   function applyQuery(value: string) {
-    navigate(value.trim(), urlType);
+    navigate({ q: value.trim() });
   }
 
   function handleChange(value: string) {
@@ -105,27 +131,90 @@ export function MovementFilters() {
           return (
             <Link
               key={label}
-              href={buildHref(query.trim(), value)}
+              href={buildHref({ ...current, type: value })}
               replace
               scroll={false}
               onClick={(event) => {
                 // Navigating here keeps the transition pending, so the input
                 // is not reset while the URL catches up.
                 event.preventDefault();
-                navigate(query.trim(), value);
+                navigate({ type: value });
               }}
               aria-current={isActive ? "true" : undefined}
-              className={`flex min-h-11 items-center rounded-full border px-3 text-sm font-medium whitespace-nowrap ${
-                isActive
-                  ? "border-garnet bg-garnet-soft text-garnet"
-                  : "border-transparent text-muted"
-              }`}
+              className={chipClassName(isActive)}
             >
               {label}
             </Link>
           );
         })}
       </nav>
+
+      <nav
+        aria-label="Filtrar por fecha"
+        className="-mx-6 mt-2 flex gap-1 overflow-x-auto px-6 [scrollbar-width:none]"
+      >
+        {presets.map(({ label, from, to }) => {
+          const isActive = urlFrom === from && urlTo === to;
+          return (
+            <Link
+              key={label}
+              href={buildHref({ ...current, desde: from, hasta: to })}
+              replace
+              scroll={false}
+              onClick={(event) => {
+                event.preventDefault();
+                navigate({ desde: from, hasta: to });
+              }}
+              aria-current={isActive ? "true" : undefined}
+              className={chipClassName(isActive)}
+            >
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <fieldset className="mt-2 flex items-end gap-3">
+        <legend className="sr-only">Rango de fechas</legend>
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted">
+          Desde
+          <input
+            type="date"
+            name="desde"
+            value={urlFrom}
+            max={urlTo || today}
+            onChange={(event) => navigate({ desde: event.target.value })}
+            className="h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-ink"
+          />
+        </label>
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted">
+          Hasta
+          <input
+            type="date"
+            name="hasta"
+            value={urlTo}
+            min={urlFrom || undefined}
+            max={today}
+            onChange={(event) => navigate({ hasta: event.target.value })}
+            className="h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-ink"
+          />
+        </label>
+        {(urlFrom || urlTo) && (
+          <button
+            type="button"
+            onClick={() => navigate({ desde: "", hasta: "" })}
+            aria-label="Borrar fechas"
+            className="flex size-11 shrink-0 items-center justify-center text-muted"
+          >
+            <CloseIcon className="size-4" />
+          </button>
+        )}
+      </fieldset>
+      {urlFrom && urlTo && urlFrom > urlTo && (
+        <p className="mt-2 text-xs text-muted">
+          La fecha Desde es posterior a Hasta, así que mostramos todas las fechas.
+        </p>
+      )}
     </>
   );
 }

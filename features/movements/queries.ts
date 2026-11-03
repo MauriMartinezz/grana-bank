@@ -1,5 +1,6 @@
 import type { Currency } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { addDays, startOfDay } from "./day";
 import { NO_FILTERS, type MovementFilters } from "./filters";
 
 const MAX_MOVEMENTS = 50;
@@ -18,19 +19,30 @@ function escapeLikePattern(text: string) {
   return text.replace(/[\\%_]/g, "\\$&");
 }
 
+/** From midnight of `from` to the midnight that ends `to`, in Buenos Aires. */
+function occurredAtRange(from?: string, to?: string) {
+  if (!from && !to) return undefined;
+  return {
+    ...(from && { gte: startOfDay(from) }),
+    ...(to && { lt: startOfDay(addDays(to, 1)) }),
+  };
+}
+
 // Every query goes through `account.userId`, so a user can never read
 // movements from another account, even by guessing an id. Without a
 // currency, the movements of every account of the user are listed.
 export function listMovements(
   userId: string,
-  { query, type }: MovementFilters = NO_FILTERS,
+  { query, type, from, to }: MovementFilters = NO_FILTERS,
   limit = MAX_MOVEMENTS,
   currency?: Currency,
 ) {
+  const occurredAt = occurredAtRange(from, to);
   return db.movement.findMany({
     where: {
       account: { userId, ...(currency && { currency }) },
       ...(type && { type }),
+      ...(occurredAt && { occurredAt }),
       ...(query && {
         counterparty: {
           contains: escapeLikePattern(query),

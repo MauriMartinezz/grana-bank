@@ -366,3 +366,83 @@ describe("listCardMovements", () => {
     expect(own.map((m) => m.reference)).toEqual(["OTHER-1"]);
   });
 });
+
+describe("listMovements by date", () => {
+  const EMAIL = "dates@queries.test";
+  let userId: string;
+
+  // Buenos Aires is UTC-3, so 23:59 there is 02:59 UTC on the next day.
+  const MOVEMENTS = [
+    ["BEFORE-2359", "2026-10-10T02:59:00Z"], // 9 Oct 23:59 BA
+    ["FROM-0001", "2026-10-10T03:01:00Z"], // 10 Oct 00:01 BA
+    ["MIDDLE", "2026-10-11T15:00:00Z"], // 11 Oct
+    ["TO-2359", "2026-10-13T02:59:00Z"], // 12 Oct 23:59 BA
+    ["AFTER-0001", "2026-10-13T03:01:00Z"], // 13 Oct 00:01 BA
+  ] as const;
+
+  beforeAll(async () => {
+    await db.user.deleteMany({ where: { email: EMAIL } });
+    const user = await db.user.create({
+      data: {
+        email: EMAIL,
+        firstName: "Test",
+        lastName: "",
+        passwordHash: "!",
+        accounts: {
+          create: {
+            alias: "dates.queries.test",
+            balanceCents: 0,
+            movements: {
+              create: MOVEMENTS.map(([reference, iso]) => ({
+                type: reference === "MIDDLE" ? ("SUBSCRIPTION" as const) : ("SENT" as const),
+                counterparty: reference === "MIDDLE" ? "Adobe" : "Juan Perez",
+                amountCents: 100,
+                reference,
+                occurredAt: new Date(iso),
+              })),
+            },
+          },
+        },
+      },
+    });
+    userId = user.id;
+  });
+
+  afterAll(() => db.user.deleteMany({ where: { email: EMAIL } }));
+
+  async function references(filters: Parameters<typeof listMovements>[1]) {
+    return (await listMovements(userId, filters)).map((m) => m.reference);
+  }
+
+  it("includes whole Buenos Aires days on both ends", async () => {
+    expect(await references({ query: "", type: null, from: "2026-10-10", to: "2026-10-12" })).toEqual([
+      "TO-2359",
+      "MIDDLE",
+      "FROM-0001",
+    ]);
+  });
+
+  it("supports a single day and open ranges", async () => {
+    expect(await references({ query: "", type: null, from: "2026-10-12", to: "2026-10-12" })).toEqual([
+      "TO-2359",
+    ]);
+    expect(await references({ query: "", type: null, from: "2026-10-13" })).toEqual(["AFTER-0001"]);
+    expect(await references({ query: "", type: null, to: "2026-10-09" })).toEqual(["BEFORE-2359"]);
+  });
+
+  it("combines the dates with search and type", async () => {
+    const range = { from: "2026-10-10", to: "2026-10-12" };
+    expect(await references({ query: "juan", type: null, ...range })).toEqual(["TO-2359", "FROM-0001"]);
+    expect(await references({ query: "", type: "SUBSCRIPTION", ...range })).toEqual(["MIDDLE"]);
+  });
+
+  it("returns every movement without dates", async () => {
+    expect(await references(NO_FILTERS)).toEqual([
+      "AFTER-0001",
+      "TO-2359",
+      "MIDDLE",
+      "FROM-0001",
+      "BEFORE-2359",
+    ]);
+  });
+});

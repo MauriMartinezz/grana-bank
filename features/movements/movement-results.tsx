@@ -1,6 +1,6 @@
 import { StateMessage } from "@/components/ui/state-message";
 import { getCurrentUser } from "@/features/auth/current-user";
-import { hasActiveFilters, type MovementFilters } from "./filters";
+import { hasActiveFilters, hasDateFilter, type MovementFilters } from "./filters";
 import { MovementList } from "./movement-list";
 import { listMovements } from "./queries";
 
@@ -13,7 +13,16 @@ export async function MovementResults({
   const movements = await listMovements(user.id, filters);
 
   if (movements.length > 0) {
-    return <MovementList movements={movements} />;
+    return <MovementList movements={movements} headingLevel="h2" />;
+  }
+
+  if (hasDateFilter(filters)) {
+    return (
+      <StateMessage
+        title="No hay movimientos en esas fechas"
+        description="Probá con otro rango de fechas o cambiá los filtros."
+      />
+    );
   }
 
   return hasActiveFilters(filters) ? (
