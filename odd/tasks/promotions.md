@@ -23,3 +23,4 @@ Assumptions (S3): "Todos los días" shows every promotion whatever its days; a d
 - L2 (2026-11-03, user): "Sí, después de Servicios".
 - L3 (2026-11-03, user): "Sigue con las promociones".
 - L4 (2026-11-03): T1 and T2 done; RED observed for filters, URL builder and queries. vitest 860/860, tsc and eslint clean. The dev database has no promotions until `pnpm db:seed` runs (the seed also recreates the demo users). Not checked in a browser.
+- L5 (2026-11-03, user): "Implementa las promociones, son solo demostrativas, no hace falta que sean reales ni que tengan algún comportamiento". They already existed (09a9bbc) but the dev database had none because the seed had not run since. `pnpm db:promos` now loads only the catalog (prisma/promotions.ts, also used by the seed); it loaded 12.

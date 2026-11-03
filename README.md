@@ -147,6 +147,7 @@ Sin secreto, el botón **Procesar pagos agendados**, al final de Servicios, ejec
 | `pnpm db:up` | Levanta PostgreSQL en Docker |
 | `pnpm db:migrate` | Aplica las migraciones pendientes y regenera el cliente de Prisma |
 | `pnpm db:seed` | Reinicia los usuarios de demo y las promociones (necesita `SEED_USER_PASSWORD`) |
+| `pnpm db:promos` | Carga solo las promociones de demo, sin tocar los usuarios |
 | `docker compose down` | Detiene PostgreSQL y conserva sus datos |
 | `docker compose down -v` | Detiene PostgreSQL y borra sus datos; después hay que correr `db:up`, `db:migrate` y `db:seed` |
 
