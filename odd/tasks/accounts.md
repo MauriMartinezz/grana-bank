@@ -14,6 +14,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - S7. Assumption: a USD account is opened from the dollar screen ("Abrir cuenta en dólares"); the seed gives the main user both accounts.
 - S9. "en la pantalla de perfil hay que hacer unos cambios: no pueden aparecer todos los formularios abiertos, por ejemplo, el alias debe decir el alias y luego un botón o tab para modificarlo, lo mismo el mail o si quiero cambiar la contraseña, recién ahí se me debe renviar a una pantalla con los inputs necesarios". Assumptions: changing the password needs the current one, the new one has at least 8 characters and is typed twice, and other sessions are closed.
 - S10. "Vamos a agregar una funcionalidad en la página de Perfil, añadir un tema oscuro además del claro". Assumptions: light stays the default; the choice is per device (stored in the browser and applied before the first paint, so it also covers the login page); colors move to theme tokens.
+- S11. "El logout deberá estar al final de la pantalla de Perfil en vez de en la barra inferior". Added to T9 because it touches the same files.
 - S8. Existing stored money is never relabeled: the migration keeps each account's stored currency; only the default changes to ARS.
 
 ## Tasks
@@ -25,7 +26,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [x] T5 (S5) parallel: cards list and add-card form with brand validation.
 - [x] T6 (S1, S6) parallel: Perfil screen and bottom navigation item.
 - [x] T8 (S9) delegated: Perfil summary with one screen per change and password change. Commit 46e2334.
-- [ ] T9 (S10) delegated: light/dark theme with a selector in Perfil.
+- [ ] T9 (S10, S11) delegated: light/dark theme with a selector in Perfil; logout moves from the bottom bar to the end of Perfil.
 - [ ] T7 inline: README, seam check, browser checks.
 
 Route evidence: the parent context is past the long-session backstop, so units are delegated (context reason). T2–T6 depend on T1 and start after it, with disjoint edit surfaces. Risk: T1 item 1 (migration moves stored data) and T3/T4 item 4 (balance updates under locks): independent verifier after T1 and at the end.
@@ -41,3 +42,4 @@ Route evidence: the parent context is past the long-session backstop, so units a
 - L7 (2026-11-03, user): "Bien, sin embargo, en la pantalla de perfil hay que hacer unos cambios: no pueden aparecer todos los formularios abiertos, por ejemplo, el alias debe decir el alias y luego un botón o tab para modificarlo, lo mismo el mail o si quiero cambiar la contraseña, recién ahí se me debe renviar a una pantalla con los inputs necesarios"
 - L8 (2026-11-03): Native review granted by the user for c868b04..8e97d1a, but START refused with `lens_context_budget_exceeded` (5909 lines): no review authority was created. Per the stop table the range must be reviewed as smaller candidates. T8 committed 46e2334 (431 tests). Final independent verifier launched on 46e2334.
 - L9 (2026-11-03, user): "Vamos a agregar una funcionalidad en la página de Perfil, añadir un tema oscuro además del claro"
+- L10 (2026-11-03, user): "El logout deberá estar al final de la pantalla de Perfil en vez de en la barra inferior". Sent to the T9 writer, who owns bottom-nav.tsx and the Perfil page right now.
