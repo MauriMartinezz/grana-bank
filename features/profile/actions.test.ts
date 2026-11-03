@@ -169,6 +169,15 @@ describe("updateEmail", () => {
     expect((await owner()).email).toBe(EMAILS[0]);
   });
 
+  it("says the email is already the user's own and writes nothing", async () => {
+    const before = await owner();
+
+    expect(
+      await updateEmail(undefined, form({ email: ` ${EMAILS[0].toUpperCase()} `, password: PASSWORD })),
+    ).toEqual({ value: EMAILS[0], errors: { email: PROFILE_MESSAGES.emailSame } });
+    expect(await owner()).toEqual(before);
+  });
+
   it("rejects an invalid email", async () => {
     expect(await updateEmail(undefined, form({ email: "nope", password: PASSWORD }))).toEqual({
       value: "nope",

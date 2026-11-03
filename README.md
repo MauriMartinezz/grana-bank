@@ -100,7 +100,7 @@ proxy.ts     Redirects visitors with no session cookie to login
 - **Contrast:** the yellow amount is hard to read on white. It is kept to follow the design, and the icon and subtitle also convey the movement type.
 - **Search:** it ignores case but not accents, so "Jose" does not find "José".
 - **List size:** the movement list shows the 50 most recent items, without pagination.
-- **Login attempts:** there is no rate limiting, which a real banking app would need.
+- **Password attempts:** there is no rate limiting on login or on the Perfil changes that ask for the current password, which a real banking app would need.
 - **Transfers:** there is no daily limit or second factor, only a limit of 1,000,000 per transfer. Deleting a user also deletes their transfers; no screen deletes users.
 - **Exchange rate:** fixed at 1 USD = $1.500 for both buying and selling; there is no spread or live quote.
 - **New dollar account:** it starts without a card, so the user adds one in Tarjetas before exchanging.
