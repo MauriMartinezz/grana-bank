@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MastercardLogo } from "@/components/icons";
 import { formatBalance } from "@/lib/format";
 import { Balance } from "./balance";
@@ -20,12 +21,23 @@ export function BalanceCard({
   return (
     <section
       aria-label={`Cuenta en ${account.currency}`}
-      className="rounded-[28px] bg-garnet-fill p-6 text-white shadow-lg shadow-black/10"
+      className="relative rounded-[28px] bg-garnet-fill p-6 text-white shadow-lg shadow-black/10"
     >
+      {card && (
+        // Covers the whole card, so a tap anywhere opens the card's page; the
+        // eye sits above it, since a button cannot live inside a link.
+        <Link
+          href={`/tarjetas/${card.id}`}
+          aria-label={`Ver la tarjeta ${BRAND_LABELS[card.brand]} terminada en ${card.last4}`}
+          className="absolute inset-0 rounded-[28px] focus-visible:outline-2 focus-visible:outline-offset-2"
+        />
+      )}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
           <p className="text-sm">Balance</p>
-          <BalanceVisibilityToggle />
+          <div className="relative z-10">
+            <BalanceVisibilityToggle />
+          </div>
         </div>
         {card?.brand === "MASTERCARD" ? (
           <MastercardLogo className="-mt-0.5" />
