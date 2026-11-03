@@ -21,6 +21,6 @@ export const config = {
     "/top-ups",
     "/cards/:path*",
     "/exchange/:path*",
-    "/profile",
+    "/profile/:path*",
   ],
 };
