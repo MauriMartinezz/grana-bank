@@ -327,6 +327,8 @@ model TopUp {
   card           Card?         @relation(fields: [cardId], references: [id], onDelete: SetNull)
   /// Same role as in Transfer: a repeated request creates one top-up.
   idempotencyKey String        @map("clave_idempotencia")
+  /// The user's optional note, up to 140 characters.
+  note           String?       @map("nota")
   createdAt      DateTime      @default(now()) @map("creado_en")
   movements      Movement[]
 
@@ -414,6 +416,8 @@ model ServicePayment {
   amountCents    BigInt      @map("monto_centavos")
   /// Same role as in Transfer: a repeated request creates one payment.
   idempotencyKey String      @map("clave_idempotencia")
+  /// The user's optional note, up to 140 characters.
+  note           String?     @map("nota")
   createdAt      DateTime    @default(now()) @map("creado_en")
   movements      Movement[]
 

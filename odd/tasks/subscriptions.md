@@ -10,10 +10,11 @@ Branch: `feat/accounts`. Delivery strategy: `single-pr`. Test runner: Vitest.
 
 ## Tasks
 
-- [ ] T1 (S2) model, migration, seed, rules and queries.
-- [ ] T2 (S2) screens: list, detail with cancel, add from the catalog, entry point.
+- [ ] T1 (S2) model, migration, seed, rules and queries. Model, migration and catalog done by the parent (commit after 4b40aa7); seed, rules and queries delegated with T2.
+- [ ] T2 (S2) screens: list, detail with cancel and card change, add from the catalog. Route: delegated (parallel writer). The Perfil entry row is added by the parent after the desktop writer finishes (shared file).
 
 ## Log
 
 - L1 (2026-11-03, user request): see S1.
 - L2 (2026-11-03, user): "Que queden como demo".
+- L3 (2026-11-03, user): "puedes asignar varios agentes a trabajar en las distintas cosas que están pendientes?"

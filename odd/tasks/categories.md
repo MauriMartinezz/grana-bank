@@ -16,7 +16,7 @@ Branch: `feat/accounts` (after the accounts feature). Delivery strategy: `single
 - [x] T2 (S1, S4) transfer flow: note and category in the amount step, shown on confirmation, success and detail. Route: inline. Commit 4d3d478.
 - [x] T3 (S2) Categorías screen in Perfil. Route: inline. Commit e63d251 (shares features/categories/actions.ts with T4).
 - [x] T4 (S4) change the category from the movement detail, for every movement type. Route: inline. Commit e63d251.
-- [ ] T5 (S1) notes in the top-up and service payment flows. Pending the user's go-ahead.
+- [ ] T5 (S1) notes in the top-up and service payment flows. Route: delegated (parallel writer). Schema and migration 20261104110000_operation_notes done by the parent.
 
 Route evidence: accounts T9 landed (2525ab3). T2, T3 and T4 have disjoint surfaces, but they run inline one after another: the machine ran out of memory today, and parallel writers each run Vitest and tsc.
 
@@ -25,3 +25,4 @@ Route evidence: accounts T9 landed (2525ab3). T2, T3 and T4 have disjoint surfac
 - L1 (2026-11-03, user request): "Las transferencias, recargas y pagos de servicios podrán tener comentarios o notas además de categorías (por defecto sugerir un par pero que el usuario pueda modificarlas o crear nuevas, esto se usará para ver un resumen por categoría más adelante)"
 - L2 (2026-11-03, user): "Bien, continúa con categorías".
 - L3 (2026-11-03): T1-T4 done; RED observed before the category service, the transfer note and category, and the actions. vitest 808/808, tsc and eslint clean. Migration 20261104030000_categories gives every existing user the five defaults. The note and the category are not compared on an idempotent replay, like `saveContact`. Not checked in a browser. Independent verifier: S1-S4 pass, no blockers; differential check of reviewAmount, readConfirmation and confirmTransfer against 757c6d4 identical. Fixed one advisory (a submitted textarea sends line breaks as CRLF, which counted twice against the 140 limit; the note now normalizes them to \n), RED observed first. Remaining advisories: a name of only zero-width characters is accepted; a confirmation URL rebuilt for a missing key drops the note and category; a category deleted during a write shows the generic retry error. Native review declined by the user for this candidate (757c6d4..6e697a9).
+- L4 (2026-11-03, user): "puedes asignar varios agentes a trabajar en las distintas cosas que están pendientes?" (taken as the go-ahead for T5).

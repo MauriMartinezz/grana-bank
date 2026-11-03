@@ -31,6 +31,8 @@ describe("proxy", () => {
     "/ingresar-dinero/comprobante/some-id",
     "/promociones",
     "/notificaciones",
+    "/suscripciones",
+    "/suscripciones/some-id",
     "/promociones/some-id",
     "/recargas",
     "/recargas/sube",
