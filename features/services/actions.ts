@@ -14,7 +14,10 @@ import { formatMoney } from "@/lib/format";
 import { adhereService as createAdhesion } from "./adhesions";
 import { validateAdhesion, type AdhesionErrors } from "./companies";
 import { confirmationPath } from "./confirmation";
+import { calendarToday, formatDueDate } from "./due-date";
 import { payBill, resolvePaymentCard, type PayBillError } from "./pay-bill";
+import { parseScheduleDate } from "./schedule";
+import { processScheduledPayments, type ProcessSummary } from "./scheduled-payments";
 
 export type AdhereServiceState =
   | {
@@ -24,6 +27,8 @@ export type AdhereServiceState =
   | undefined;
 
 export type BillPaymentFormState = { error: string } | undefined;
+
+export type NoticeState = { error: string } | { notice: string } | undefined;
 
 const PAY_ERRORS: Record<PayBillError, string> = {
   BILL_NOT_FOUND: "Esta factura ya no está disponible.",
@@ -143,4 +148,153 @@ export async function confirmBillPayment(
 
   revalidateAccountScreens();
   redirect(`/servicios/comprobante/${result.movementId}`);
+}
+
+function cardError(error: "CARD_NOT_FOUND" | "CURRENCY_MISMATCH", currency: Currency) {
+  return error === "CURRENCY_MISMATCH"
+    ? `Elegí una tarjeta de tu cuenta en ${CURRENCY_NAMES[currency]}.`
+    : PAY_ERRORS[error];
+}
+
+/** Schedules a one-off payment of a pending bill on a date and with a card. */
+export async function scheduleBillPayment(
+  _previous: BillPaymentFormState,
+  formData: FormData,
+): Promise<BillPaymentFormState> {
+  const user = await getCurrentUser();
+  const billId = text(formData, "billId");
+  const cardId = text(formData, "cardId");
+  if (!isCardId(billId)) return { error: PAY_ERRORS.BILL_NOT_FOUND };
+  if (!isCardId(cardId)) return { error: PAY_ERRORS.CARD_NOT_FOUND };
+
+  let adhesionId: string;
+  try {
+    const bill = await db.serviceBill.findFirst({
+      where: { id: billId, adhesion: { userId: user.id } },
+      select: { status: true, currency: true, dueDate: true, adhesionId: true },
+    });
+    if (!bill) return { error: PAY_ERRORS.BILL_NOT_FOUND };
+    if (bill.status !== "PENDING") return { error: PAY_ERRORS.ALREADY_PAID };
+    const date = parseScheduleDate(
+      text(formData, "date"),
+      bill.dueDate,
+      calendarToday(new Date()),
+      (last) => `Elegí una fecha hasta el vencimiento, el ${formatDueDate(last)}.`,
+    );
+    if (!date.ok) return { error: date.error };
+    const card = await resolvePaymentCard(db, user.id, cardId, bill.currency);
+    if (!card.ok) return { error: cardError(card.error, bill.currency) };
+
+    // The balance is checked when the payment runs, not now.
+    const { count } = await db.serviceBill.updateMany({
+      where: { id: billId, status: "PENDING" },
+      data: { scheduledFor: date.date, scheduledCardId: cardId, failedAt: null, failureReason: null },
+    });
+    if (count === 0) return { error: PAY_ERRORS.ALREADY_PAID };
+    adhesionId = bill.adhesionId;
+  } catch (error) {
+    console.error("Bill schedule failed", error);
+    return { error: "No pudimos programar el pago. Probá de nuevo." };
+  }
+
+  revalidateAccountScreens();
+  redirect(`/servicios/${adhesionId}`);
+}
+
+/** Cancels the one-off payment of the user's bill, and any failure of it. */
+export async function cancelScheduledPayment(formData: FormData) {
+  const user = await getCurrentUser();
+  const billId = text(formData, "billId");
+  const bill = isCardId(billId)
+    ? await db.serviceBill.findFirst({
+        where: { id: billId, adhesion: { userId: user.id } },
+        select: { adhesionId: true },
+      })
+    : null;
+  if (!bill) redirect("/servicios");
+
+  await db.serviceBill.updateMany({
+    where: { id: billId, status: "PENDING" },
+    data: { scheduledFor: null, scheduledCardId: null, failedAt: null, failureReason: null },
+  });
+  revalidateAccountScreens();
+  redirect(`/servicios/${bill.adhesionId}`);
+}
+
+/**
+ * Turns the automatic debit of an adhesion on with a card, or off with an
+ * empty card. Either way, the failed debits of its bills are cleared, so the
+ * next run tries them again with the new setting.
+ */
+export async function saveAutoDebit(_previous: NoticeState, formData: FormData): Promise<NoticeState> {
+  const user = await getCurrentUser();
+  const adhesionId = text(formData, "adhesionId");
+  const cardId = text(formData, "cardId");
+  const notAvailable = { error: "Este servicio ya no está disponible." };
+  if (!isCardId(adhesionId)) return notAvailable;
+  if (cardId !== "" && !isCardId(cardId)) return { error: PAY_ERRORS.CARD_NOT_FOUND };
+
+  try {
+    const adhesion = await db.serviceAdhesion.findFirst({
+      where: { id: adhesionId, userId: user.id },
+      select: { bills: { select: { currency: true }, orderBy: { dueDate: "desc" }, take: 1 } },
+    });
+    if (!adhesion) return notAvailable;
+    if (cardId !== "") {
+      // An adhesion bills in one currency; pesos until it has a bill.
+      const currency = adhesion.bills[0]?.currency ?? "ARS";
+      const card = await resolvePaymentCard(db, user.id, cardId, currency);
+      if (!card.ok) return { error: cardError(card.error, currency) };
+    }
+    await db.$transaction([
+      db.serviceAdhesion.update({
+        where: { id: adhesionId },
+        data: { autoDebitCardId: cardId === "" ? null : cardId },
+      }),
+      db.serviceBill.updateMany({
+        where: { adhesionId, status: "PENDING", scheduledFor: null, failedAt: { not: null } },
+        data: { failedAt: null, failureReason: null },
+      }),
+    ]);
+  } catch (error) {
+    console.error("Auto-debit change failed", error);
+    return { error: "No pudimos guardar el débito automático. Probá de nuevo." };
+  }
+
+  revalidateAccountScreens();
+  return { notice: cardId === "" ? "Débito automático desactivado." : "Débito automático activado." };
+}
+
+function plural(count: number, one: string, many: string) {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+/** `Pagamos 2 facturas. 1 pago no se pudo hacer. ...` */
+function processNotice({ paid, failed }: ProcessSummary) {
+  const parts: string[] = [];
+  if (paid > 0) parts.push(`Pagamos ${plural(paid, "factura", "facturas")}.`);
+  if (failed > 0) {
+    parts.push(
+      `${plural(failed, "pago no se pudo hacer", "pagos no se pudieron hacer")}. Revisá el aviso en el servicio.`,
+    );
+  }
+  return parts.length > 0 ? parts.join(" ") : "No había pagos para procesar hoy.";
+}
+
+/**
+ * The demo stand-in for the cron: runs today's scheduled and automatic
+ * payments of the signed-in user only.
+ */
+// Takes no arguments: the form sends nothing it needs.
+export async function processMyScheduledPayments(): Promise<NoticeState> {
+  const user = await getCurrentUser();
+  let summary: ProcessSummary;
+  try {
+    summary = await processScheduledPayments({ now: new Date(), userId: user.id });
+  } catch (error) {
+    console.error("Scheduled payments run failed", error);
+    return { error: "No pudimos procesar los pagos agendados. Probá de nuevo." };
+  }
+  revalidateAccountScreens();
+  return { notice: processNotice(summary) };
 }

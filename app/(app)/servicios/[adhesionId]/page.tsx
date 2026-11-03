@@ -4,9 +4,11 @@ import { notFound } from "next/navigation";
 import { BackButton } from "@/components/ui/back-button";
 import { StateMessage } from "@/components/ui/state-message";
 import { getCurrentUser } from "@/features/auth/current-user";
+import { AutoDebitForm } from "@/features/services/auto-debit-form";
+import { billAutomation } from "@/features/services/bill-automation";
 import { COMPANY_INFO } from "@/features/services/companies";
 import { dueLabel, formatDueDate } from "@/features/services/due-date";
-import { getAdhesion } from "@/features/services/queries";
+import { getAdhesion, getPaymentCards } from "@/features/services/queries";
 import { formatDate, formatMoney } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Facturas del servicio" };
@@ -20,6 +22,9 @@ export default async function AdhesionPage({ params }: PageProps<"/servicios/[ad
   if (!adhesion) notFound();
   const company = COMPANY_INFO[adhesion.company];
   const now = new Date();
+  // An adhesion bills in one currency; pesos until it has a bill.
+  const currency = adhesion.bills[0]?.currency ?? "ARS";
+  const payment = await getPaymentCards(user.id, currency);
 
   return (
     <>
@@ -37,12 +42,23 @@ export default async function AdhesionPage({ params }: PageProps<"/servicios/[ad
         </p>
       </section>
 
+      {payment && payment.cards.length > 0 && (
+        <section aria-label="Débito automático" className="mt-4 rounded-2xl bg-surface p-5">
+          <AutoDebitForm
+            adhesionId={adhesion.id}
+            cards={payment.cards}
+            selected={adhesion.autoDebitCard?.id ?? ""}
+          />
+        </section>
+      )}
+
       <h2 className="mt-6 mb-3 font-serif text-lg font-bold">Facturas</h2>
       {adhesion.bills.length > 0 ? (
         <ul aria-label="Facturas" className="space-y-px overflow-hidden rounded-2xl">
           {adhesion.bills.map((bill) => {
             const pending = bill.status === "PENDING";
             const label = dueLabel(bill.dueDate, now);
+            const automation = pending ? billAutomation(bill, adhesion.autoDebitCard) : null;
             return (
               <li key={bill.id} className="flex items-center justify-between gap-3 bg-surface p-4">
                 <span className="min-w-0">
@@ -57,6 +73,13 @@ export default async function AdhesionPage({ params }: PageProps<"/servicios/[ad
                       ? `${label} · ${formatDueDate(bill.dueDate)}`
                       : `Pagada el ${bill.paidAt ? formatDate(bill.paidAt) : ""}`}
                   </span>
+                  {automation && (
+                    <span
+                      className={`block text-sm ${automation.kind === "failed" ? "text-garnet" : "text-ink"}`}
+                    >
+                      {automation.text}
+                    </span>
+                  )}
                 </span>
                 {pending ? (
                   <Link

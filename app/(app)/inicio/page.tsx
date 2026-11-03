@@ -18,6 +18,7 @@ import {
   listRecentMovements,
   RECENT_MOVEMENTS,
 } from "@/features/movements/queries";
+import { UpcomingBills } from "@/features/services/upcoming-bills";
 import { SelectedAccountSkeleton } from "./selected-account-skeleton";
 
 export const metadata: Metadata = { title: "Inicio" };
@@ -111,6 +112,11 @@ export default function HomePage({ searchParams }: PageProps<"/inicio">) {
 
       <Suspense fallback={<SelectedAccountSkeleton />}>
         <SelectedAccount searchParams={searchParams} />
+      </Suspense>
+
+      {/* Shows nothing while loading: it only appears when bills are due. */}
+      <Suspense fallback={null}>
+        <UpcomingBills />
       </Suspense>
 
       <section className="mt-6">

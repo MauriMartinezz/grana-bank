@@ -5,16 +5,21 @@ import { BackButton } from "@/components/ui/back-button";
 import { buttonClassName } from "@/components/ui/button";
 import { StateMessage } from "@/components/ui/state-message";
 import { getCurrentUser } from "@/features/auth/current-user";
+import { billAutomation } from "@/features/services/bill-automation";
 import { COMPANY_INFO } from "@/features/services/companies";
 import { dueLabel } from "@/features/services/due-date";
-import { listAdhesions } from "@/features/services/queries";
+import { ProcessScheduledButton } from "@/features/services/process-scheduled-button";
+import { listAdhesions, listFailedBills } from "@/features/services/queries";
 import { formatMoney } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Pago de servicios" };
 
 export default async function ServicesPage() {
   const user = await getCurrentUser();
-  const adhesions = await listAdhesions(user.id);
+  const [adhesions, failed] = await Promise.all([
+    listAdhesions(user.id),
+    listFailedBills(user.id),
+  ]);
   // Read after the session, so the screen is rendered per request.
   const now = new Date();
 
@@ -30,12 +35,38 @@ export default async function ServicesPage() {
         Adherir servicio
       </Link>
 
+      {failed.length > 0 && (
+        <section
+          role="alert"
+          aria-label="Pagos que no se pudieron hacer"
+          className="mt-5 rounded-2xl border border-garnet/40 p-4 text-sm"
+        >
+          <p className="font-medium text-garnet">
+            {failed.length === 1
+              ? "Un pago programado no se pudo hacer"
+              : `${failed.length} pagos programados no se pudieron hacer`}
+          </p>
+          <ul className="mt-2 space-y-1">
+            {failed.map((bill) => (
+              <li key={bill.id}>
+                <Link href={`/servicios/pagar/${bill.id}`} className="underline">
+                  {bill.adhesion.nickname} · {bill.period}
+                </Link>
+                : {bill.failureReason === "INSUFFICIENT_FUNDS" ? "no había saldo suficiente" : "la tarjeta ya no está disponible"}.
+                Pagala o programala de nuevo.
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className="mt-6">
         {adhesions.length > 0 ? (
           <ul aria-label="Tus servicios" className="space-y-px overflow-hidden rounded-2xl">
             {adhesions.map((adhesion) => {
               const company = COMPANY_INFO[adhesion.company];
               const next = adhesion.bills[0];
+              const automation = next ? billAutomation(next, adhesion.autoDebitCard) : null;
               return (
                 <li key={adhesion.id}>
                   <Link
@@ -55,9 +86,15 @@ export default async function ServicesPage() {
                             {formatMoney(next.amountCents, next.currency)}
                           </span>
                           <span
-                            className={`block ${dueLabel(next.dueDate, now) === "Vencida" ? "text-garnet" : "text-muted"}`}
+                            className={`block ${automation?.kind === "failed" || dueLabel(next.dueDate, now) === "Vencida" ? "text-garnet" : "text-muted"}`}
                           >
-                            {dueLabel(next.dueDate, now)}
+                            {automation?.kind === "failed"
+                              ? "No se pudo pagar"
+                              : automation?.kind === "scheduled"
+                                ? "Programado"
+                                : automation?.kind === "auto-debit"
+                                  ? `Débito automático · ${dueLabel(next.dueDate, now)}`
+                                  : dueLabel(next.dueDate, now)}
                           </span>
                         </>
                       ) : (
@@ -76,6 +113,12 @@ export default async function ServicesPage() {
           />
         )}
       </div>
+
+      {adhesions.length > 0 && (
+        <div className="mt-6">
+          <ProcessScheduledButton />
+        </div>
+      )}
     </>
   );
 }

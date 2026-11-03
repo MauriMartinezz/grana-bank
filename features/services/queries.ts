@@ -3,6 +3,8 @@ import type { Currency } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { orderBills } from "./bills";
 
+const CARD_FACE = { select: { id: true, brand: true, last4: true } } as const;
+
 /** The user's adhesions, oldest first, each with its next pending bill. */
 export function listAdhesions(userId: string) {
   return db.serviceAdhesion.findMany({
@@ -12,11 +14,21 @@ export function listAdhesions(userId: string) {
       id: true,
       company: true,
       nickname: true,
+      autoDebitCard: CARD_FACE,
       bills: {
         where: { status: "PENDING" },
         orderBy: [{ dueDate: "asc" }, { id: "asc" }],
         take: 1,
-        select: { id: true, period: true, amountCents: true, currency: true, dueDate: true },
+        select: {
+          id: true,
+          period: true,
+          amountCents: true,
+          currency: true,
+          dueDate: true,
+          scheduledFor: true,
+          scheduledCard: CARD_FACE,
+          failureReason: true,
+        },
       },
     },
   });
@@ -26,7 +38,7 @@ export function listAdhesions(userId: string) {
 export async function getAdhesion(userId: string, adhesionId: string) {
   const adhesion = await db.serviceAdhesion.findFirst({
     where: { id: adhesionId, userId },
-    include: { bills: true },
+    include: { bills: { include: { scheduledCard: CARD_FACE } }, autoDebitCard: CARD_FACE },
   });
   return adhesion && { ...adhesion, bills: orderBills(adhesion.bills) };
 }
@@ -35,7 +47,51 @@ export async function getAdhesion(userId: string, adhesionId: string) {
 export function getBill(userId: string, billId: string) {
   return db.serviceBill.findFirst({
     where: { id: billId, adhesion: { userId } },
-    include: { adhesion: { select: { id: true, company: true, nickname: true } } },
+    include: {
+      scheduledCard: CARD_FACE,
+      adhesion: {
+        select: { id: true, company: true, nickname: true, autoDebitCard: CARD_FACE },
+      },
+    },
+  });
+}
+
+/** Pending bills whose scheduled or automatic payment failed, oldest due first. */
+export function listFailedBills(userId: string) {
+  return db.serviceBill.findMany({
+    where: { status: "PENDING", failedAt: { not: null }, adhesion: { userId } },
+    orderBy: [{ dueDate: "asc" }, { id: "asc" }],
+    select: {
+      id: true,
+      period: true,
+      failureReason: true,
+      adhesion: { select: { id: true, nickname: true } },
+    },
+  });
+}
+
+export const UPCOMING_BILLS = 3;
+
+/**
+ * The next pending bills that nothing pays by itself: no one-off schedule and
+ * no automatic debit. Home reminds them with `Vence en N días`.
+ */
+export function listUpcomingBills(userId: string) {
+  return db.serviceBill.findMany({
+    where: {
+      status: "PENDING",
+      scheduledFor: null,
+      adhesion: { userId, autoDebitCardId: null },
+    },
+    orderBy: [{ dueDate: "asc" }, { id: "asc" }],
+    take: UPCOMING_BILLS,
+    select: {
+      id: true,
+      amountCents: true,
+      currency: true,
+      dueDate: true,
+      adhesion: { select: { nickname: true, company: true } },
+    },
   });
 }
 
