@@ -123,6 +123,7 @@ model User {
   categories          Category[]
   depositSchedules    DepositSchedule[]
   topUpSchedules      TopUpSchedule[]
+  subscriptions       Subscription[]
 
   @@map("usuarios")
 }
@@ -195,6 +196,7 @@ model Card {
   topUps          TopUp[]
   servicePayments ServicePayment[]
   autoDebits      ServiceAdhesion[] @relation("AutoDebitCard")
+  subscriptions   Subscription[]
   scheduledBills  ServiceBill[]     @relation("ScheduledBillCard")
 
   @@index([accountId])
@@ -512,4 +514,35 @@ model TopUpSchedule {
   @@index([userId])
   @@index([subeCardId])
   @@map("recargas_programadas")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+
+  @@map("estado_suscripcion")
+}
+
+/// A monthly subscription, a demo: it is listed and can be cancelled, but
+/// nothing charges it.
+model Subscription {
+  id          String             @id @default(uuid())
+  userId      String             @map("usuario_id")
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  merchant    String             @map("comercio")
+  /// Integer cents of each monthly charge.
+  amountCents BigInt             @map("monto_centavos")
+  currency    Currency           @default(ARS) @map("moneda")
+  /// The card it would be charged to; empty when the card was removed.
+  cardId      String?            @map("tarjeta_id")
+  card        Card?              @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  /// 1 to 31; a shorter month uses its last day.
+  billingDay  Int                @map("dia_cobro")
+  status      SubscriptionStatus @default(ACTIVE) @map("estado")
+  cancelledAt DateTime?          @map("dada_de_baja_en")
+  createdAt   DateTime           @default(now()) @map("creado_en")
+
+  @@index([userId])
+  @@index([cardId])
+  @@map("suscripciones")
 }
