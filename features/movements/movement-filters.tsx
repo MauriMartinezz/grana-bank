@@ -47,6 +47,13 @@ export function MovementFilters() {
   const presets = dateFilterPresets(new Date());
   const today = presets[0].to;
 
+  const presetActive = presets.some(({ from, to }) => urlFrom === from && urlTo === to);
+  // A range that no chip describes was picked by hand, so its inputs stay open.
+  const customRange = Boolean(urlFrom || urlTo) && !presetActive;
+  const [rangeOpen, setRangeOpen] = useState(customRange);
+  const showRange = rangeOpen || customRange;
+  const anyFilter = Boolean(urlQuery || urlType || urlFrom || urlTo);
+
   const [query, setQuery] = useState(urlQuery);
   const [appliedQuery, setAppliedQuery] = useState(urlQuery);
   const [isPending, startTransition] = useTransition();
@@ -85,6 +92,12 @@ export function MovementFilters() {
   function handleClear() {
     setQuery("");
     applyQuery("");
+  }
+
+  function clearAll() {
+    setQuery("");
+    setRangeOpen(false);
+    navigate({ q: "", type: null, desde: "", hasta: "" });
   }
 
   return (
@@ -163,6 +176,7 @@ export function MovementFilters() {
               scroll={false}
               onClick={(event) => {
                 event.preventDefault();
+                setRangeOpen(false);
                 navigate({ desde: from, hasta: to });
               }}
               aria-current={isActive ? "true" : undefined}
@@ -172,48 +186,68 @@ export function MovementFilters() {
             </Link>
           );
         })}
+        <button
+          type="button"
+          onClick={() => setRangeOpen((open) => !open)}
+          aria-expanded={showRange}
+          aria-controls="movement-date-range"
+          className={chipClassName(showRange)}
+        >
+          Elegir fechas
+        </button>
       </nav>
 
-      <fieldset className="mt-2 flex items-end gap-3">
-        <legend className="sr-only">Rango de fechas</legend>
-        <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted">
-          Desde
-          <input
-            type="date"
-            name="desde"
-            value={urlFrom}
-            max={urlTo || today}
-            onChange={(event) => navigate({ desde: event.target.value })}
-            className="h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-ink"
-          />
-        </label>
-        <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted">
-          Hasta
-          <input
-            type="date"
-            name="hasta"
-            value={urlTo}
-            min={urlFrom || undefined}
-            max={today}
-            onChange={(event) => navigate({ hasta: event.target.value })}
-            className="h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-ink"
-          />
-        </label>
-        {(urlFrom || urlTo) && (
-          <button
-            type="button"
-            onClick={() => navigate({ desde: "", hasta: "" })}
-            aria-label="Borrar fechas"
-            className="flex size-11 shrink-0 items-center justify-center text-muted"
-          >
-            <CloseIcon className="size-4" />
-          </button>
-        )}
-      </fieldset>
+      {showRange && (
+        <fieldset id="movement-date-range" className="mt-2 flex items-end gap-3">
+          <legend className="sr-only">Rango de fechas</legend>
+          <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted">
+            Desde
+            <input
+              type="date"
+              name="desde"
+              value={urlFrom}
+              max={urlTo || today}
+              onChange={(event) => navigate({ desde: event.target.value })}
+              className="h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-ink"
+            />
+          </label>
+          <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted">
+            Hasta
+            <input
+              type="date"
+              name="hasta"
+              value={urlTo}
+              min={urlFrom || undefined}
+              max={today}
+              onChange={(event) => navigate({ hasta: event.target.value })}
+              className="h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-ink"
+            />
+          </label>
+          {(urlFrom || urlTo) && (
+            <button
+              type="button"
+              onClick={() => navigate({ desde: "", hasta: "" })}
+              aria-label="Borrar fechas"
+              className="flex size-11 shrink-0 items-center justify-center text-muted"
+            >
+              <CloseIcon className="size-4" />
+            </button>
+          )}
+        </fieldset>
+      )}
       {urlFrom && urlTo && urlFrom > urlTo && (
         <p className="mt-2 text-xs text-muted">
           La fecha Desde es posterior a Hasta, así que mostramos todas las fechas.
         </p>
+      )}
+      {anyFilter && (
+        <button
+          type="button"
+          onClick={clearAll}
+          className="mt-3 flex min-h-11 items-center font-serif text-sm text-garnet"
+        >
+          Borrar filtros
+        </button>
       )}
     </>
   );
