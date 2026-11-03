@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { BackButton } from "@/components/ui/back-button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { lookupRecipient } from "@/features/transfers/actions";
 import { FieldForm } from "@/features/transfers/field-form";
 
@@ -32,19 +34,19 @@ const METHODS = {
   },
 } as const;
 
-export default async function NewRecipientPage({
+// Reads the URL, so it renders behind Suspense: the shell shared by every
+// link to this route cannot depend on `?by=`.
+async function RecipientForm({
   searchParams,
-}: PageProps<"/transfers/new">) {
+}: {
+  searchParams: PageProps<"/transfers/new">["searchParams"];
+}) {
   const { by: requested } = await searchParams;
   const by = requested === "email" ? "email" : "alias";
   const method = METHODS[by];
 
   return (
     <>
-      <header className="flex items-center gap-1">
-        <BackButton fallbackHref="/transfers" />
-        <h1 className="font-serif text-2xl font-bold">Nuevo destinatario</h1>
-      </header>
       <p className="mt-2 text-sm text-muted">
         {method.hint} Después de transferirle, la vas a ver en tus contactos.
       </p>
@@ -70,6 +72,31 @@ export default async function NewRecipientPage({
       >
         {method.switchTo.label}
       </Link>
+    </>
+  );
+}
+
+function RecipientFormSkeleton() {
+  return (
+    <div role="status" aria-label="Cargando formulario">
+      <Skeleton className="mt-2 h-4 w-64" />
+      <Skeleton className="mt-6 h-4 w-40" />
+      <Skeleton className="mt-2 h-11 rounded-xl" />
+      <Skeleton className="mt-8 h-12 rounded-full" />
+    </div>
+  );
+}
+
+export default function NewRecipientPage({ searchParams }: PageProps<"/transfers/new">) {
+  return (
+    <>
+      <header className="flex items-center gap-1">
+        <BackButton fallbackHref="/transfers" />
+        <h1 className="font-serif text-2xl font-bold">Nuevo destinatario</h1>
+      </header>
+      <Suspense fallback={<RecipientFormSkeleton />}>
+        <RecipientForm searchParams={searchParams} />
+      </Suspense>
     </>
   );
 }

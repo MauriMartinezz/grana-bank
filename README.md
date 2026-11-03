@@ -19,6 +19,8 @@ pnpm dev
 
 Open http://localhost:3000 in a mobile viewport.
 
+After pulling changes that touch `prisma/`, run `pnpm db:migrate` and restart `pnpm dev`: a running server keeps the Prisma client it loaded at start. If routes from another branch still show, stop the server, delete `.next` and start it again.
+
 | Command | Purpose |
 |---------|---------|
 | `pnpm test` | Unit and integration tests. The database must be running. |
