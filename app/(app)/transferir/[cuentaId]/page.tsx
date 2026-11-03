@@ -4,9 +4,9 @@ import { BackButton } from "@/components/ui/back-button";
 import { StateMessage } from "@/components/ui/state-message";
 import { getAccount } from "@/features/account/queries";
 import { getCurrentUser } from "@/features/auth/current-user";
-import { reviewAmount } from "@/features/transfers/actions";
+import { listCategories } from "@/features/categories/categories";
+import { AmountForm } from "@/features/transfers/amount-form";
 import { getRecipient } from "@/features/transfers/contacts";
-import { FieldForm } from "@/features/transfers/field-form";
 import { RecipientSummary } from "@/features/transfers/recipient-summary";
 import { formatMoney } from "@/lib/format";
 
@@ -20,7 +20,10 @@ export default async function TransferAmountPage({
   const recipient = await getRecipient(user.id, accountId);
   if (!recipient) notFound();
   // The money leaves the sender's account in the recipient's currency.
-  const account = await getAccount(user.id, recipient.currency);
+  const [account, categories] = await Promise.all([
+    getAccount(user.id, recipient.currency),
+    listCategories(user.id),
+  ]);
 
   return (
     <>
@@ -39,14 +42,10 @@ export default async function TransferAmountPage({
             Disponible: {formatMoney(account.balanceCents, account.currency)}
           </p>
           <div className="mt-2">
-            <FieldForm
-              action={reviewAmount}
-              label={`Monto en ${account.currency}`}
-              name="amount"
-              hidden={{ recipientAccountId: recipient.accountId }}
-              submitLabel="Continuar"
-              pendingLabel="Validando…"
-              input={{ inputMode: "decimal", autoComplete: "off", placeholder: "0,00" }}
+            <AmountForm
+              recipientAccountId={recipient.accountId}
+              currency={account.currency}
+              categories={categories}
             />
           </div>
         </>

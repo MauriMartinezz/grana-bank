@@ -20,11 +20,15 @@ export function ConfirmForm({
   recipientAccountId,
   amountCents,
   idempotencyKey,
+  note,
+  categoryId,
   saveContactName,
 }: {
   recipientAccountId: string;
   amountCents: number;
   idempotencyKey: string;
+  note: string | null;
+  categoryId: string | null;
   /** Offers to save the recipient as a contact; null when they already are one. */
   saveContactName: string | null;
 }) {
@@ -35,6 +39,8 @@ export function ConfirmForm({
       <input type="hidden" name="recipientAccountId" value={recipientAccountId} />
       <input type="hidden" name="amountCents" value={amountCents} />
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+      {note && <input type="hidden" name="note" value={note} />}
+      {categoryId && <input type="hidden" name="categoryId" value={categoryId} />}
       {saveContactName && (
         <label className="mb-4 flex min-h-12 items-center gap-3 text-sm">
           <input type="checkbox" name="saveContact" className="size-5 accent-garnet" />

@@ -1,4 +1,6 @@
 import { fullName } from "@/features/account/name";
+import { isOwnCategory } from "@/features/categories/categories";
+import { validateNote } from "@/features/categories/names";
 import { db } from "@/lib/db";
 import { MAX_TRANSFER_CENTS } from "./amount";
 
@@ -8,7 +10,9 @@ export type TransferError =
   | "RECIPIENT_NOT_FOUND"
   | "SELF_TRANSFER"
   | "CURRENCY_MISMATCH"
-  | "IDEMPOTENCY_MISMATCH";
+  | "IDEMPOTENCY_MISMATCH"
+  | "INVALID_NOTE"
+  | "CATEGORY_NOT_FOUND";
 
 export type TransferResult =
   | { ok: true; movementId: string }
@@ -32,6 +36,14 @@ export type TransferRequest = {
    * transfer returns the first result and changes nothing, contacts included.
    */
   saveContact?: boolean;
+  /**
+   * The concept, shown to both sides, up to 140 characters. Like
+   * `saveContact`, the note and the category are not compared on a replay:
+   * a replayed key returns the first transfer as it was.
+   */
+  note?: string | null;
+  /** One of the sender's categories, set on the sender's movement only. */
+  categoryId?: string | null;
 };
 
 // The raw query returns BIGINT columns as bigint.
@@ -57,6 +69,8 @@ export async function transfer({
   amountCents,
   idempotencyKey,
   saveContact = false,
+  note = null,
+  categoryId = null,
 }: TransferRequest): Promise<TransferResult> {
   if (
     !Number.isSafeInteger(amountCents) ||
@@ -66,6 +80,8 @@ export async function transfer({
     return { ok: false, error: "INVALID_AMOUNT" };
   }
   const cents = BigInt(amountCents);
+  const validNote = validateNote(note ?? "");
+  if (!validNote.ok) return { ok: false, error: "INVALID_NOTE" };
 
   return db.$transaction(async (tx) => {
     // Owner and currency never change, so reading them before the lock is
@@ -121,6 +137,9 @@ export async function transfer({
     if (from.balanceCents < cents) {
       return { ok: false, error: "INSUFFICIENT_FUNDS" };
     }
+    if (categoryId !== null && !(await isOwnCategory(tx, senderId, categoryId))) {
+      return { ok: false, error: "CATEGORY_NOT_FOUND" };
+    }
 
     const users = await tx.user.findMany({
       where: { id: { in: [senderId, recipientId] } },
@@ -152,6 +171,7 @@ export async function transfer({
         toAccountId: to.id,
         amountCents: cents,
         idempotencyKey,
+        note: validNote.note,
       },
     });
     const shared = {
@@ -166,6 +186,7 @@ export async function transfer({
         ...shared,
         accountId: from.id,
         cardId: firstCardOf(from.id),
+        categoryId,
         type: "SENT",
         counterparty: nameOf(recipientId),
       },

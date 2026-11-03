@@ -4,8 +4,9 @@ import { notFound, redirect } from "next/navigation";
 import { BackButton } from "@/components/ui/back-button";
 import { getAccount } from "@/features/account/queries";
 import { getCurrentUser } from "@/features/auth/current-user";
+import { listCategories } from "@/features/categories/categories";
 import { ConfirmForm } from "@/features/transfers/confirm-form";
-import { readConfirmation } from "@/features/transfers/confirmation";
+import { readConfirmation, readTransferExtras } from "@/features/transfers/confirmation";
 import { getRecipient, isContact } from "@/features/transfers/contacts";
 import { findSentMovementByKey } from "@/features/transfers/transfer";
 import { RecipientSummary } from "@/features/transfers/recipient-summary";
@@ -17,10 +18,16 @@ export default async function ConfirmTransferPage({
   params,
   searchParams,
 }: PageProps<"/transferir/[cuentaId]/confirmar">) {
-  const [{ cuentaId: accountId }, { amount, key }] = await Promise.all([params, searchParams]);
+  const [{ cuentaId: accountId }, { amount, key, note: rawNote, category }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
   const confirmation = readConfirmation(accountId, amount, key);
   if ("redirectTo" in confirmation) redirect(confirmation.redirectTo);
   const { amountCents, idempotencyKey } = confirmation;
+  const extras = readTransferExtras(rawNote, category);
+  if (!extras) redirect(`/transferir/${accountId}`);
+  const { note, categoryId } = extras;
 
   const user = await getCurrentUser();
   // Back from the success screen lands here: show the receipt instead of
@@ -31,11 +38,17 @@ export default async function ConfirmTransferPage({
   const recipient = await getRecipient(user.id, accountId);
   if (!recipient) notFound();
   // Without an account in this currency, the amount step explains why.
-  const [account, saved] = await Promise.all([
+  const [account, saved, categories] = await Promise.all([
     getAccount(user.id, recipient.currency),
     isContact(user.id, recipient.accountId),
+    listCategories(user.id),
   ]);
   if (!account) redirect(`/transferir/${accountId}`);
+  // Only the user's own category; another id sends them back to pick again.
+  const categoryName = categoryId
+    ? categories.find((c) => c.id === categoryId)?.name
+    : null;
+  if (categoryName === undefined) redirect(`/transferir/${accountId}`);
 
   const remaining = account.balanceCents - BigInt(amountCents);
 
@@ -70,6 +83,18 @@ export default async function ConfirmTransferPage({
                 : formatMoney(remaining, account.currency)}
             </dd>
           </div>
+          {note && (
+            <div className="flex justify-between gap-6 py-3">
+              <dt className="text-muted">Nota</dt>
+              <dd className="min-w-0 text-right font-medium break-words">{note}</dd>
+            </div>
+          )}
+          {categoryName && (
+            <div className="flex justify-between gap-6 py-3">
+              <dt className="text-muted">Categoría</dt>
+              <dd className="text-right font-medium">{categoryName}</dd>
+            </div>
+          )}
         </dl>
       </section>
 
@@ -78,6 +103,8 @@ export default async function ConfirmTransferPage({
           recipientAccountId={recipient.accountId}
           amountCents={amountCents}
           idempotencyKey={idempotencyKey}
+          note={note}
+          categoryId={categoryId}
           saveContactName={saved ? null : recipient.name}
         />
         <Link

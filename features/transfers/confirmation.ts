@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { validateNote } from "@/features/categories/names";
 import { MAX_TRANSFER_CENTS } from "./amount";
 
 const UUID_PATTERN =
@@ -30,4 +31,19 @@ export function readConfirmation(
     };
   }
   return { amountCents: cents, idempotencyKey: key.toLowerCase() };
+}
+
+/**
+ * Reads the optional note and category of the confirmation URL, or null when
+ * one is invalid, so the page sends the user back to the amount step.
+ */
+export function readTransferExtras(
+  note: SearchParam,
+  category: SearchParam,
+): { note: string | null; categoryId: string | null } | null {
+  if (Array.isArray(note) || Array.isArray(category)) return null;
+  const validNote = validateNote(note ?? "");
+  if (!validNote.ok) return null;
+  if (category && !UUID_PATTERN.test(category)) return null;
+  return { note: validNote.note, categoryId: category ? category.toLowerCase() : null };
 }

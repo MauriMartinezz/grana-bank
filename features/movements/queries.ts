@@ -81,6 +81,10 @@ export type MovementListItem = Awaited<
 export function getMovement(userId: string, id: string) {
   return db.movement.findFirst({
     where: { id, account: { userId } },
-    include: MOVEMENT_INCLUDE,
+    include: {
+      ...MOVEMENT_INCLUDE,
+      transfer: { select: { note: true } },
+      category: { select: { id: true, name: true } },
+    },
   });
 }

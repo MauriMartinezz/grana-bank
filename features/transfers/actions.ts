@@ -7,6 +7,9 @@ import { getAccount } from "@/features/account/queries";
 import { revalidateAccountScreens } from "@/features/account/revalidate";
 import { isValidEmail, normalizeEmail } from "@/features/auth/email";
 import { getCurrentUser } from "@/features/auth/current-user";
+import { CATEGORY_NOT_FOUND, isOwnCategory } from "@/features/categories/categories";
+import { validateNote } from "@/features/categories/names";
+import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { parseAmountToCents } from "./amount";
 import { isIdempotencyKey } from "./confirmation";
@@ -20,7 +23,14 @@ import {
 import { transfer, type TransferError } from "./transfer";
 
 /** The typed value comes back because React resets the form after an action. */
-export type FieldState = { value: string; error: string } | undefined;
+export type FieldState =
+  | {
+      value: string;
+      error: string;
+      /** The amount step's other field the error is about; the main input otherwise. */
+      field?: "note" | "category";
+    }
+  | undefined;
 export type ConfirmState = { error: string } | undefined;
 
 const TRANSFER_ERRORS: Record<TransferError, string> = {
@@ -30,7 +40,11 @@ const TRANSFER_ERRORS: Record<TransferError, string> = {
   SELF_TRANSFER: "No podés transferirte a vos mismo.",
   CURRENCY_MISMATCH: "No tenés una cuenta en esa moneda.",
   IDEMPOTENCY_MISMATCH: "La operación expiró. Volvé a intentarlo.",
+  INVALID_NOTE: "La nota tiene hasta 140 caracteres.",
+  CATEGORY_NOT_FOUND: `${CATEGORY_NOT_FOUND} Volvé a elegirla.`,
 };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const LOOKUPS = {
   alias: {
@@ -111,6 +125,8 @@ export async function reviewAmount(
   const user = await getCurrentUser();
   const recipientAccountId = String(formData.get("recipientAccountId") ?? "");
   const value = String(formData.get("amount") ?? "");
+  const note = validateNote(String(formData.get("note") ?? ""));
+  const categoryId = String(formData.get("categoryId") ?? "").toLowerCase();
 
   if (!value.trim()) return { value, error: "Ingresá un monto." };
   const amountCents = parseAmountToCents(value);
@@ -135,6 +151,10 @@ export async function reviewAmount(
         error: `No tenés saldo suficiente. Disponible: ${formatMoney(account.balanceCents, account.currency)}`,
       };
     }
+    if (!note.ok) return { value, error: note.error, field: "note" };
+    if (categoryId && (!UUID.test(categoryId) || !(await isOwnCategory(db, user.id, categoryId)))) {
+      return { value, error: CATEGORY_NOT_FOUND, field: "category" };
+    }
   } catch (error) {
     console.error("Amount review failed", error);
     return { value, error: "No pudimos validar el monto. Probá de nuevo." };
@@ -143,9 +163,10 @@ export async function reviewAmount(
   // The key is created here and travels in the URL, so going back to the
   // confirmation screen, or retrying after an error, reuses it and can never
   // charge twice.
-  redirect(
-    `/transferir/${recipientAccountId}/confirmar?amount=${amountCents}&key=${randomUUID()}`,
-  );
+  const query = new URLSearchParams({ amount: String(amountCents), key: randomUUID() });
+  if (note.ok && note.note) query.set("note", note.note);
+  if (categoryId) query.set("category", categoryId);
+  redirect(`/transferir/${recipientAccountId}/confirmar?${query}`);
 }
 
 export async function confirmTransfer(
@@ -174,6 +195,8 @@ export async function confirmTransfer(
       idempotencyKey,
       // An unchecked checkbox sends nothing.
       saveContact: formData.get("saveContact") === "on",
+      note: String(formData.get("note") ?? ""),
+      categoryId: String(formData.get("categoryId") ?? "").toLowerCase() || null,
     });
   } catch (error) {
     console.error("Transfer failed", error);

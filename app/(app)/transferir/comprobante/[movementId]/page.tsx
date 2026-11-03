@@ -29,6 +29,12 @@ export default async function TransferSuccessPage({
         {formatMoney(movement.amountCents, movement.account.currency)}
       </p>
       <p className="mt-1 text-sm text-muted">a {movement.counterparty}</p>
+      {movement.transfer?.note && (
+        <p className="mt-3 max-w-full text-sm break-words">“{movement.transfer.note}”</p>
+      )}
+      {movement.category && (
+        <p className="mt-1 text-sm text-muted">Categoría: {movement.category.name}</p>
+      )}
       <p className="mt-4 text-sm text-muted">N.º de operación {movement.reference}</p>
 
       <div className="mt-10 w-full space-y-3">
