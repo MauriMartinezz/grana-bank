@@ -5,7 +5,7 @@ import { DollarIcon } from "@/features/exchange/icons";
 // Four per row; the fifth and sixth start a second row.
 // Ingresar dinero first: it funds every other operation in the demo.
 const ACTIONS = [
-  { href: "/ingresar-dinero", label: "Ingresar dinero", Icon: PlusIcon },
+  { href: "/ingresar-dinero", label: "Ingresar", Icon: PlusIcon },
   { href: "/transferir", label: "Transferir", Icon: SwapIcon },
   { href: "/servicios", label: "Servicios", Icon: ReceiptIcon },
   { href: "/recargas", label: "Recargas", Icon: TopUpIcon },
