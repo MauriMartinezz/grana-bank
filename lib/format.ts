@@ -1,18 +1,21 @@
-const LOCALE_MONEY = "en-US";
+// Argentine separators: dots for thousands, a comma for decimals.
+const LOCALE_MONEY = "es-AR";
 const LOCALE_DATE = "es-AR";
 const TIME_ZONE = "America/Argentina/Buenos_Aires";
 
 const HUNDRED = 100;
 
-/** Formats a movement amount: `$125`, or `$12.99` when it has cents. */
+// Pesos are the app's default currency, so they keep the bare symbol.
+const PREFIX: Record<string, string> = { ARS: "$", USD: "USD$" };
+
+/** Formats an amount: `$5.000` for pesos, `USD$12,50` for dollars. */
 export function formatMoney(cents: number, currency: string): string {
   const hasCents = cents % HUNDRED !== 0;
-  return new Intl.NumberFormat(LOCALE_MONEY, {
-    style: "currency",
-    currency,
+  const number = new Intl.NumberFormat(LOCALE_MONEY, {
     minimumFractionDigits: hasCents ? 2 : 0,
     maximumFractionDigits: 2,
   }).format(cents / HUNDRED);
+  return `${PREFIX[currency] ?? `${currency}$`}${number}`;
 }
 
 /** Formats a balance without currency symbol: the card shows it apart. */

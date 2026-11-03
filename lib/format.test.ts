@@ -2,20 +2,29 @@ import { describe, expect, it } from "vitest";
 import { formatAmount, formatDateTime, formatMoney } from "./format";
 
 describe("formatMoney", () => {
-  it("drops the decimals of whole amounts, as the design does", () => {
-    expect(formatMoney(12500, "USD")).toBe("$125");
+  it("prefixes pesos with $ and dollars with USD$", () => {
+    expect(formatMoney(500000, "ARS")).toBe("$5.000");
+    expect(formatMoney(500000, "USD")).toBe("USD$5.000");
   });
 
-  it("keeps two decimals when the amount has cents", () => {
-    expect(formatMoney(1299, "USD")).toBe("$12.99");
-    expect(formatMoney(1250, "USD")).toBe("$12.50");
+  it("drops the decimals of whole amounts, as the design does", () => {
+    expect(formatMoney(12500, "ARS")).toBe("$125");
+  });
+
+  it("keeps two decimals with a comma when the amount has cents", () => {
+    expect(formatMoney(1299, "ARS")).toBe("$12,99");
+    expect(formatMoney(1250, "USD")).toBe("USD$12,50");
+  });
+
+  it("uses dots for thousands", () => {
+    expect(formatMoney(123456789, "ARS")).toBe("$1.234.567,89");
   });
 });
 
 describe("formatAmount", () => {
   it("always shows two decimals and no currency symbol", () => {
-    expect(formatAmount(97885)).toBe("978.85");
-    expect(formatAmount(100000)).toBe("1,000.00");
+    expect(formatAmount(97885)).toBe("978,85");
+    expect(formatAmount(100000)).toBe("1.000,00");
   });
 });
 
