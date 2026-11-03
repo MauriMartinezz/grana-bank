@@ -19,7 +19,7 @@ Mobile-first home banking web app built for a technical challenge. A user signs 
 | Area | What the user can do |
 |------|----------------------|
 | Sign in | Email and password, "Recordarme", logout from Perfil |
-| Home | Balance per account, quick actions, upcoming bills, today's promotions, latest movements |
+| Home | Balance per account (the eye hides it as `*****`), quick actions, upcoming bills, today's promotions, latest movements |
 | Movimientos | Search and filter by date, open the detail, change a movement's category |
 | Transferir | Send by alias or email, with a note and a category; contacts and favorites |
 | Dólares | Buy and sell dollars at a simulated rate |
@@ -215,6 +215,7 @@ proxy.ts     Redirects visitors with no session cookie to sign-in
 | Dollar exchange | Fixed simulated rate of 1 USD = $1.500 in one transaction that locks both accounts, with an idempotency key | Same guarantees as transfers: no overdraft, no deadlock, no double charge. |
 | Cards | Visa, Mastercard and American Express validated locally (prefix, length, Luhn, expiry, CVV length); only brand, last four digits, holder and expiry are stored | It shows how the product validates without an external API, and the full number and CVV never reach the database or the logs. Database `CHECK` constraints reject a full number. |
 | Perfil | A summary with one screen per change; changing the email or password needs the current password, and a new password closes the other sessions | Editing the login identifier or the password must prove it is the owner. |
+| Hidden balance | An eye on the balance card swaps every balance for `*****`, per device, applied before the first paint like the theme | The amount never flashes on screen before hiding, which matters for privacy in public. |
 | Theme | Light or dark per device, applied before the first paint | Reading a cookie in the root layout would make every page dynamic under Cache Components. |
 
 ## Differences from Figma

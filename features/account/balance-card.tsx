@@ -1,5 +1,7 @@
 import { MastercardLogo } from "@/components/icons";
 import { formatBalance } from "@/lib/format";
+import { BALANCE_MASK } from "./balance-privacy";
+import { BalanceVisibilityToggle } from "./balance-visibility-toggle";
 import type { AccountWithCards } from "./queries";
 
 const BRAND_LABELS = { MASTERCARD: "Mastercard", VISA: "Visa", AMEX: "American Express" };
@@ -21,7 +23,10 @@ export function BalanceCard({
       className="rounded-[28px] bg-garnet-fill p-6 text-white shadow-lg shadow-black/10"
     >
       <div className="flex items-start justify-between">
-        <p className="text-sm">Balance</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm">Balance</p>
+          <BalanceVisibilityToggle />
+        </div>
         {card?.brand === "MASTERCARD" ? (
           <MastercardLogo className="-mt-0.5" />
         ) : (
@@ -29,7 +34,11 @@ export function BalanceCard({
         )}
       </div>
       <p className="mt-1 text-2xl font-medium">
-        {formatBalance(account.balanceCents, account.currency)}
+        {/* CSS shows one of the two, following data-balance on <html>. */}
+        <span className="balance-amount">{formatBalance(account.balanceCents, account.currency)}</span>
+        <span className="balance-mask" aria-label="Saldo oculto">
+          {BALANCE_MASK}
+        </span>
       </p>
       <p className="mt-1 truncate text-xs text-white/80">Alias: {account.alias}</p>
       {card ? (

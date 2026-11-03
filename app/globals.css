@@ -61,3 +61,9 @@ body {
   outline: 2px solid var(--color-garnet);
   outline-offset: 2px;
 }
+
+/* Balance privacy: the head script sets data-balance before the first paint. */
+:root[data-balance="hidden"] .balance-amount,
+:root:not([data-balance="hidden"]) .balance-mask {
+  display: none;
+}

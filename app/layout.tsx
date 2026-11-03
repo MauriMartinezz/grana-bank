@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Roboto_Slab } from "next/font/google";
 import { ThemeSync } from "@/features/profile/theme-toggle";
+import { balanceInitScript } from "@/features/account/balance-privacy";
 import { themeInitScript } from "@/features/profile/theme";
 import "./globals.css";
 
@@ -29,12 +30,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="es"
       data-theme="light"
       className={`${jakarta.variable} ${robotoSlab.variable} h-full antialiased`}
-      // The inline script below may switch data-theme before React hydrates.
+      // The inline scripts below may switch data-theme and set data-balance
+      // before React hydrates.
       suppressHydrationWarning
     >
       <head>
         {/* Applies this device's theme before the first paint, on every page. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {/* Hides the balance before the first paint when this device chose it. */}
+        <script dangerouslySetInnerHTML={{ __html: balanceInitScript }} />
       </head>
       <body className="min-h-full font-sans">
         <div className="mx-auto min-h-dvh w-full max-w-[430px]">{children}</div>
