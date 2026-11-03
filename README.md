@@ -1,5 +1,7 @@
 # GranaBank
 
+[![CI](https://github.com/MauriMartinezz/grana-bank/actions/workflows/ci.yml/badge.svg)](https://github.com/MauriMartinezz/grana-bank/actions/workflows/ci.yml)
+
 Aplicación web de home banking, pensada primero para celular, hecha para un desafío técnico. Un usuario inicia sesión y maneja una cuenta por moneda (pesos y, opcionalmente, dólares): transferencias, compra y venta de dólares, tarjetas, recargas, pago de servicios con programación, categorías, ingresos desde una cuenta de prueba, suscripciones, promociones y notificaciones. Todo corre localmente contra una base PostgreSQL en Docker; no se contacta a ningún banco, red de tarjetas ni empresa real.
 
 ## Documentación
@@ -18,6 +20,7 @@ Aplicación web de home banking, pensada primero para celular, hecha para un des
 - [Requisitos](#requisitos)
 - [Levantarlo localmente](#levantarlo-localmente)
 - [Comandos](#comandos)
+- [Integración continua](#integración-continua)
 - [Probarlo](#probarlo)
 - [Estructura del proyecto](#estructura-del-proyecto)
 
@@ -150,6 +153,15 @@ Sin secreto, el botón **Procesar pagos agendados**, al final de Servicios, ejec
 | `pnpm db:promos` | Carga solo las promociones de demo, sin tocar los usuarios |
 | `docker compose down` | Detiene PostgreSQL y conserva sus datos |
 | `docker compose down -v` | Detiene PostgreSQL y borra sus datos; después hay que correr `db:up`, `db:migrate` y `db:seed` |
+
+## Integración continua
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) corre en cada push y en cada pull request, sobre una máquina limpia con PostgreSQL 17:
+
+1. Instala las dependencias con el lockfile exacto (`pnpm install --frozen-lockfile`).
+2. Genera el cliente de Prisma y aplica todas las migraciones sobre una base vacía.
+3. Corre lint, el chequeo de tipos y los tests contra esa base. Los tests crean sus propios datos, así que no hace falta el seed.
+4. Compila para producción (`pnpm build`).
 
 ## Probarlo
 
