@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAccount } from "@/features/account/queries";
@@ -90,7 +91,12 @@ export async function reviewAmount(
     return { value, error: "No pudimos validar el monto. Probá de nuevo." };
   }
 
-  redirect(`/transfers/to/${recipientId}/confirm?amount=${amountCents}`);
+  // The key is created here and travels in the URL, so going back to the
+  // confirmation screen, or retrying after an error, reuses it and can never
+  // charge twice.
+  redirect(
+    `/transfers/to/${recipientId}/confirm?amount=${amountCents}&key=${randomUUID()}`,
+  );
 }
 
 export async function confirmTransfer(
@@ -100,7 +106,8 @@ export async function confirmTransfer(
   const user = await getCurrentUser();
   const recipientId = String(formData.get("recipientId") ?? "");
   const rawAmount = String(formData.get("amountCents") ?? "");
-  const idempotencyKey = String(formData.get("idempotencyKey") ?? "");
+  // Lower case, so the same key in another case is the same transfer.
+  const idempotencyKey = String(formData.get("idempotencyKey") ?? "").toLowerCase();
 
   if (!/^\d{1,12}$/.test(rawAmount)) {
     return { error: TRANSFER_ERRORS.INVALID_AMOUNT };
@@ -124,7 +131,15 @@ export async function confirmTransfer(
       error: "No pudimos completar la transferencia. Probá de nuevo: no se va a cobrar dos veces.",
     };
   }
-  if (!result.ok) return { error: TRANSFER_ERRORS[result.error] };
+  if (!result.ok) {
+    // The user picked this recipient from a list, never typed an email here.
+    return {
+      error:
+        result.error === "RECIPIENT_NOT_FOUND"
+          ? "Este destinatario ya no está disponible."
+          : TRANSFER_ERRORS[result.error],
+    };
+  }
 
   revalidatePath("/", "layout");
   redirect(`/transfers/success/${result.movementId}`);

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { MAX_TRANSFER_CENTS } from "./amount";
-import { transfer } from "./transfer";
+import { findSentMovementByKey, transfer } from "./transfer";
 
 const EMAILS = ["sender@transfer.test", "recipient@transfer.test"];
 
@@ -140,6 +140,23 @@ describe("transfer", () => {
     expect(first.ok).toBe(true);
     expect((await snapshot()).transfers).toBe(1);
     expect(await balanceOf(sender.id)).toBe(9000);
+  });
+
+  it("finds the sent movement of an already used key, only for its sender", async () => {
+    const idempotencyKey = randomUUID();
+    expect(await findSentMovementByKey(sender.id, idempotencyKey)).toBeNull();
+
+    const result = await transfer({
+      senderId: sender.id,
+      recipientId: recipient.id,
+      amountCents: 100,
+      idempotencyKey,
+    });
+
+    expect(await findSentMovementByKey(sender.id, idempotencyKey)).toBe(
+      result.ok && result.movementId,
+    );
+    expect(await findSentMovementByKey(recipient.id, idempotencyKey)).toBeNull();
   });
 
   it("rejects a reused key with a different amount or recipient", async () => {

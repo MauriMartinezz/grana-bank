@@ -89,10 +89,20 @@ describe("lookupRecipient", () => {
 });
 
 describe("reviewAmount", () => {
-  it("goes to the confirmation screen with the amount in cents", async () => {
-    await expect(
-      reviewAmount(undefined, form({ recipientId, amount: "25,50" })),
-    ).rejects.toThrow(`REDIRECT:/transfers/to/${recipientId}/confirm?amount=2550`);
+  it("goes to the confirmation screen with the amount in cents and a fresh key", async () => {
+    const redirectTo = async () =>
+      (await reviewAmount(undefined, form({ recipientId, amount: "25,50" })).catch(
+        (error: Error) => error.message,
+      )) as string;
+    const first = await redirectTo();
+    const second = await redirectTo();
+
+    const pattern = new RegExp(
+      `^REDIRECT:/transfers/to/${recipientId}/confirm\\?amount=2550&key=[0-9a-f-]{36}$`,
+    );
+    expect(first).toMatch(pattern);
+    expect(second).toMatch(pattern);
+    expect(first).not.toBe(second);
   });
 
   it.each([
@@ -133,6 +143,24 @@ describe("confirmTransfer", () => {
 
     const sender = await db.account.findUniqueOrThrow({ where: { userId: current.user.id } });
     expect(sender.balanceCents).toBe(10000);
+  });
+
+  it("treats the same key in upper case as the same transfer", async () => {
+    const key = randomUUID();
+    const first = await confirm("100", key).catch((error: Error) => error.message);
+    const second = await confirm("100", key.toUpperCase()).catch((error: Error) => error.message);
+
+    expect(second).toBe(first);
+    const sender = await db.account.findUniqueOrThrow({ where: { userId: current.user.id } });
+    expect(sender.balanceCents).toBe(9900);
+  });
+
+  it("says the recipient is no longer available when their account is gone", async () => {
+    await db.account.delete({ where: { userId: recipientId } });
+
+    expect(await confirm("100")).toEqual({
+      error: "Este destinatario ya no está disponible.",
+    });
   });
 
   it("rejects a missing idempotency key", async () => {

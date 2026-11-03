@@ -150,3 +150,15 @@ export async function transfer({
     return { ok: true, movementId: sent.id };
   });
 }
+
+/** The sender's movement for an already used key, or null when it is unused. */
+export async function findSentMovementByKey(senderId: string, idempotencyKey: string) {
+  const found = await db.transfer.findFirst({
+    where: { idempotencyKey, fromAccount: { userId: senderId } },
+    select: {
+      fromAccountId: true,
+      movements: { select: { id: true, accountId: true } },
+    },
+  });
+  return found?.movements.find((m) => m.accountId === found.fromAccountId)?.id ?? null;
+}

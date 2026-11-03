@@ -8,10 +8,14 @@ import { getCurrentUser } from "@/features/auth/current-user";
 import { MAX_TRANSFER_CENTS } from "@/features/transfers/amount";
 import { ConfirmForm } from "@/features/transfers/confirm-form";
 import { getRecipient } from "@/features/transfers/contacts";
+import { findSentMovementByKey } from "@/features/transfers/transfer";
 import { RecipientSummary } from "@/features/transfers/recipient-summary";
 import { formatMoney } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Confirmar transferencia" };
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function parseCents(value: string | string[] | undefined) {
   if (typeof value !== "string" || !/^\d{1,12}$/.test(value)) return null;
@@ -23,11 +27,22 @@ export default async function ConfirmTransferPage({
   params,
   searchParams,
 }: PageProps<"/transfers/to/[userId]/confirm">) {
-  const [{ userId }, { amount }] = await Promise.all([params, searchParams]);
+  const [{ userId }, { amount, key }] = await Promise.all([params, searchParams]);
   const amountCents = parseCents(amount);
   if (amountCents === null) redirect(`/transfers/to/${userId}`);
+  // The amount step creates the key; without a valid one, start a fresh
+  // confirmation so the key never changes between renders of this URL.
+  if (typeof key !== "string" || !UUID_PATTERN.test(key)) {
+    redirect(`/transfers/to/${userId}/confirm?amount=${amountCents}&key=${randomUUID()}`);
+  }
+  const idempotencyKey = key.toLowerCase();
 
   const user = await getCurrentUser();
+  // Back from the success screen lands here: show the receipt instead of
+  // offering to confirm a transfer that already happened.
+  const done = await findSentMovementByKey(user.id, idempotencyKey);
+  if (done) redirect(`/transfers/success/${done}`);
+
   const [recipient, account] = await Promise.all([
     getRecipient(user.id, userId),
     getAccount(user.id),
@@ -35,9 +50,6 @@ export default async function ConfirmTransferPage({
   if (!recipient) notFound();
   if (!account) throw new Error(`User ${user.id} has no account.`);
 
-  // One key per rendered confirmation: submitting it again cannot repeat
-  // the transfer.
-  const idempotencyKey = randomUUID();
   const remaining = account.balanceCents - amountCents;
 
   return (
