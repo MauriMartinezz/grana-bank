@@ -3,6 +3,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "../features/auth/password";
 import { defaultCategoryRows } from "../features/categories/names";
 import { TEST_ACCOUNT } from "../features/deposits/test-account";
+import { PROMOTIONS } from "../features/promotions/catalog";
+import { buenosAiresDate } from "../features/services/due-date";
 import { simulatedBills } from "../features/services/bills";
 import { PrismaClient, MovementType } from "../generated/prisma/client";
 
@@ -218,6 +220,19 @@ async function main() {
         })),
       },
     },
+  });
+
+  // Promociones: the invented catalog, in force from the first day of this
+  // month to the last day of the next one, so the demo always shows them.
+  const { year, month } = buenosAiresDate(new Date());
+  await prisma.promotion.deleteMany();
+  await prisma.promotion.createMany({
+    data: PROMOTIONS.map(({ capPesos, ...promotion }) => ({
+      ...promotion,
+      capCents: BigInt(capPesos) * BigInt(100),
+      validFrom: new Date(Date.UTC(year, month - 1, 1)),
+      validUntil: new Date(Date.UTC(year, month + 1, 0)),
+    })),
   });
 
   // Seeded movements went through their account's card, like a transfer.

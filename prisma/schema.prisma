@@ -428,3 +428,36 @@ model Category {
   @@unique([userId, key])
   @@map("categorias")
 }
+
+enum PromotionCategory {
+  DEPORTES
+  SUPERMERCADO
+  CINE
+  GIMNASIO
+  ROPA
+  FARMACIA
+
+  @@map("categoria_promocion")
+}
+
+/// An informative discount of an invented merchant: nothing is applied to
+/// payments. Loaded by the seed from features/promotions/catalog.ts.
+model Promotion {
+  id         String            @id @default(uuid())
+  merchant   String            @map("comercio")
+  category   PromotionCategory @map("categoria")
+  /// 1 to 100.
+  percent    Int               @map("porcentaje")
+  /// The most the discount gives back, in integer cents.
+  capCents   BigInt            @map("tope_centavos")
+  /// The weekdays it applies, 1 (Monday) to 7 (Sunday).
+  weekdays   Int[]             @map("dias")
+  /// Empty when every card applies.
+  cardBrand  CardBrand?        @map("marca_tarjeta")
+  validFrom  DateTime          @map("vigente_desde") @db.Date
+  validUntil DateTime          @map("vigente_hasta") @db.Date
+  conditions String            @map("condiciones")
+
+  @@index([category])
+  @@map("promociones")
+}
