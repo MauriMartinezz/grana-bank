@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/lib/db";
 import { adhereService } from "./adhesions";
 import { payBill } from "./pay-bill";
@@ -266,5 +266,31 @@ describe("paying a failed bill by hand", () => {
     expect(bill.status).toBe("PAID");
     expect(bill.failedAt).toBeNull();
     expect(bill.failureReason).toBeNull();
+  });
+});
+
+describe("a failure racing a change", () => {
+  it("does not mark failed a bill rescheduled while the run was paying it", async () => {
+    await db.account.update({ where: { id: payer.ars }, data: { balanceCents: BigInt(0) } });
+    await schedule(payer.bill, payer.arsCard, TODAY);
+    // The user reschedules after the run read the bill and before it marks it.
+    const original = db.serviceBill.updateMany.bind(db.serviceBill);
+    const reschedulingFirst = async (args: Parameters<typeof original>[0]) => {
+      await schedule(payer.bill, payer.otherArsCard, TOMORROW);
+      return original(args);
+    };
+    const spy = vi
+      .spyOn(db.serviceBill, "updateMany")
+      // A plain promise stands in for Prisma's lazy one; the caller only awaits it.
+      .mockImplementationOnce(reschedulingFirst as unknown as typeof original);
+
+    const summary = await processScheduledPayments({ now: NOW, userId: payer.id });
+    spy.mockRestore();
+
+    expect(summary).toEqual({ paid: 0, failed: 0 });
+    expect(await billOf(payer.bill)).toMatchObject({
+      failedAt: null,
+      scheduledCardId: payer.otherArsCard,
+    });
   });
 });

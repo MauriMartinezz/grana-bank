@@ -12,10 +12,28 @@ const FAILURES: Partial<Record<PayBillError, ScheduledPaymentFailure>> = {
   CURRENCY_MISMATCH: "CARD_UNAVAILABLE",
 };
 
-/** Marks a pending bill as failed, unless something changed it meanwhile. */
-async function markFailed(billId: string, reason: ScheduledPaymentFailure, now: Date) {
+type DueBill = {
+  id: string;
+  scheduledFor: Date | null;
+  scheduledCardId: string | null;
+  adhesion: { autoDebitCardId: string | null };
+};
+
+/**
+ * Marks a pending bill as failed, only while it still has the schedule or the
+ * automatic debit this run tried: a change the user made meanwhile is a new
+ * attempt, not a failed one.
+ */
+async function markFailed(bill: DueBill, reason: ScheduledPaymentFailure, now: Date) {
   const { count } = await db.serviceBill.updateMany({
-    where: { id: billId, status: "PENDING", failedAt: null },
+    where: {
+      id: bill.id,
+      status: "PENDING",
+      failedAt: null,
+      scheduledFor: bill.scheduledFor,
+      scheduledCardId: bill.scheduledCardId,
+      adhesion: { autoDebitCardId: bill.adhesion.autoDebitCardId },
+    },
     data: { failedAt: now, failureReason: reason },
   });
   return count === 1;
@@ -70,7 +88,7 @@ export async function processScheduledPayments({
     if (!run.due) continue;
     try {
       if (run.cardId === null) {
-        if (await markFailed(bill.id, "CARD_UNAVAILABLE", now)) summary.failed += 1;
+        if (await markFailed(bill, "CARD_UNAVAILABLE", now)) summary.failed += 1;
         continue;
       }
       const result = await payBill({
@@ -86,7 +104,7 @@ export async function processScheduledPayments({
       }
       // Already paid, cancelled or replayed by an overlapping run: nothing to do.
       const reason = FAILURES[result.error];
-      if (reason && (await markFailed(bill.id, reason, now))) summary.failed += 1;
+      if (reason && (await markFailed(bill, reason, now))) summary.failed += 1;
     } catch (error) {
       // One bill's failure must not stop the others; the next run retries it.
       console.error(`Scheduled payment of bill ${bill.id} failed`, error);

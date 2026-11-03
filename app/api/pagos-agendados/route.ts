@@ -14,10 +14,12 @@ function digest(value: string) {
 }
 
 function isAuthorized(request: Request) {
+  // Read first: touching the request keeps the handler dynamic, so a build
+  // without the secret never prerenders the 401.
+  const given = request.headers.get("authorization") ?? "";
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
   // Hashing gives equal lengths, so the comparison takes constant time.
-  const given = request.headers.get("authorization") ?? "";
   return timingSafeEqual(digest(given), digest(`Bearer ${secret}`));
 }
 
