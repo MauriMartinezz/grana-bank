@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 import { fullName } from "@/features/account/name";
 import { getSessionUser } from "./session";
@@ -19,7 +19,10 @@ export const getCurrentUser = cache(async () => {
  * on screen, because that form already reports the failure when it is used.
  */
 export async function redirectIfSignedIn() {
-  const user = await getSessionUser().catch((error) => {
+  const user = await getSessionUser().catch((error: unknown) => {
+    // Next's own signals (the end of a prerender, a redirect) are not
+    // failures: let them through instead of logging them.
+    unstable_rethrow(error);
     console.error("Could not read the session", error);
     return null;
   });

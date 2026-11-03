@@ -29,6 +29,8 @@ vi.mock("next/navigation", () => ({
   redirect: (path: string) => {
     throw new Error(`REDIRECT:${path}`);
   },
+  // Rethrows only Next's internal signals; a plain error goes on.
+  unstable_rethrow: () => {},
 }));
 
 const EMAIL = "owner@auth.test";

@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { PromotionCard } from "./promotion-card";
 import { listTodayPromotions } from "./queries";
 
 /** Home's "Promos de hoy": today's best few, or nothing when there are none. */
 export async function TodayPromotions() {
+  // "Today" belongs to the request: prerendering stops here, so the build
+  // never freezes a date into the page.
+  await connection();
   const promotions = await listTodayPromotions(new Date());
   if (promotions.length === 0) return null;
 
