@@ -22,6 +22,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - S16. "En la pantalla de transferencias preguntar si se desea guardar el contacto antes de guardarlo por defecto". Assumptions: the confirmation step offers an unchecked "Guardar a <nombre> en mis contactos" only when the recipient account is not a contact yet; the transfer saves the contact only when it is checked, in the same transaction; existing contacts and favorites are untouched.
 - S17. User decision: the Home balance card uses the app-wide format, `$978,85` / `USD$978,85`, without the currency badge (added to T13).
 - S18. "Cambiar los nombres de las rutas a nombres en español y más concisos o descriptivos". Mapping: /login→/ingresar, /home→/inicio, /movements→/movimientos, /transfers→/transferir (/new→/nuevo, /to/[accountId]→/[cuentaId], /confirm→/confirmar, /success/[id]→/comprobante/[id]), /exchange→/dolares (/confirmar, /comprobante/[id]), /cards→/tarjetas (/new→/nueva, /[cardId]→/[tarjetaId]), /profile→/perfil (/personal→/datos, /email, /alias/[cuentaId], /password→/contrasena, /currency→/moneda), /services→/servicios, /top-ups→/recargas; Query parameters stay as they are (user: "Los parámetros no hacen falta pasarlos a español, pero sí las rutas"). Code identifiers stay in English.
+- S19. User decision: database tables and columns in Spanish with Prisma `@@map`/`@map`, code identifiers in English ("En español con @map"). Assumptions: snake_case names (e.g. `usuarios`, `sesiones`, `cuentas`, `tarjetas`, `contactos`, `transferencias`, `movimientos`, `operaciones_cambio`; `saldo_centavos`, `monto_centavos`, `moneda`, `creado_en`), Spanish enum type names; enum values stay (ARS, USD, SENT…) because they are data; a rename-only migration that keeps every row, constraint and index (constraints and indexes renamed to match); raw SQL in the lock queries rewritten.
 - S8. Existing stored money is never relabeled: the migration keeps each account's stored currency; only the default changes to ARS.
 
 ## Tasks
@@ -38,6 +39,7 @@ Branch: `feat/accounts` (from `feat/transfers` at 72b0f05). Delivery strategy: `
 - [x] T11 (S13) delegated: card detail with its movements; expiry in Buenos Aires time.
 - [x] T13 (S15, S17) delegated: balances and amounts as BigInt end to end; balance card format; verifier follow-ups.
 - [ ] T15 (S18) right after T13, before every other queued task: Spanish route names.
+- [ ] T16 (S19) after T15: Spanish database names via @map; Risk item 1.
 - [ ] T14 (S16) after T15: ask before saving a new contact.
 - [ ] T12 (S14) after T15: group movements by date and filter Movimientos by date.
 - [ ] T7 inline: README, seam check, browser checks.
@@ -72,3 +74,4 @@ Route evidence: the parent context is past the long-session backstop, so units a
 - L24 (2026-11-03, user): "Cambiar los nombres de las rutas a nombres en español y más concisos o descriptivos". Queued first after T13 so new features are born with Spanish routes.
 - L25 (2026-11-03): T13 committed: 479 tests, tsc, eslint, scratch build; migration on a throwaway DB kept all 23 values identical as text and every CHECK; dev DB migrated. Revalidation now targets the `(app)` route group, so /login is not re-prerendered on saves.
 - L26 (2026-11-03, user): "Los parámetros no hacen falta pasarlos a español, pero sí las rutas, si en la base de datos están en inglés cambiarlos a español también para generar consistencia en los nombres". Parameters stay; database naming asked back to the user (English like the code, or Spanish table and column names via @map).
+- L27 (2026-11-03, user): chose "En español con @map" for database names. The full-range START was granted and refused again (budget).
