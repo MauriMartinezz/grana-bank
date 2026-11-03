@@ -3,13 +3,14 @@ import { CardIcon, PlusIcon, ReceiptIcon, SwapIcon, TopUpIcon } from "@/componen
 import { DollarIcon } from "@/features/exchange/icons";
 
 // Four per row; the fifth and sixth start a second row.
+// Ingresar dinero first: it funds every other operation in the demo.
 const ACTIONS = [
+  { href: "/ingresar-dinero", label: "Ingresar dinero", Icon: PlusIcon },
   { href: "/transferir", label: "Transferir", Icon: SwapIcon },
   { href: "/servicios", label: "Servicios", Icon: ReceiptIcon },
   { href: "/recargas", label: "Recargas", Icon: TopUpIcon },
   { href: "/tarjetas", label: "Tarjetas", Icon: CardIcon },
   { href: "/dolares", label: "Dólares", Icon: DollarIcon },
-  { href: "/ingresar-dinero", label: "Ingresar dinero", Icon: PlusIcon },
 ];
 
 export function QuickActions() {
