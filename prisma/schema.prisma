@@ -84,6 +84,14 @@ enum ServiceBillStatus {
   @@map("estado_factura")
 }
 
+/// Why a scheduled or automatic payment could not run.
+enum ScheduledPaymentFailure {
+  INSUFFICIENT_FUNDS
+  CARD_UNAVAILABLE
+
+  @@map("motivo_fallo_pago")
+}
+
 model User {
   id                String            @id @default(uuid())
   email             String            @unique
@@ -163,19 +171,21 @@ model Account {
 /// A card linked to an account. Only what the card face shows is stored:
 /// never the full number or the security code. CHECK constraints enforce it.
 model Card {
-  id              String           @id @default(uuid())
-  accountId       String           @map("cuenta_id")
-  account         Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  brand           CardBrand        @map("marca")
+  id              String            @id @default(uuid())
+  accountId       String            @map("cuenta_id")
+  account         Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  brand           CardBrand         @map("marca")
   /// The last 4 digits of the card number.
-  last4           String           @map("ultimos_4")
-  holder          String           @map("titular")
+  last4           String            @map("ultimos_4")
+  holder          String            @map("titular")
   /// Formatted as MM/YY.
-  expiry          String           @map("vencimiento")
-  createdAt       DateTime         @default(now()) @map("creado_en")
+  expiry          String            @map("vencimiento")
+  createdAt       DateTime          @default(now()) @map("creado_en")
   movements       Movement[]
   topUps          TopUp[]
   servicePayments ServicePayment[]
+  autoDebits      ServiceAdhesion[] @relation("AutoDebitCard")
+  scheduledBills  ServiceBill[]     @relation("ScheduledBillCard")
 
   @@index([accountId])
   @@map("tarjetas")
@@ -309,16 +319,20 @@ model TopUp {
 /// A utility service the user adhered with its electronic payment number. A
 /// CHECK constraint keeps the number as digits of the company's length.
 model ServiceAdhesion {
-  id            String         @id @default(uuid())
-  userId        String         @map("usuario_id")
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company       ServiceCompany @map("empresa")
+  id              String         @id @default(uuid())
+  userId          String         @map("usuario_id")
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         ServiceCompany @map("empresa")
   /// The electronic payment number printed on the bill, digits only.
-  paymentNumber String         @map("numero_pago")
+  paymentNumber   String         @map("numero_pago")
   /// A reminder name such as "Luz depto", up to 40 characters.
-  nickname      String         @map("apodo")
-  createdAt     DateTime       @default(now()) @map("creado_en")
-  bills         ServiceBill[]
+  nickname        String         @map("apodo")
+  /// The card the bills are paid with on their due date; empty when the
+  /// automatic debit is off or its card was removed.
+  autoDebitCardId String?        @map("tarjeta_debito_id")
+  autoDebitCard   Card?          @relation("AutoDebitCard", fields: [autoDebitCardId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now()) @map("creado_en")
+  bills           ServiceBill[]
 
   @@unique([userId, company, paymentNumber])
   @@map("adhesiones_servicio")
@@ -328,21 +342,32 @@ model ServiceAdhesion {
 /// that settles it is unique per bill, and a CHECK constraint keeps the
 /// status and the payment date together.
 model ServiceBill {
-  id          String            @id @default(uuid())
-  adhesionId  String            @map("adhesion_id")
-  adhesion    ServiceAdhesion   @relation(fields: [adhesionId], references: [id], onDelete: Cascade)
+  id              String                   @id @default(uuid())
+  adhesionId      String                   @map("adhesion_id")
+  adhesion        ServiceAdhesion          @relation(fields: [adhesionId], references: [id], onDelete: Cascade)
   /// The billed month as shown, for example "Noviembre 2026".
-  period      String            @map("periodo")
+  period          String                   @map("periodo")
   /// Integer cents, always positive.
-  amountCents BigInt            @map("monto_centavos")
-  currency    Currency          @default(ARS) @map("moneda")
+  amountCents     BigInt                   @map("monto_centavos")
+  currency        Currency                 @default(ARS) @map("moneda")
   /// A calendar date, without time of day.
-  dueDate     DateTime          @map("vence_el") @db.Date
-  status      ServiceBillStatus @default(PENDING) @map("estado")
-  paidAt      DateTime?         @map("pagada_en")
-  payment     ServicePayment?
+  dueDate         DateTime                 @map("vence_el") @db.Date
+  status          ServiceBillStatus        @default(PENDING) @map("estado")
+  paidAt          DateTime?                @map("pagada_en")
+  /// A one-off payment on this calendar date; it wins over the automatic debit.
+  scheduledFor    DateTime?                @map("programada_para") @db.Date
+  /// The card of the one-off payment. Empty when the card was removed later,
+  /// and then the scheduled payment fails.
+  scheduledCardId String?                  @map("tarjeta_programada_id")
+  scheduledCard   Card?                    @relation("ScheduledBillCard", fields: [scheduledCardId], references: [id], onDelete: SetNull)
+  /// Set when a scheduled or automatic payment failed; it is not retried
+  /// until the user schedules again or changes the automatic debit.
+  failedAt        DateTime?                @map("fallo_en")
+  failureReason   ScheduledPaymentFailure? @map("motivo_fallo")
+  payment         ServicePayment?
 
   @@unique([adhesionId, period])
+  @@index([scheduledCardId])
   @@map("facturas_servicio")
 }
 

@@ -50,3 +50,9 @@ const dueDateFormatter = new Intl.DateTimeFormat("es-AR", {
 export function formatDueDate(date: Date): string {
   return dueDateFormatter.format(date);
 }
+
+/** Today in Buenos Aires as the UTC midnight a date column reads back as. */
+export function calendarToday(now: Date): Date {
+  const { year, month, day } = buenosAiresDate(now);
+  return new Date(Date.UTC(year, month - 1, day));
+}

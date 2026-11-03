@@ -32,6 +32,7 @@ const PAY_ERRORS: Record<PayBillError, string> = {
   CURRENCY_MISMATCH: "Elegí una tarjeta en la moneda de la factura.",
   INSUFFICIENT_FUNDS: "No tenés saldo suficiente para pagar esta factura.",
   IDEMPOTENCY_MISMATCH: "La operación expiró. Volvé a intentarlo.",
+  NOT_SCHEDULED: "Este pago ya no está programado.",
 };
 
 const CURRENCY_NAMES: Record<Currency, string> = { ARS: "pesos", USD: "dólares" };

@@ -1,6 +1,7 @@
 import type { Currency, Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { COMPANY_INFO, type ServiceCompany } from "./companies";
+import { scheduledRun } from "./schedule";
 
 export type PayBillError =
   | "BILL_NOT_FOUND"
@@ -8,7 +9,8 @@ export type PayBillError =
   | "CARD_NOT_FOUND"
   | "CURRENCY_MISMATCH"
   | "INSUFFICIENT_FUNDS"
-  | "IDEMPOTENCY_MISMATCH";
+  | "IDEMPOTENCY_MISMATCH"
+  | "NOT_SCHEDULED";
 
 export type PayBillResult =
   | { ok: true; paymentId: string; movementId: string }
@@ -24,6 +26,12 @@ export type PayBillRequest = {
    * the same key with another bill or card is rejected.
    */
   idempotencyKey: string;
+  /**
+   * Set by the scheduled payments run to its calendar day: under the bill
+   * lock, the bill must still be due that day with this card, so a schedule
+   * cancelled or changed meanwhile is not paid.
+   */
+  scheduledOn?: Date;
 };
 
 /**
@@ -75,6 +83,7 @@ export async function payBill({
   billId,
   cardId,
   idempotencyKey,
+  scheduledOn,
 }: PayBillRequest): Promise<PayBillResult> {
   return db.$transaction(async (tx) => {
     // A bill's owner, amount and currency and a card's account never change,
@@ -124,6 +133,22 @@ export async function payBill({
     }
 
     if (locked.status !== "PENDING") return { ok: false, error: "ALREADY_PAID" };
+    if (scheduledOn) {
+      // Read under the bill lock: a schedule change writes this row, so it
+      // either committed before or waits for this payment.
+      const current = await tx.serviceBill.findUniqueOrThrow({
+        where: { id: billId },
+        select: {
+          dueDate: true,
+          scheduledFor: true,
+          scheduledCardId: true,
+          failedAt: true,
+          adhesion: { select: { autoDebitCardId: true } },
+        },
+      });
+      const run = scheduledRun(current, scheduledOn);
+      if (!run.due || run.cardId !== cardId) return { ok: false, error: "NOT_SCHEDULED" };
+    }
     if (account.balanceCents < bill.amountCents) return { ok: false, error: "INSUFFICIENT_FUNDS" };
 
     await tx.account.update({
@@ -142,7 +167,8 @@ export async function payBill({
     });
     await tx.serviceBill.update({
       where: { id: billId },
-      data: { status: "PAID", paidAt: payment.createdAt },
+      // A paid bill carries no failure of an earlier scheduled attempt.
+      data: { status: "PAID", paidAt: payment.createdAt, failedAt: null, failureReason: null },
     });
     const movement = await tx.movement.create({
       data: {
