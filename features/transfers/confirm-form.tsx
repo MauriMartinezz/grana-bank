@@ -20,10 +20,13 @@ export function ConfirmForm({
   recipientAccountId,
   amountCents,
   idempotencyKey,
+  saveContactName,
 }: {
   recipientAccountId: string;
   amountCents: number;
   idempotencyKey: string;
+  /** Offers to save the recipient as a contact; null when they already are one. */
+  saveContactName: string | null;
 }) {
   const [state, action] = useActionState(confirmTransfer, undefined);
 
@@ -32,6 +35,12 @@ export function ConfirmForm({
       <input type="hidden" name="recipientAccountId" value={recipientAccountId} />
       <input type="hidden" name="amountCents" value={amountCents} />
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+      {saveContactName && (
+        <label className="mb-4 flex min-h-12 items-center gap-3 text-sm">
+          <input type="checkbox" name="saveContact" className="size-5 accent-garnet" />
+          Guardar a {saveContactName} en mis contactos
+        </label>
+      )}
       {state?.error && (
         <p role="alert" className="mb-4 text-center text-sm text-garnet">
           {state.error}

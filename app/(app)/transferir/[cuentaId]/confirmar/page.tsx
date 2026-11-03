@@ -6,7 +6,7 @@ import { getAccount } from "@/features/account/queries";
 import { getCurrentUser } from "@/features/auth/current-user";
 import { ConfirmForm } from "@/features/transfers/confirm-form";
 import { readConfirmation } from "@/features/transfers/confirmation";
-import { getRecipient } from "@/features/transfers/contacts";
+import { getRecipient, isContact } from "@/features/transfers/contacts";
 import { findSentMovementByKey } from "@/features/transfers/transfer";
 import { RecipientSummary } from "@/features/transfers/recipient-summary";
 import { formatMoney } from "@/lib/format";
@@ -31,7 +31,10 @@ export default async function ConfirmTransferPage({
   const recipient = await getRecipient(user.id, accountId);
   if (!recipient) notFound();
   // Without an account in this currency, the amount step explains why.
-  const account = await getAccount(user.id, recipient.currency);
+  const [account, saved] = await Promise.all([
+    getAccount(user.id, recipient.currency),
+    isContact(user.id, recipient.accountId),
+  ]);
   if (!account) redirect(`/transferir/${accountId}`);
 
   const remaining = account.balanceCents - BigInt(amountCents);
@@ -75,6 +78,7 @@ export default async function ConfirmTransferPage({
           recipientAccountId={recipient.accountId}
           amountCents={amountCents}
           idempotencyKey={idempotencyKey}
+          saveContactName={saved ? null : recipient.name}
         />
         <Link
           href={`/transferir/${accountId}`}

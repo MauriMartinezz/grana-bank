@@ -164,12 +164,30 @@ describe("reviewAmount", () => {
 });
 
 describe("confirmTransfer", () => {
-  function confirm(amountCents: string, idempotencyKey: string = randomUUID()) {
+  function confirm(
+    amountCents: string,
+    idempotencyKey: string = randomUUID(),
+    extra: Record<string, string> = {},
+  ) {
     return confirmTransfer(
       undefined,
-      form({ recipientAccountId, amountCents, idempotencyKey }),
+      form({ recipientAccountId, amountCents, idempotencyKey, ...extra }),
     );
   }
+
+  const contacts = () => db.contact.findMany({ where: { ownerId: current.user.id } });
+
+  it("saves the recipient as a contact when the checkbox is checked", async () => {
+    await expect(confirm("100", randomUUID(), { saveContact: "on" })).rejects.toThrow(
+      /^REDIRECT:/,
+    );
+    expect(await contacts()).toMatchObject([{ contactAccountId: recipientAccountId }]);
+  });
+
+  it("saves no contact when the checkbox is left unchecked", async () => {
+    await expect(confirm("100")).rejects.toThrow(/^REDIRECT:/);
+    expect(await contacts()).toEqual([]);
+  });
 
   it("transfers and goes to the success screen", async () => {
     const result = confirm("2550");

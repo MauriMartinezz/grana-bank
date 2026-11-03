@@ -36,7 +36,7 @@ export default async function TransfersPage() {
         ) : (
           <StateMessage
             title="Todavía no tenés contactos"
-            description="Cuando le transfieras a alguien por primera vez, lo vas a ver acá."
+            description="Cuando transfieras, vas a poder guardar a la persona en tus contactos."
           />
         )}
       </div>

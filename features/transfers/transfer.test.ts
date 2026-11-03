@@ -77,12 +77,18 @@ afterAll(async () => {
   await db.user.deleteMany({ where: { email: { in: EMAILS } } });
 });
 
-function send(amountCents: number, from = sender.id, to = recipient.accountId) {
+function send(
+  amountCents: number,
+  from = sender.id,
+  to = recipient.accountId,
+  saveContact = false,
+) {
   return transfer({
     senderId: from,
     recipientAccountId: to,
     amountCents,
     idempotencyKey: randomUUID(),
+    saveContact,
   });
 }
 
@@ -109,21 +115,44 @@ describe("transfer", () => {
     expect(result.ok && result.movementId).toBe(sent?.id);
   });
 
-  it("saves the recipient as a contact without touching an existing favorite", async () => {
-    await send(100);
-    const [contact] = (await snapshot()).contacts;
-    expect(contact).toMatchObject({
-      ownerId: sender.id,
-      contactAccountId: recipient.accountId,
-      favorite: false,
+  it("saves no contact unless the sender asks for it", async () => {
+    expect((await send(100)).ok).toBe(true);
+    expect((await snapshot()).contacts).toEqual([]);
+  });
+
+  it("saves the recipient as a contact when the sender asks for it", async () => {
+    expect((await send(100, sender.id, recipient.accountId, true)).ok).toBe(true);
+    expect((await snapshot()).contacts).toMatchObject([
+      { ownerId: sender.id, contactAccountId: recipient.accountId, favorite: false },
+    ]);
+  });
+
+  it("keeps an existing favorite contact as it is when asked to save it again", async () => {
+    await db.contact.create({
+      data: { ownerId: sender.id, contactAccountId: recipient.accountId, favorite: true },
     });
 
-    await db.contact.update({ where: { id: contact.id }, data: { favorite: true } });
-    await send(100);
+    expect((await send(100, sender.id, recipient.accountId, true)).ok).toBe(true);
 
     const contacts = (await snapshot()).contacts;
     expect(contacts).toHaveLength(1);
     expect(contacts[0].favorite).toBe(true);
+  });
+
+  it("returns the first transfer when a key is replayed with another saveContact", async () => {
+    const request = {
+      senderId: sender.id,
+      recipientAccountId: recipient.accountId,
+      amountCents: 1000,
+      idempotencyKey: randomUUID(),
+    };
+    const first = await transfer({ ...request, saveContact: false });
+    const before = await snapshot();
+
+    expect(await transfer({ ...request, saveContact: true })).toEqual(first);
+    expect(first.ok).toBe(true);
+    // The replay changes nothing, not even the contacts.
+    expect(await snapshot()).toEqual(before);
   });
 
   it.each([
@@ -256,7 +285,7 @@ describe("transfer between currencies", () => {
       },
     });
 
-    const result = await send(1250, payer.id, payee.id);
+    const result = await send(1250, payer.id, payee.id, true);
 
     expect(result.ok).toBe(true);
     expect(await balanceOf(payer.accounts.USD)).toBe(BigInt(1750));

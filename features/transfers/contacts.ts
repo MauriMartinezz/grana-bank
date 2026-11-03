@@ -72,6 +72,15 @@ export async function setFavorite(
   return count > 0;
 }
 
+/** Whether the account is already one of the owner's contacts. */
+export async function isContact(ownerId: string, contactAccountId: string) {
+  const contact = await db.contact.findUnique({
+    where: { ownerId_contactAccountId: { ownerId, contactAccountId } },
+    select: { id: true },
+  });
+  return contact !== null;
+}
+
 /** An account the sender can transfer to: one that someone else owns. */
 export async function getRecipient(
   senderId: string,

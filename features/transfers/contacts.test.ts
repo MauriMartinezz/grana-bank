@@ -5,6 +5,7 @@ import {
   findRecipientByAlias,
   findRecipientByEmail,
   getRecipient,
+  isContact,
   listContacts,
   setFavorite,
 } from "./contacts";
@@ -228,5 +229,14 @@ describe("getRecipient", () => {
     expect(await getRecipient(owner.id, owner.accounts.ARS)).toBeNull();
     expect(await getRecipient(owner.id, noAccount.id)).toBeNull();
     expect(await getRecipient(owner.id, "not-a-uuid")).toBeNull();
+  });
+});
+
+describe("isContact", () => {
+  it("tells whether the account is one of the owner's contacts", async () => {
+    expect(await isContact(owner.id, zoe.accounts.ARS)).toBe(true);
+    expect(await isContact(owner.id, dollars.accounts.ARS)).toBe(false);
+    // Another user's contact list does not count.
+    expect(await isContact(zoe.id, owner.accounts.ARS)).toBe(false);
   });
 });

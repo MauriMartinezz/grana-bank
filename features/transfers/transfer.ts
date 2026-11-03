@@ -25,6 +25,13 @@ export type TransferRequest = {
    * and the same key with other values is rejected.
    */
   idempotencyKey: string;
+  /**
+   * Saves the recipient account as a contact of the sender, when it is not
+   * one yet. Not part of the idempotency comparison: it is a preference about
+   * the sender's list, not about the money, so a replay of an already done
+   * transfer returns the first result and changes nothing, contacts included.
+   */
+  saveContact?: boolean;
 };
 
 // The raw query returns BIGINT columns as bigint.
@@ -49,6 +56,7 @@ export async function transfer({
   recipientAccountId,
   amountCents,
   idempotencyKey,
+  saveContact = false,
 }: TransferRequest): Promise<TransferResult> {
   if (
     !Number.isSafeInteger(amountCents) ||
@@ -172,14 +180,16 @@ export async function transfer({
       },
     });
 
-    // Keeps an existing contact as it is, including its favorite flag.
-    await tx.contact.upsert({
-      where: {
-        ownerId_contactAccountId: { ownerId: senderId, contactAccountId: to.id },
-      },
-      create: { ownerId: senderId, contactAccountId: to.id },
-      update: {},
-    });
+    if (saveContact) {
+      // Keeps an existing contact as it is, including its favorite flag.
+      await tx.contact.upsert({
+        where: {
+          ownerId_contactAccountId: { ownerId: senderId, contactAccountId: to.id },
+        },
+        create: { ownerId: senderId, contactAccountId: to.id },
+        update: {},
+      });
+    }
 
     return { ok: true, movementId: sent.id };
   });

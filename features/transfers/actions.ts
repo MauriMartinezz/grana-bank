@@ -172,6 +172,8 @@ export async function confirmTransfer(
       recipientAccountId,
       amountCents: Number(rawAmount),
       idempotencyKey,
+      // An unchecked checkbox sends nothing.
+      saveContact: formData.get("saveContact") === "on",
     });
   } catch (error) {
     console.error("Transfer failed", error);
