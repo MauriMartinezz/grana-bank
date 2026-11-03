@@ -8,10 +8,10 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <div
       data-shell="app"
-      className="desktop:grid desktop:grid-cols-[15rem_minmax(0,1fr)] desktop:gap-8 desktop:px-8 desktop:py-6"
+      className="desktop:grid desktop:grid-cols-[15rem_minmax(0,1fr)] desktop:gap-8 desktop:pr-8"
     >
       <SideNav />
-      <main className="px-6 pt-12 pb-28 desktop:mx-auto desktop:w-full desktop:max-w-2xl desktop:px-0 desktop:pt-6 desktop:pb-12">
+      <main className="px-6 pt-12 pb-28 desktop:mx-auto desktop:w-full desktop:max-w-2xl desktop:px-0 desktop:pt-12 desktop:pb-12">
         {children}
       </main>
       <BottomNav />
