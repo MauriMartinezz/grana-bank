@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Movimientos" };
 
 const LIST_SKELETON_ROWS = 6;
 
-type SearchParams = PageProps<"/movements">["searchParams"];
+type SearchParams = PageProps<"/movimientos">["searchParams"];
 
 async function FilteredResults({
   searchParams,
@@ -30,7 +30,7 @@ async function FilteredResults({
   );
 }
 
-export default function MovementsPage({ searchParams }: PageProps<"/movements">) {
+export default function MovementsPage({ searchParams }: PageProps<"/movimientos">) {
   return (
     <>
       <h1 className="mb-5 font-serif text-2xl font-bold">Movimientos</h1>

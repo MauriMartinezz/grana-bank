@@ -80,7 +80,7 @@ export async function addCard(_previous: AddCardState, formData: FormData): Prom
   if (saved === "ACCOUNT_NOT_FOUND") return { values, errors: { accountId: ACCOUNT_REQUIRED } };
   if (saved === "DUPLICATE") return { values, errors: { form: DUPLICATE } };
 
-  revalidatePath("/cards");
-  revalidatePath("/home");
-  redirect("/cards");
+  revalidatePath("/tarjetas");
+  revalidatePath("/inicio");
+  redirect("/tarjetas");
 }

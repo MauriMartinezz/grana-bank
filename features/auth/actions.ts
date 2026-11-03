@@ -64,10 +64,10 @@ export async function login(
   }
 
   // Outside the try block: redirect() works by throwing.
-  redirect("/home");
+  redirect("/inicio");
 }
 
 export async function logout() {
   await deleteSession();
-  redirect("/login");
+  redirect("/ingresar");
 }

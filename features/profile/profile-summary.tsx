@@ -50,7 +50,7 @@ export function ChangeScreenHeader({ title, description }: { title: string; desc
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref="/profile" />
+        <BackButton fallbackHref="/perfil" />
         <h1 className="font-serif text-2xl font-bold">{title}</h1>
       </header>
       {description && <p className="mt-2 text-sm text-muted">{description}</p>}

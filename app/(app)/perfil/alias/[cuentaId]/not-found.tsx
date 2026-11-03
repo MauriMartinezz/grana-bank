@@ -8,7 +8,7 @@ export default function AliasNotFound() {
       title="No encontramos esta cuenta"
       description="Puede que el enlace sea incorrecto."
     >
-      <Link href="/profile" className={`${buttonClassName} mt-4`}>
+      <Link href="/perfil" className={`${buttonClassName} mt-4`}>
         Volver al perfil
       </Link>
     </StateMessage>

@@ -10,8 +10,8 @@ import { listCardMovements } from "@/features/movements/queries";
 
 export const metadata: Metadata = { title: "Detalle de la tarjeta" };
 
-export default async function CardDetailPage({ params }: PageProps<"/cards/[cardId]">) {
-  const { cardId } = await params;
+export default async function CardDetailPage({ params }: PageProps<"/tarjetas/[tarjetaId]">) {
+  const { tarjetaId: cardId } = await params;
   const user = await getCurrentUser();
   // Both queries are scoped to the user, so they can run together.
   const [card, movements] = await Promise.all([
@@ -26,7 +26,7 @@ export default async function CardDetailPage({ params }: PageProps<"/cards/[card
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref="/cards" />
+        <BackButton fallbackHref="/tarjetas" />
         <h1 className="font-serif text-2xl font-bold">Tarjeta</h1>
       </header>
 

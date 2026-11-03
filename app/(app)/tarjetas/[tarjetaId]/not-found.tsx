@@ -8,7 +8,7 @@ export default function CardNotFound() {
       title="No encontramos esta tarjeta"
       description="Puede que el enlace sea incorrecto."
     >
-      <Link href="/cards" className={`${buttonClassName} mt-4`}>
+      <Link href="/tarjetas" className={`${buttonClassName} mt-4`}>
         Ver mis tarjetas
       </Link>
     </StateMessage>

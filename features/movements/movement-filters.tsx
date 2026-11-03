@@ -13,7 +13,7 @@ function buildHref(query: string, type: string | null) {
   if (query) params.set("q", query);
   if (type) params.set("type", type);
   const search = params.toString();
-  return search ? `/movements?${search}` : "/movements";
+  return search ? `/movimientos?${search}` : "/movimientos";
 }
 
 // Filters live in the URL: they survive a reload and the way back from a

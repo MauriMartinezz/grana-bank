@@ -34,7 +34,7 @@ describe("readExchangeConfirmation", () => {
     ["a card id with odd characters", { to: "../x" }],
   ])("sends %s back to the form", (_name, overrides) => {
     expect(readExchangeConfirmation({ ...VALID, ...overrides })).toEqual({
-      redirectTo: "/exchange",
+      redirectTo: "/dolares",
     });
   });
 
@@ -57,6 +57,6 @@ describe("confirmationPath", () => {
         { direction: "SELL", usdCents: 100, fromCardId: "card-a", toCardId: "card-b" },
         KEY,
       ),
-    ).toBe(`/exchange/confirm?direction=SELL&usd=100&from=card-a&to=card-b&key=${KEY}`);
+    ).toBe(`/dolares/confirmar?direction=SELL&usd=100&from=card-a&to=card-b&key=${KEY}`);
   });
 });

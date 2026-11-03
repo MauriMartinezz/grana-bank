@@ -65,7 +65,7 @@ describe("lookupRecipient", () => {
   it("looks up by alias by default, ignoring case", async () => {
     await expect(
       lookupRecipient(undefined, form({ alias: " RECIPIENT.Actions.Test " })),
-    ).rejects.toThrow(`REDIRECT:/transfers/to/${recipientAccountId}`);
+    ).rejects.toThrow(`REDIRECT:/transferir/${recipientAccountId}`);
   });
 
   it.each([
@@ -85,7 +85,7 @@ describe("lookupRecipient", () => {
   it("looks up by email when the email option is chosen", async () => {
     await expect(
       lookupRecipient(undefined, form({ by: "email", email: " RECIPIENT@actions.test " })),
-    ).rejects.toThrow(`REDIRECT:/transfers/to/${recipientAccountId}`);
+    ).rejects.toThrow(`REDIRECT:/transferir/${recipientAccountId}`);
   });
 
   it.each([
@@ -122,7 +122,7 @@ describe("reviewAmount", () => {
     const second = await redirectTo();
 
     const pattern = new RegExp(
-      `^REDIRECT:/transfers/to/${recipientAccountId}/confirm\\?amount=2550&key=[0-9a-f-]{36}$`,
+      `^REDIRECT:/transferir/${recipientAccountId}/confirmar\\?amount=2550&key=[0-9a-f-]{36}$`,
     );
     expect(first).toMatch(pattern);
     expect(second).toMatch(pattern);
@@ -173,7 +173,7 @@ describe("confirmTransfer", () => {
 
   it("transfers and goes to the success screen", async () => {
     const result = confirm("2550");
-    await expect(result).rejects.toThrow(/^REDIRECT:\/transfers\/success\/[0-9a-f-]{36}$/);
+    await expect(result).rejects.toThrow(/^REDIRECT:\/transferir\/comprobante\/[0-9a-f-]{36}$/);
 
     const sender = await db.account.findUniqueOrThrow({ where: { id: senderAccountId } });
     expect(sender.balanceCents).toBe(BigInt(7450));

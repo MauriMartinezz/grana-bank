@@ -83,7 +83,7 @@ afterAll(async () => {
 
 describe("addCard", () => {
   it("stores only the card face and goes back to the card list", async () => {
-    expect(await submit({ accountId: usdAccountId })).toBe("REDIRECT:/cards");
+    expect(await submit({ accountId: usdAccountId })).toBe("REDIRECT:/tarjetas");
 
     const cards = await db.card.findMany({ where: { accountId: usdAccountId } });
     expect(cards).toHaveLength(1);
@@ -141,7 +141,7 @@ describe("addCard", () => {
   });
 
   it("rejects the same card on the same account", async () => {
-    expect(await submit()).toBe("REDIRECT:/cards");
+    expect(await submit()).toBe("REDIRECT:/tarjetas");
 
     expect(await submit()).toEqual({
       values: { holder: "Ana Pérez", expiry: "12/39", accountId: arsAccountId },
@@ -150,8 +150,8 @@ describe("addCard", () => {
     expect(await db.card.count({ where: { accountId: arsAccountId } })).toBe(1);
 
     // Another expiry is a replacement card, and another account is allowed.
-    expect(await submit({ expiry: "11/39" })).toBe("REDIRECT:/cards");
-    expect(await submit({ accountId: usdAccountId })).toBe("REDIRECT:/cards");
+    expect(await submit({ expiry: "11/39" })).toBe("REDIRECT:/tarjetas");
+    expect(await submit({ accountId: usdAccountId })).toBe("REDIRECT:/tarjetas");
   });
 
   it("validates again on the server and keeps the typed values", async () => {

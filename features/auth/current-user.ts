@@ -10,7 +10,7 @@ import { getSessionUser } from "./session";
  */
 export const getCurrentUser = cache(async () => {
   const user = await getSessionUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/ingresar");
   return { ...user, name: fullName(user) };
 });
 
@@ -23,5 +23,5 @@ export async function redirectIfSignedIn() {
     console.error("Could not read the session", error);
     return null;
   });
-  if (user) redirect("/home");
+  if (user) redirect("/inicio");
 }

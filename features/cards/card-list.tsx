@@ -23,7 +23,7 @@ export function CardList({ accounts }: { accounts: AccountCards[] }) {
                 {account.cards.map((card) => (
                   <li key={card.id}>
                     <Link
-                      href={`/cards/${card.id}`}
+                      href={`/tarjetas/${card.id}`}
                       aria-label={`Ver tarjeta ${BRAND_NAMES[card.brand]} terminada en ${card.last4}`}
                       className="flex items-center gap-3 bg-surface p-4 transition-colors hover:bg-surface/70 active:bg-surface/60"
                     >

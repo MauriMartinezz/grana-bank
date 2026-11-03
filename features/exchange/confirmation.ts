@@ -31,7 +31,7 @@ export function confirmationPath(draft: ExchangeDraft, idempotencyKey: string) {
     to: draft.toCardId,
     key: idempotencyKey,
   });
-  return `/exchange/confirm?${query}`;
+  return `/dolares/confirmar?${query}`;
 }
 
 /**
@@ -45,7 +45,7 @@ export function readExchangeConfirmation(
   const { direction, usd, from, to, key } = params;
   const usdCents = typeof usd === "string" && /^\d{1,12}$/.test(usd) ? Number(usd) : 0;
   if (!isDirection(direction) || !isExchangeAmount(usdCents) || !isCardId(from) || !isCardId(to)) {
-    return { redirectTo: "/exchange" };
+    return { redirectTo: "/dolares" };
   }
   const draft = { direction, usdCents, fromCardId: from, toCardId: to };
   if (typeof key !== "string" || !isIdempotencyKey(key)) {

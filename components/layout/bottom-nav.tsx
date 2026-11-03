@@ -7,11 +7,11 @@ import { CardIcon, HomeIcon, ListIcon, ReceiptIcon } from "@/components/icons";
 import { ProfileIcon } from "@/features/profile/profile-icon";
 
 const LINKS = [
-  { href: "/home", label: "Inicio", Icon: HomeIcon },
-  { href: "/movements", label: "Movimientos", Icon: ListIcon },
-  { href: "/cards", label: "Tarjetas", Icon: CardIcon },
-  { href: "/services", label: "Servicios", Icon: ReceiptIcon },
-  { href: "/profile", label: "Perfil", Icon: ProfileIcon },
+  { href: "/inicio", label: "Inicio", Icon: HomeIcon },
+  { href: "/movimientos", label: "Movimientos", Icon: ListIcon },
+  { href: "/tarjetas", label: "Tarjetas", Icon: CardIcon },
+  { href: "/servicios", label: "Servicios", Icon: ReceiptIcon },
+  { href: "/perfil", label: "Perfil", Icon: ProfileIcon },
 ];
 
 const ITEM_CLASS =

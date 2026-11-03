@@ -7,20 +7,20 @@ import { SESSION_COOKIE } from "@/features/auth/session-cookie";
  */
 export function proxy(request: NextRequest) {
   if (!request.cookies.has(SESSION_COOKIE)) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/ingresar", request.url));
   }
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    "/home",
-    "/movements/:path*",
-    "/transfers/:path*",
-    "/services",
-    "/top-ups",
-    "/cards/:path*",
-    "/exchange/:path*",
-    "/profile/:path*",
+    "/inicio",
+    "/movimientos/:path*",
+    "/transferir/:path*",
+    "/servicios",
+    "/recargas",
+    "/tarjetas/:path*",
+    "/dolares/:path*",
+    "/perfil/:path*",
   ],
 };

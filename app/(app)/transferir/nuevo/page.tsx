@@ -12,7 +12,7 @@ const METHODS = {
   alias: {
     label: "Alias del destinatario",
     hint: "Ingresá el alias de la cuenta. No importan las mayúsculas.",
-    switchTo: { href: "/transfers/new?by=email", label: "Transferir por email" },
+    switchTo: { href: "/transferir/nuevo?by=email", label: "Transferir por email" },
     input: {
       autoCapitalize: "none",
       autoCorrect: "off",
@@ -24,7 +24,7 @@ const METHODS = {
   email: {
     label: "Email del destinatario",
     hint: "Ingresá el email de la persona.",
-    switchTo: { href: "/transfers/new", label: "Transferir por alias" },
+    switchTo: { href: "/transferir/nuevo", label: "Transferir por alias" },
     input: {
       type: "email",
       inputMode: "email",
@@ -39,7 +39,7 @@ const METHODS = {
 async function RecipientForm({
   searchParams,
 }: {
-  searchParams: PageProps<"/transfers/new">["searchParams"];
+  searchParams: PageProps<"/transferir/nuevo">["searchParams"];
 }) {
   const { by: requested } = await searchParams;
   const by = requested === "email" ? "email" : "alias";
@@ -87,11 +87,11 @@ function RecipientFormSkeleton() {
   );
 }
 
-export default function NewRecipientPage({ searchParams }: PageProps<"/transfers/new">) {
+export default function NewRecipientPage({ searchParams }: PageProps<"/transferir/nuevo">) {
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref="/transfers" />
+        <BackButton fallbackHref="/transferir" />
         <h1 className="font-serif text-2xl font-bold">Nuevo destinatario</h1>
       </header>
       <Suspense fallback={<RecipientFormSkeleton />}>

@@ -73,7 +73,7 @@ proxy.ts     Redirects visitors with no session cookie to login
 | Data access | Every query filters by `account.userId` | A user cannot read another account by guessing an id. |
 | Search and filters | Stored in the URL | They survive a reload and the way back from the detail page. |
 | Loading | Suspense boundaries with skeletons | The screen layout appears at once and data streams in. |
-| Detail screen | Page at `/movements/[id]` | Required by the brief and missing from Figma. It has a URL and natural loading and not-found states. |
+| Detail screen | Page at `/movimientos/[id]` | Required by the brief and missing from Figma. It has a URL and natural loading and not-found states. |
 | Validation libraries | None | Filters and amounts are parsed by small tested functions. |
 | Transfers | One database transaction that locks both accounts with `SELECT … FOR UPDATE` in id order | Concurrent transfers cannot overdraw an account, and two users sending to each other cannot deadlock. Database `CHECK` constraints keep balances non-negative even if the code has a bug. |
 | Double submit | An idempotency key generated when the confirmation screen renders | Repeating the request returns the first transfer, so a retry never charges twice. The same key with another amount or recipient is rejected. |

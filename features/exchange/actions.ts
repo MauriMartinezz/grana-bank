@@ -35,7 +35,7 @@ export async function openDollarAccount(): Promise<ExchangeFormState> {
   }
   // The new account shows on Home, Tarjetas, Perfil and the dollar screen.
   revalidateAccountScreens();
-  redirect("/exchange");
+  redirect("/dolares");
 }
 
 export async function reviewExchange(
@@ -127,5 +127,5 @@ export async function confirmExchange(
   if (!result.ok) return { error: EXCHANGE_ERRORS[result.error] };
 
   revalidateAccountScreens();
-  redirect(`/exchange/success/${result.movementId}`);
+  redirect(`/dolares/comprobante/${result.movementId}`);
 }

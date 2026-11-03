@@ -4,11 +4,11 @@ import { DollarIcon } from "@/features/exchange/icons";
 
 // Four per row; the fifth starts a second row.
 const ACTIONS = [
-  { href: "/transfers", label: "Transferir", Icon: SwapIcon },
-  { href: "/services", label: "Servicios", Icon: ReceiptIcon },
-  { href: "/top-ups", label: "Recargas", Icon: TopUpIcon },
-  { href: "/cards", label: "Tarjetas", Icon: CardIcon },
-  { href: "/exchange", label: "Dólares", Icon: DollarIcon },
+  { href: "/transferir", label: "Transferir", Icon: SwapIcon },
+  { href: "/servicios", label: "Servicios", Icon: ReceiptIcon },
+  { href: "/recargas", label: "Recargas", Icon: TopUpIcon },
+  { href: "/tarjetas", label: "Tarjetas", Icon: CardIcon },
+  { href: "/dolares", label: "Dólares", Icon: DollarIcon },
 ];
 
 export function QuickActions() {

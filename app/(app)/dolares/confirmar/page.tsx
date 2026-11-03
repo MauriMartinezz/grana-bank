@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Confirmar operación" };
 // boundary, so the shared shell never depends on the query string.
 export default async function ConfirmExchangePage({
   searchParams,
-}: PageProps<"/exchange/confirm">) {
+}: PageProps<"/dolares/confirmar">) {
   const { direction, usd, from, to, key } = await searchParams;
   const confirmation = readExchangeConfirmation({ direction, usd, from, to, key });
   if ("redirectTo" in confirmation) redirect(confirmation.redirectTo);
@@ -26,7 +26,7 @@ export default async function ConfirmExchangePage({
   // Back from the success screen lands here: show the receipt instead of
   // offering to confirm an exchange that already happened.
   const done = await findExchangeMovementByKey(user.id, idempotencyKey);
-  if (done) redirect(`/exchange/success/${done}`);
+  if (done) redirect(`/dolares/comprobante/${done}`);
 
   const cards = await getOwnedCards(user.id, [fromCardId, toCardId]);
   const fromCard = cards.find((card) => card.id === fromCardId);
@@ -38,7 +38,7 @@ export default async function ConfirmExchangePage({
     fromCard.account.currency !== sides.from ||
     toCard.account.currency !== sides.to
   ) {
-    redirect("/exchange");
+    redirect("/dolares");
   }
 
   const buying = confirmation.direction === "BUY";
@@ -51,7 +51,7 @@ export default async function ConfirmExchangePage({
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref="/exchange" />
+        <BackButton fallbackHref="/dolares" />
         <h1 className="font-serif text-2xl font-bold">
           {buying ? "Revisá la compra" : "Revisá la venta"}
         </h1>
@@ -104,7 +104,7 @@ export default async function ConfirmExchangePage({
           idempotencyKey={idempotencyKey}
         />
         <Link
-          href="/exchange"
+          href="/dolares"
           className="flex min-h-12 items-center justify-center font-serif text-sm text-garnet"
         >
           Modificar operación

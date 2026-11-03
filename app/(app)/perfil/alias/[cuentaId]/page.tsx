@@ -7,8 +7,8 @@ import { getOwnAccount } from "@/features/profile/queries";
 
 export const metadata: Metadata = { title: "Cambiar alias" };
 
-export default async function AliasPage({ params }: PageProps<"/profile/alias/[accountId]">) {
-  const { accountId } = await params;
+export default async function AliasPage({ params }: PageProps<"/perfil/alias/[cuentaId]">) {
+  const { cuentaId: accountId } = await params;
   const user = await getCurrentUser();
   // Another user's account id shows the same screen as one that does not exist.
   const account = await getOwnAccount(user.id, accountId);

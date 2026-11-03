@@ -15,7 +15,7 @@ export function ComingSoon({
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref="/home" />
+        <BackButton fallbackHref="/inicio" />
         <h1 className="font-serif text-2xl font-bold">{title}</h1>
       </header>
 

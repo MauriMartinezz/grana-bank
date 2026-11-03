@@ -105,7 +105,7 @@ describe("openDollarAccount", () => {
   it("opens the dollar account and goes back to the exchange screen", async () => {
     await db.account.delete({ where: { id: usd.id } });
 
-    await expect(openDollarAccount()).rejects.toThrow("REDIRECT:/exchange");
+    await expect(openDollarAccount()).rejects.toThrow("REDIRECT:/dolares");
     // Every signed-in screen, but not the login page under (auth).
     expect(revalidatePath).toHaveBeenLastCalledWith("/(app)", "layout");
     expect(
@@ -136,7 +136,7 @@ describe("reviewExchange", () => {
     const second = (await message(buying("1,50"))) as string;
 
     const pattern = new RegExp(
-      `^REDIRECT:/exchange/confirm\\?direction=BUY&usd=150&from=${ars.card}&to=${usd.card}&key=[0-9a-f-]{36}$`,
+      `^REDIRECT:/dolares/confirmar\\?direction=BUY&usd=150&from=${ars.card}&to=${usd.card}&key=[0-9a-f-]{36}$`,
     );
     expect(first).toMatch(pattern);
     expect(second).toMatch(pattern);
@@ -153,7 +153,7 @@ describe("reviewExchange", () => {
           form({ direction: "SELL", amount: "1.500", fromCardId: usd.card, toCardId: ars.card }),
         ),
       ),
-    ).toMatch(/^REDIRECT:\/exchange\/confirm\?direction=SELL&usd=150000&/);
+    ).toMatch(/^REDIRECT:\/dolares\/confirmar\?direction=SELL&usd=150000&/);
   });
 
   it.each([
@@ -213,7 +213,7 @@ describe("confirmExchange", () => {
   }
 
   it("exchanges and goes to the success screen", async () => {
-    await expect(confirm()).rejects.toThrow(/^REDIRECT:\/exchange\/success\/[0-9a-f-]{36}$/);
+    await expect(confirm()).rejects.toThrow(/^REDIRECT:\/dolares\/comprobante\/[0-9a-f-]{36}$/);
     expect(revalidatePath).toHaveBeenLastCalledWith("/(app)", "layout");
 
     expect(await balanceOf(ars.id)).toBe(BigInt(300000));

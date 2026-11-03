@@ -14,8 +14,8 @@ export const metadata: Metadata = { title: "Monto a transferir" };
 
 export default async function TransferAmountPage({
   params,
-}: PageProps<"/transfers/to/[accountId]">) {
-  const { accountId } = await params;
+}: PageProps<"/transferir/[cuentaId]">) {
+  const { cuentaId: accountId } = await params;
   const user = await getCurrentUser();
   const recipient = await getRecipient(user.id, accountId);
   if (!recipient) notFound();
@@ -25,7 +25,7 @@ export default async function TransferAmountPage({
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref="/transfers" />
+        <BackButton fallbackHref="/transferir" />
         <h1 className="font-serif text-2xl font-bold">¿Cuánto querés transferir?</h1>
       </header>
 

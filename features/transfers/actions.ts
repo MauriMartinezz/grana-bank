@@ -67,7 +67,7 @@ export async function toggleFavorite(formData: FormData): Promise<{ ok: boolean 
     console.error("Favorite update failed", error);
     return { ok: false };
   }
-  revalidatePath("/transfers");
+  revalidatePath("/transferir");
   return { ok: true };
 }
 
@@ -101,7 +101,7 @@ export async function lookupRecipient(
     };
   }
 
-  redirect(`/transfers/to/${result.recipient.accountId}`);
+  redirect(`/transferir/${result.recipient.accountId}`);
 }
 
 export async function reviewAmount(
@@ -144,7 +144,7 @@ export async function reviewAmount(
   // confirmation screen, or retrying after an error, reuses it and can never
   // charge twice.
   redirect(
-    `/transfers/to/${recipientAccountId}/confirm?amount=${amountCents}&key=${randomUUID()}`,
+    `/transferir/${recipientAccountId}/confirmar?amount=${amountCents}&key=${randomUUID()}`,
   );
 }
 
@@ -183,5 +183,5 @@ export async function confirmTransfer(
   if (!result.ok) return { error: TRANSFER_ERRORS[result.error] };
 
   revalidateAccountScreens();
-  redirect(`/transfers/success/${result.movementId}`);
+  redirect(`/transferir/comprobante/${result.movementId}`);
 }

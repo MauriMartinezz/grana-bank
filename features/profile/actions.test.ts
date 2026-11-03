@@ -87,7 +87,7 @@ describe("updateProfile", () => {
         undefined,
         form({ firstName: " María ", lastName: "Muñoz", address: " Calle 1 ", phone: "11 1234 5678" }),
       ),
-    ).rejects.toThrow("REDIRECT:/profile?guardado=datos");
+    ).rejects.toThrow("REDIRECT:/perfil?guardado=datos");
     expect(await owner()).toMatchObject({
       firstName: "María",
       lastName: "Muñoz",
@@ -100,7 +100,7 @@ describe("updateProfile", () => {
     await db.user.update({ where: { id: ownerId }, data: { address: "Vieja", phone: "12345678" } });
     await expect(
       updateProfile(undefined, form({ firstName: "Ana", lastName: "Pérez", address: " ", phone: "" })),
-    ).rejects.toThrow("REDIRECT:/profile?guardado=datos");
+    ).rejects.toThrow("REDIRECT:/perfil?guardado=datos");
     expect(await owner()).toMatchObject({ address: null, phone: null });
   });
 
@@ -132,7 +132,7 @@ describe("updatePreferredCurrency", () => {
       data: { userId: ownerId, alias: "owner.usd.profile.actions", currency: "USD", balanceCents: 0 },
     });
     await expect(updatePreferredCurrency(undefined, form({ currency: "USD" }))).rejects.toThrow(
-      "REDIRECT:/profile?guardado=moneda",
+      "REDIRECT:/perfil?guardado=moneda",
     );
     expect((await owner()).preferredCurrency).toBe("USD");
   });
@@ -142,7 +142,7 @@ describe("updateEmail", () => {
   it("changes the email, normalized, with the right password", async () => {
     await expect(
       updateEmail(undefined, form({ email: "  NEW@Profile-Actions.test ", password: PASSWORD })),
-    ).rejects.toThrow("REDIRECT:/profile?guardado=email");
+    ).rejects.toThrow("REDIRECT:/perfil?guardado=email");
     expect((await owner()).email).toBe(EMAILS[2]);
   });
 
@@ -190,7 +190,7 @@ describe("updateAlias", () => {
   it("changes the alias of an account the user owns, normalized", async () => {
     await expect(
       updateAlias(undefined, form({ accountId: ownerArsAccountId, alias: " Ana.Nueva.Profile " })),
-    ).rejects.toThrow("REDIRECT:/profile?guardado=alias");
+    ).rejects.toThrow("REDIRECT:/perfil?guardado=alias");
     expect((await owner()).accounts[0].alias).toBe("ana.nueva.profile");
   });
 
@@ -255,7 +255,7 @@ describe("changePassword", () => {
       where: { user: { email: EMAILS[1] } },
     });
 
-    await expect(change({})).rejects.toThrow("REDIRECT:/profile?guardado=contrasena");
+    await expect(change({})).rejects.toThrow("REDIRECT:/perfil?guardado=contrasena");
 
     const hash = await storedHash();
     expect(hash).not.toBe(passwordHash);

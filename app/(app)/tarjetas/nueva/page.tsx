@@ -14,7 +14,7 @@ export default async function NewCardPage() {
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref="/cards" />
+        <BackButton fallbackHref="/tarjetas" />
         <h1 className="font-serif text-2xl font-bold">Agregar tarjeta</h1>
       </header>
       <p className="mt-2 text-sm text-muted">

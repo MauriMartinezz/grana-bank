@@ -8,7 +8,7 @@ export default function MovementNotFound() {
       title="No encontramos este movimiento"
       description="Puede que el enlace sea incorrecto."
     >
-      <Link href="/movements" className={`${buttonClassName} mt-4`}>
+      <Link href="/movimientos" className={`${buttonClassName} mt-4`}>
         Ver movimientos
       </Link>
     </StateMessage>

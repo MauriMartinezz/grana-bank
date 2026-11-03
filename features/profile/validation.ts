@@ -59,7 +59,7 @@ export type SavedKey = keyof typeof SAVED_MESSAGES;
 
 /** Where a change screen goes after saving: the summary with its confirmation. */
 export function profileSavedPath(key: SavedKey) {
-  return `/profile?guardado=${key}`;
+  return `/perfil?guardado=${key}`;
 }
 
 /** The confirmation for a `guardado` search param, or null for anything else. */

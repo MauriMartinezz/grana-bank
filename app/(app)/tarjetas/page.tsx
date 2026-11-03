@@ -18,11 +18,11 @@ export default async function CardsPage() {
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref="/home" />
+        <BackButton fallbackHref="/inicio" />
         <h1 className="font-serif text-2xl font-bold">Mis tarjetas</h1>
       </header>
 
-      <Link href="/cards/new" className={`${buttonClassName} mt-5 w-full gap-2`}>
+      <Link href="/tarjetas/nueva" className={`${buttonClassName} mt-5 w-full gap-2`}>
         <PlusIcon className="size-5" />
         Agregar tarjeta
       </Link>

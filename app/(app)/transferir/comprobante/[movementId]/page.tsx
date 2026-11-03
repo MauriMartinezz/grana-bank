@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Transferencia enviada" };
 
 export default async function TransferSuccessPage({
   params,
-}: PageProps<"/transfers/success/[movementId]">) {
+}: PageProps<"/transferir/comprobante/[movementId]">) {
   const { movementId } = await params;
   const user = await getCurrentUser();
   const movement = await getMovement(user.id, movementId);
@@ -32,11 +32,11 @@ export default async function TransferSuccessPage({
       <p className="mt-4 text-sm text-muted">N.º de operación {movement.reference}</p>
 
       <div className="mt-10 w-full space-y-3">
-        <Link href={`/movements/${movement.id}`} className={`${buttonClassName} w-full`}>
+        <Link href={`/movimientos/${movement.id}`} className={`${buttonClassName} w-full`}>
           Ver comprobante
         </Link>
         <Link
-          href="/home"
+          href="/inicio"
           className="flex min-h-12 items-center justify-center font-serif text-sm text-garnet"
         >
           Volver al inicio

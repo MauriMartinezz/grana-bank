@@ -11,7 +11,7 @@ function ContactGroup({ title, contacts }: { title: string; contacts: Contact[] 
         {contacts.map((contact) => (
           <li key={contact.accountId} className="flex items-center gap-1 pr-2">
             <Link
-              href={`/transfers/to/${contact.accountId}`}
+              href={`/transferir/${contact.accountId}`}
               aria-label={`Transferir a ${contact.name}`}
               className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-4"
             >

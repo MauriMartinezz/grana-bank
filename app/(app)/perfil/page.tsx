@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Perfil" };
 
 const NOT_SET = "Sin cargar";
 
-type SearchParams = PageProps<"/profile">["searchParams"];
+type SearchParams = PageProps<"/perfil">["searchParams"];
 
 // Reads the URL, so it renders behind Suspense.
 async function Confirmation({ searchParams }: { searchParams: SearchParams }) {
@@ -24,7 +24,7 @@ async function Confirmation({ searchParams }: { searchParams: SearchParams }) {
   return message ? <SavedNotice message={message} /> : null;
 }
 
-export default async function ProfilePage({ searchParams }: PageProps<"/profile">) {
+export default async function ProfilePage({ searchParams }: PageProps<"/perfil">) {
   const user = await getCurrentUser();
   const accounts = await listAccounts(user.id);
 
@@ -41,29 +41,29 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
       </Suspense>
 
       <SummaryList>
-        <SummaryRow title="Datos personales" href="/profile/personal" item="datos personales">
+        <SummaryRow title="Datos personales" href="/perfil/datos" item="datos personales">
           <p>{user.name}</p>
           <p className="font-normal text-muted">Dirección: {user.address ?? NOT_SET}</p>
           <p className="font-normal text-muted">Teléfono: {user.phone ?? NOT_SET}</p>
         </SummaryRow>
-        <SummaryRow title="Email" href="/profile/email" item="email">
+        <SummaryRow title="Email" href="/perfil/email" item="email">
           {user.email}
         </SummaryRow>
         {accounts.map((account) => (
           <SummaryRow
             key={account.id}
             title="Alias"
-            href={`/profile/alias/${account.id}`}
+            href={`/perfil/alias/${account.id}`}
             item={`alias en ${account.currency}`}
           >
             {account.currency} · {account.alias}
           </SummaryRow>
         ))}
-        <SummaryRow title="Contraseña" href="/profile/password" item="contraseña">
+        <SummaryRow title="Contraseña" href="/perfil/contrasena" item="contraseña">
           <span aria-hidden="true">••••••••</span>
           <span className="sr-only">Oculta</span>
         </SummaryRow>
-        <SummaryRow title="Moneda preferida" href="/profile/currency" item="moneda preferida">
+        <SummaryRow title="Moneda preferida" href="/perfil/moneda" item="moneda preferida">
           {CURRENCY_LABELS[user.preferredCurrency]}
         </SummaryRow>
         <SettingRow title="Tema">

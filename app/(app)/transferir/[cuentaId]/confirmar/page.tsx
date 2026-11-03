@@ -16,8 +16,8 @@ export const metadata: Metadata = { title: "Confirmar transferencia" };
 export default async function ConfirmTransferPage({
   params,
   searchParams,
-}: PageProps<"/transfers/to/[accountId]/confirm">) {
-  const [{ accountId }, { amount, key }] = await Promise.all([params, searchParams]);
+}: PageProps<"/transferir/[cuentaId]/confirmar">) {
+  const [{ cuentaId: accountId }, { amount, key }] = await Promise.all([params, searchParams]);
   const confirmation = readConfirmation(accountId, amount, key);
   if ("redirectTo" in confirmation) redirect(confirmation.redirectTo);
   const { amountCents, idempotencyKey } = confirmation;
@@ -26,20 +26,20 @@ export default async function ConfirmTransferPage({
   // Back from the success screen lands here: show the receipt instead of
   // offering to confirm a transfer that already happened.
   const done = await findSentMovementByKey(user.id, idempotencyKey);
-  if (done) redirect(`/transfers/success/${done}`);
+  if (done) redirect(`/transferir/comprobante/${done}`);
 
   const recipient = await getRecipient(user.id, accountId);
   if (!recipient) notFound();
   // Without an account in this currency, the amount step explains why.
   const account = await getAccount(user.id, recipient.currency);
-  if (!account) redirect(`/transfers/to/${accountId}`);
+  if (!account) redirect(`/transferir/${accountId}`);
 
   const remaining = account.balanceCents - BigInt(amountCents);
 
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref={`/transfers/to/${accountId}`} />
+        <BackButton fallbackHref={`/transferir/${accountId}`} />
         <h1 className="font-serif text-2xl font-bold">Revisá la transferencia</h1>
       </header>
 
@@ -77,7 +77,7 @@ export default async function ConfirmTransferPage({
           idempotencyKey={idempotencyKey}
         />
         <Link
-          href={`/transfers/to/${accountId}`}
+          href={`/transferir/${accountId}`}
           className="flex min-h-12 items-center justify-center font-serif text-sm text-garnet"
         >
           Modificar monto

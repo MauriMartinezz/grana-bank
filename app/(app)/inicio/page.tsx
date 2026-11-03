@@ -22,7 +22,7 @@ import { SelectedAccountSkeleton } from "./selected-account-skeleton";
 
 export const metadata: Metadata = { title: "Inicio" };
 
-type SearchParams = PageProps<"/home">["searchParams"];
+type SearchParams = PageProps<"/inicio">["searchParams"];
 
 async function Greeting() {
   const user = await getCurrentUser();
@@ -37,7 +37,7 @@ async function RecentMovements() {
   return movements.length > 0 ? (
     <>
       <MovementList movements={movements} />
-      <Link href="/movements" className={`${buttonClassName} mt-4 w-full`}>
+      <Link href="/movimientos" className={`${buttonClassName} mt-4 w-full`}>
         Consultar todos
       </Link>
     </>
@@ -87,7 +87,7 @@ async function SelectedAccount({ searchParams }: { searchParams: SearchParams })
   );
 }
 
-export default function HomePage({ searchParams }: PageProps<"/home">) {
+export default function HomePage({ searchParams }: PageProps<"/inicio">) {
   return (
     <>
       <header className="flex items-center justify-between">
@@ -99,7 +99,7 @@ export default function HomePage({ searchParams }: PageProps<"/home">) {
         </div>
         <div className="-mr-2 flex items-center">
           <Link
-            href="/movements"
+            href="/movimientos"
             aria-label="Buscar movimientos"
             className="flex size-11 items-center justify-center rounded-full"
           >

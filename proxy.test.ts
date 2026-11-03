@@ -13,30 +13,30 @@ function request(path: string, cookie?: string) {
 
 describe("proxy", () => {
   it.each([
-    "/home",
-    "/movements",
-    "/movements/some-id",
-    "/transfers",
-    "/transfers/new",
-    "/services",
-    "/top-ups",
-    "/cards",
-    "/cards/new",
-    "/exchange",
-    "/profile",
+    "/inicio",
+    "/movimientos",
+    "/movimientos/some-id",
+    "/transferir",
+    "/transferir/nuevo",
+    "/servicios",
+    "/recargas",
+    "/tarjetas",
+    "/tarjetas/nueva",
+    "/dolares",
+    "/perfil",
   ])(
     "redirects %s to login without a session cookie",
     (path) => {
       const response = proxy(request(path));
       expect(response.status).toBe(307);
       expect(response.headers.get("location")).toBe(
-        "http://localhost:3000/login",
+        "http://localhost:3000/ingresar",
       );
     },
   );
 
   it("lets a request with a session cookie continue", () => {
-    const response = proxy(request("/home", "token"));
+    const response = proxy(request("/inicio", "token"));
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });

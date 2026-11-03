@@ -23,7 +23,7 @@ export default async function ExchangePage() {
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref="/home" />
+        <BackButton fallbackHref="/inicio" />
         <h1 className="font-serif text-2xl font-bold">Comprar y vender dólares</h1>
       </header>
 
@@ -61,7 +61,7 @@ export default async function ExchangePage() {
             title="Te falta una tarjeta"
             description={`Para operar necesitás una tarjeta en cada cuenta. Agregá una a tu cuenta en ${ars.cards.length === 0 ? "pesos" : "dólares"}.`}
           >
-            <Link href="/cards" className="mt-2 font-serif text-sm text-garnet">
+            <Link href="/tarjetas" className="mt-2 font-serif text-sm text-garnet">
               Ir a tarjetas
             </Link>
           </StateMessage>

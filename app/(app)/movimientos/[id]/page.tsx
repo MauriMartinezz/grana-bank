@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Detalle del movimiento" };
 
 export default async function MovementDetailPage({
   params,
-}: PageProps<"/movements/[id]">) {
+}: PageProps<"/movimientos/[id]">) {
   const { id } = await params;
   const user = await getCurrentUser();
   const movement = await getMovement(user.id, id);
@@ -26,7 +26,7 @@ export default async function MovementDetailPage({
   return (
     <>
       <header className="flex items-center gap-1">
-        <BackButton fallbackHref="/movements" />
+        <BackButton fallbackHref="/movimientos" />
         <h1 className="font-serif text-2xl font-bold">Detalle</h1>
       </header>
 
