@@ -18,7 +18,7 @@ describe("readConfirmation", () => {
     "sends an invalid amount %j back to the amount screen",
     (amount) => {
       expect(readConfirmation("u1", amount, KEY, newKey)).toEqual({
-        redirectTo: "/transfers/to/u1",
+        redirectTo: "/transferir/u1",
       });
     },
   );
@@ -27,7 +27,7 @@ describe("readConfirmation", () => {
     "starts a fresh confirmation for a missing or malformed key %j",
     (key) => {
       expect(readConfirmation("u1", "100", key, newKey)).toEqual({
-        redirectTo: `/transfers/to/u1/confirm?amount=100&key=${NEW_KEY}`,
+        redirectTo: `/transferir/u1/confirmar?amount=100&key=${NEW_KEY}`,
       });
     },
   );

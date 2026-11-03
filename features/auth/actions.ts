@@ -25,7 +25,8 @@ async function authenticate(email: string, password: string) {
     password,
     user?.passwordHash ?? UNUSABLE_HASH,
   );
-  return valid ? user : null;
+  // The test account that funds deposits never signs in.
+  return valid && user && !user.isTestAccount ? user : null;
 }
 
 export async function login(
@@ -64,10 +65,10 @@ export async function login(
   }
 
   // Outside the try block: redirect() works by throwing.
-  redirect("/home");
+  redirect("/inicio");
 }
 
 export async function logout() {
   await deleteSession();
-  redirect("/login");
+  redirect("/ingresar");
 }

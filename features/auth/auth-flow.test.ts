@@ -29,6 +29,8 @@ vi.mock("next/navigation", () => ({
   redirect: (path: string) => {
     throw new Error(`REDIRECT:${path}`);
   },
+  // Rethrows only Next's internal signals; a plain error goes on.
+  unstable_rethrow: () => {},
 }));
 
 const EMAIL = "owner@auth.test";
@@ -54,7 +56,8 @@ beforeAll(async () => {
   const user = await db.user.create({
     data: {
       email: EMAIL,
-      name: "Owner",
+      firstName: "Owner",
+      lastName: "Flow",
       passwordHash: await hashPassword(PASSWORD),
     },
   });
@@ -73,7 +76,7 @@ afterAll(async () => {
 
 describe("login", () => {
   it("creates a session and enters the app with valid credentials", async () => {
-    await expect(signIn()).rejects.toThrow("REDIRECT:/home");
+    await expect(signIn()).rejects.toThrow("REDIRECT:/inicio");
 
     const cookie = jar.get(SESSION_COOKIE);
     expect(cookie?.options).toMatchObject({
@@ -97,7 +100,7 @@ describe("login", () => {
 
   it("ignores case and spaces around the email", async () => {
     await expect(signIn({ email: "  Owner@AUTH.test " })).rejects.toThrow(
-      "REDIRECT:/home",
+      "REDIRECT:/inicio",
     );
   });
 
@@ -202,7 +205,13 @@ describe("getCurrentUser", () => {
     await expect(signIn()).rejects.toThrow("REDIRECT:");
 
     const user = await getCurrentUser();
-    expect(user).toMatchObject({ id: userId, email: EMAIL });
+    expect(user).toMatchObject({
+      id: userId,
+      email: EMAIL,
+      firstName: "Owner",
+      lastName: "Flow",
+      name: "Owner Flow",
+    });
     expect(user).not.toHaveProperty("passwordHash");
   });
 
@@ -217,19 +226,19 @@ describe("getCurrentUser", () => {
   });
 
   it("sends a visitor without a cookie to login", async () => {
-    await expect(getCurrentUser()).rejects.toThrow("REDIRECT:/login");
+    await expect(getCurrentUser()).rejects.toThrow("REDIRECT:/ingresar");
   });
 
   it("sends an unknown token to login", async () => {
     jar.set(SESSION_COOKIE, { value: "forged", options: {} });
-    await expect(getCurrentUser()).rejects.toThrow("REDIRECT:/login");
+    await expect(getCurrentUser()).rejects.toThrow("REDIRECT:/ingresar");
   });
 
   it("does not accept the stored hash as a token", async () => {
     await expect(signIn()).rejects.toThrow("REDIRECT:");
     const session = await db.session.findFirstOrThrow({ where: { userId } });
     jar.set(SESSION_COOKIE, { value: session.tokenHash, options: {} });
-    await expect(getCurrentUser()).rejects.toThrow("REDIRECT:/login");
+    await expect(getCurrentUser()).rejects.toThrow("REDIRECT:/ingresar");
   });
 
   it("sends an expired session to login", async () => {
@@ -238,14 +247,14 @@ describe("getCurrentUser", () => {
       where: { userId },
       data: { expiresAt: new Date(Date.now() - 1000) },
     });
-    await expect(getCurrentUser()).rejects.toThrow("REDIRECT:/login");
+    await expect(getCurrentUser()).rejects.toThrow("REDIRECT:/ingresar");
   });
 });
 
 describe("redirectIfSignedIn", () => {
   it("sends a signed-in user to home", async () => {
     await expect(signIn()).rejects.toThrow("REDIRECT:");
-    await expect(redirectIfSignedIn()).rejects.toThrow("REDIRECT:/home");
+    await expect(redirectIfSignedIn()).rejects.toThrow("REDIRECT:/inicio");
   });
 
   it("keeps a visitor without a session on the page", async () => {
@@ -266,7 +275,7 @@ describe("logout", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(db.session, "deleteMany").mockRejectedValue(new Error("offline"));
 
-    await expect(logout()).rejects.toThrow("REDIRECT:/login");
+    await expect(logout()).rejects.toThrow("REDIRECT:/ingresar");
     expect(jar.has(SESSION_COOKIE)).toBe(false);
   });
 
@@ -274,16 +283,16 @@ describe("logout", () => {
     await expect(signIn()).rejects.toThrow("REDIRECT:");
     const token = jar.get(SESSION_COOKIE)?.value as string;
 
-    await expect(logout()).rejects.toThrow("REDIRECT:/login");
+    await expect(logout()).rejects.toThrow("REDIRECT:/ingresar");
 
     expect(jar.has(SESSION_COOKIE)).toBe(false);
     await expect(sessionCount()).resolves.toBe(0);
 
     jar.set(SESSION_COOKIE, { value: token, options: {} });
-    await expect(getCurrentUser()).rejects.toThrow("REDIRECT:/login");
+    await expect(getCurrentUser()).rejects.toThrow("REDIRECT:/ingresar");
   });
 
   it("works without a session", async () => {
-    await expect(logout()).rejects.toThrow("REDIRECT:/login");
+    await expect(logout()).rejects.toThrow("REDIRECT:/ingresar");
   });
 });

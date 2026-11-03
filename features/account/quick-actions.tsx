@@ -1,11 +1,18 @@
 import Link from "next/link";
-import { CardIcon, ReceiptIcon, SwapIcon, TopUpIcon } from "@/components/icons";
+import { CardIcon, PlusIcon, ReceiptIcon, SwapIcon, TagIcon, TopUpIcon } from "@/components/icons";
+import { DollarIcon } from "@/features/exchange/icons";
 
+// Four per row; the rest start a second row. Labels are one word, so each
+// stays on one centered line.
+// Ingresar dinero first: it funds every other operation in the demo.
 const ACTIONS = [
-  { href: "/transfers", label: "Transferir", Icon: SwapIcon },
-  { href: "/services", label: "Servicios", Icon: ReceiptIcon },
-  { href: "/top-ups", label: "Recargas", Icon: TopUpIcon },
-  { href: "/cards", label: "Tarjetas", Icon: CardIcon },
+  { href: "/ingresar-dinero", label: "Ingresar", Icon: PlusIcon },
+  { href: "/transferir", label: "Transferir", Icon: SwapIcon },
+  { href: "/servicios", label: "Servicios", Icon: ReceiptIcon },
+  { href: "/recargas", label: "Recargas", Icon: TopUpIcon },
+  { href: "/tarjetas", label: "Tarjetas", Icon: CardIcon },
+  { href: "/dolares", label: "Dólares", Icon: DollarIcon },
+  { href: "/promociones", label: "Promos", Icon: TagIcon },
 ];
 
 export function QuickActions() {
@@ -16,7 +23,7 @@ export function QuickActions() {
           <li key={href}>
             <Link
               href={href}
-              className="flex flex-col items-center gap-2 rounded-2xl bg-white px-1 py-3 text-xs font-medium"
+              className="flex flex-col items-center gap-2 rounded-2xl bg-surface px-1 py-3 text-xs font-medium"
             >
               <span className="flex size-10 items-center justify-center rounded-xl bg-garnet-soft text-garnet">
                 <Icon />

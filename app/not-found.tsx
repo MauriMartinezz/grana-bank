@@ -9,7 +9,7 @@ export default function NotFound() {
         title="Página no encontrada"
         description="La dirección que buscás no existe."
       >
-        <Link href="/home" className={`${buttonClassName} mt-4`}>
+        <Link href="/inicio" className={`${buttonClassName} mt-4`}>
           Volver al inicio
         </Link>
       </StateMessage>

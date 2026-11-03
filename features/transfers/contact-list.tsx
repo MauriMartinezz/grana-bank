@@ -7,11 +7,11 @@ function ContactGroup({ title, contacts }: { title: string; contacts: Contact[] 
   return (
     <section aria-label={title}>
       <h2 className="mb-2 text-sm text-muted">{title}</h2>
-      <ul className="divide-y divide-line rounded-2xl bg-white">
+      <ul className="divide-y divide-line rounded-2xl bg-surface">
         {contacts.map((contact) => (
-          <li key={contact.userId} className="flex items-center gap-1 pr-2">
+          <li key={contact.accountId} className="flex items-center gap-1 pr-2">
             <Link
-              href={`/transfers/to/${contact.userId}`}
+              href={`/transferir/${contact.accountId}`}
               aria-label={`Transferir a ${contact.name}`}
               className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-4"
             >
@@ -24,7 +24,7 @@ function ContactGroup({ title, contacts }: { title: string; contacts: Contact[] 
               </span>
             </Link>
             <FavoriteButton
-              contactUserId={contact.userId}
+              contactAccountId={contact.accountId}
               name={contact.name}
               favorite={contact.favorite}
             />

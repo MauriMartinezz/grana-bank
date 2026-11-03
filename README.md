@@ -1,97 +1,205 @@
 # GranaBank
 
-Mobile-first banking web app built for a technical challenge. It has login, a home screen with balance, quick actions and recent movements, a searchable movement list, a movement detail page, and transfers between users with a contact list and favorites.
+[![CI](https://github.com/MauriMartinezz/grana-bank/actions/workflows/ci.yml/badge.svg)](https://github.com/MauriMartinezz/grana-bank/actions/workflows/ci.yml)
 
-**Stack:** Next.js, TypeScript, PostgreSQL and Prisma. Vitest runs the tests.
+**Demo:** _pendiente de despliegue_
 
-## Quick path
+Aplicación web de home banking, pensada primero para celular, hecha para un desafío técnico. Un usuario inicia sesión y maneja una cuenta por moneda (pesos y, opcionalmente, dólares): transferencias, compra y venta de dólares, tarjetas, recargas, pago de servicios con programación, categorías, ingresos desde una cuenta de prueba, suscripciones, promociones y notificaciones. Todo corre localmente contra una base PostgreSQL en Docker; no se contacta a ningún banco, red de tarjetas ni empresa real.
 
-Requires Node 22, pnpm and Docker.
+## Documentación
+
+| Documento | Para qué leerlo |
+|-----------|-----------------|
+| [docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md) | Ver cada funcionalidad, cuáles son demo, las diferencias con Figma y las limitaciones conocidas |
+| [docs/DEMO.md](docs/DEMO.md) | Iniciar sesión con los usuarios de prueba, saber a quién se le puede enviar dinero y recorrer cada flujo |
+| [docs/DECISIONES.md](docs/DECISIONES.md) | Entender las decisiones técnicas: centavos y `BIGINT`, Next.js, Server Actions, bloqueos, idempotencia, seguridad |
+
+## Contenido
+
+- [Funcionalidades](#funcionalidades)
+- [Stack](#stack)
+- [Herramientas de IA y flujo de trabajo](#herramientas-de-ia-y-flujo-de-trabajo)
+- [Requisitos](#requisitos)
+- [Levantarlo localmente](#levantarlo-localmente)
+- [Comandos](#comandos)
+- [Integración continua](#integración-continua)
+- [Despliegue](#despliegue)
+- [Probarlo](#probarlo)
+- [Estructura del proyecto](#estructura-del-proyecto)
+
+## Funcionalidades
+
+| Área | Qué puede hacer el usuario |
+|------|----------------------------|
+| Ingreso | Email y contraseña, "Recordarme", cerrar sesión desde Perfil |
+| Inicio | Saldo por cuenta (el ojo lo oculta como `*****`), tarjetas en carrusel, accesos rápidos, próximos vencimientos, promos de hoy, últimos movimientos |
+| Movimientos | Búsqueda, filtros rápidos y por fechas, detalle con categoría y nota |
+| Transferir | Por alias o email, con contactos, favoritos, nota y categoría |
+| Ingresar dinero | Desde la "Cuenta de prueba"; también programar ingresos (demo) |
+| Dólares | Compra y venta a una cotización simulada |
+| Tarjetas | Visa, Mastercard o American Express validadas localmente, con tarjeta predeterminada por cuenta |
+| Recargas | SUBE, celular (Personal, Movistar, Claro, Tuenti) y DirecTV; recarga programada de SUBE (demo) |
+| Servicios | Adhesión por empresa, pago en pesos o dólares, pago programado, débito automático y recordatorios |
+| Suscripciones | Listar, cambiar la tarjeta, dar de baja y suscribirse desde un catálogo (demo) |
+| Promociones | Descuentos de comercios inventados filtrados por día y categoría |
+| Notificaciones | La campana lista dinero que entra y sale, operaciones con dólares, pagos fallidos y recordatorios |
+| Perfil | Datos personales, email, alias, contraseña, moneda preferida, categorías, suscripciones, tema y vista (escritorio o celular) |
+
+El detalle completo está en [docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md).
+
+## Stack
+
+| Capa | Tecnología |
+|------|------------|
+| Framework | [Next.js](https://nextjs.org) 16 (App Router, Server Actions, Cache Components, Turbopack) |
+| UI | React 19, Tailwind CSS 4 |
+| Lenguaje | TypeScript 5 |
+| Base de datos | PostgreSQL 17 (imagen de Docker `postgres:17-alpine`) |
+| ORM | Prisma 7 con el adaptador del driver `pg` |
+| Tests | Vitest 5, contra la base real |
+| Lint | ESLint 9 con `eslint-config-next` |
+| Gestor de paquetes | pnpm (versión fijada en `package.json` → `packageManager`) |
+
+No hay servicios externos, pasarelas de pago ni proveedores de autenticación: las contraseñas usan scrypt de `node:crypto` y las sesiones viven en la base.
+
+## Herramientas de IA y flujo de trabajo
+
+El proyecto se construyó con un agente de IA dirigido por una persona. La persona define qué se hace, aprueba las decisiones de producto y decide cada entrega; el agente explora, escribe código y tests, y documenta.
+
+| Herramienta | Qué aporta |
+|-------------|------------|
+| [Claude Code](https://claude.com/claude-code) | Agente de programación en la terminal, con modelos Claude de Anthropic. Lee y edita el código, corre tests y comandos, y lanza subagentes |
+| Subagentes | Escritores en paralelo sobre archivos distintos y verificadores independientes que prueban cada cambio de riesgo (dinero, seguridad, migraciones) contra la base real |
+| [Engram](https://github.com/Gentleman-Programming/engram) | Memoria persistente vía MCP: guarda decisiones, descubrimientos y resúmenes de sesión, para retomar el trabajo entre sesiones |
+| [gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) | Configura al agente: el flujo de trabajo ODD, la revisión nativa por recibos (RDD) con lentes de riesgo, confiabilidad, resiliencia y legibilidad, y el registro de skills (`.atl/skill-registry.md`) |
+| Context7 (MCP) | Documentación actualizada de librerías, disponible para el agente |
+| `AGENTS.md` | Reglas que Next.js 16 genera para agentes: esta versión tiene cambios incompatibles, y su documentación local está en `node_modules/next/dist/docs/` |
+
+**Flujo ODD (Organic Driven Development).** Cada pedido pasa por: autorizar, explorar el código, resolver dudas con una sola pregunta, clasificar el tamaño y, si es grande, crear un documento en `odd/tasks/` antes de escribir código. Ese documento tiene los requisitos con las palabras textuales del pedido, las tareas y una bitácora. Después se implementa con tests primero (se ve el test fallar y luego pasar), en commits chicos con mensajes Conventional Commits. Los cambios que tocan dinero, seguridad o migraciones pasan por un verificador independiente y, si la persona acepta, por la revisión nativa.
+
+## Requisitos
+
+Instalá esto antes de empezar:
+
+| Herramienta | Versión | Para qué | Cómo verificarlo |
+|-------------|---------|----------|------------------|
+| [Node.js](https://nodejs.org) | 22 o más nueva | Corre Next.js, Prisma y los tests | `node -v` |
+| [pnpm](https://pnpm.io) | la de `packageManager` (Corepack la elige) | Instala dependencias y corre los scripts | `pnpm -v` |
+| [Docker](https://docs.docker.com/get-docker/) con Compose v2 | Docker Desktop, o Docker Engine con el plugin Compose | Corre PostgreSQL | `docker compose version` |
+| Git | cualquiera | Clona el repositorio | `git --version` |
+
+Los puertos **3000** (la app) y **5433** (PostgreSQL) tienen que estar libres. También necesitás la contraseña del usuario principal que figura en la consigna del desafío: el seed la lee de `SEED_USER_PASSWORD` y nunca se guarda en el repositorio.
+
+Corepack viene con Node.js; si falta `pnpm`, corré `corepack enable` una vez.
+
+## Levantarlo localmente
 
 ```bash
+# 1. Obtener el código
+git clone git@github.com:MauriMartinezz/grana-bank.git
+cd grana-bank
+
+# 2. Configurar el entorno (los valores por defecto sirven para la base de Docker)
 cp .env.example .env
+
+# 3. Instalar dependencias
 pnpm install
-pnpm db:up        # Postgres on port 5433
+
+# 4. Levantar PostgreSQL en Docker y esperar a que esté listo (puerto 5433)
+pnpm db:up
+
+# 5. Crear las tablas y generar el cliente de Prisma
 pnpm db:migrate
-SEED_USER_PASSWORD='<password from the brief>' pnpm db:seed
+
+# 6. Cargar los datos de demo: usuarios, cuentas, tarjetas, servicios, promociones
+SEED_USER_PASSWORD='<contraseña de la consigna>' pnpm db:seed
+
+# 7. Levantar la app
 pnpm dev
 ```
 
-Open http://localhost:3000 in a mobile viewport.
+Abrí http://localhost:3000, mejor en una vista de celular (herramientas del navegador → modo dispositivo) o elegí **Perfil → Vista → Escritorio**, e iniciá sesión como `soygranate@clublanus.com` con la contraseña de la consigna.
 
-After pulling changes that touch `prisma/`, run `pnpm db:migrate` and restart `pnpm dev`: a running server keeps the Prisma client it loaded at start. If routes from another branch still show, stop the server, delete `.next` and start it again.
+Después de traer cambios que tocan `prisma/`, corré `pnpm db:migrate` y reiniciá `pnpm dev`: un servidor en marcha mantiene el cliente de Prisma que cargó al iniciar.
 
-| Command | Purpose |
-|---------|---------|
-| `pnpm test` | Unit and integration tests. The database must be running. |
-| `pnpm lint` | ESLint |
-| `pnpm build` | Production build |
+### Variables de entorno
 
-Sign in with the credentials from the brief. The seed reads the password from `SEED_USER_PASSWORD`, so it is never stored in the repository.
+| Variable | Obligatoria | Valor en `.env.example` | Para qué |
+|----------|-------------|-------------------------|----------|
+| `DATABASE_URL` | Sí | `postgresql://grana:grana@localhost:5433/grana_bank` | La base de Docker de `docker-compose.yml` |
+| `SEED_USER_PASSWORD` | Solo para `pnpm db:seed` | no está: se pasa en el comando | Contraseña de todos los usuarios del seed |
+| `CRON_SECRET` | No | no está: agregala en `.env` | Secreto Bearer de `/api/pagos-agendados`; sin él, el endpoint rechaza todo |
 
-### Demo users
+### Pagos programados
 
-The seed creates two more users who exist to receive transfers. They sign in with the same password as the main user.
+Los pagos programados y los débitos automáticos de servicios se ejecutan cuando algo llama a `/api/pagos-agendados` (`GET` o `POST`) con `Authorization: Bearer $CRON_SECRET`, por ejemplo un cron diario. Para probarlo localmente, definí `CRON_SECRET` en `.env` (por ejemplo con `openssl rand -hex 32`), reiniciá `pnpm dev` y llamá:
 
-| Email | Alias | Name | Starts as |
-|-------|-------|------|-----------|
-| `soygranate@clublanus.com` | `soy.granate` | Granate | Main user from the brief |
-| `juanperez@clublanus.com` | `juan.perez` | Juan Perez | A contact of Granate |
-| `martinbozzini@clublanus.com` | `martin.bozzini` | Martin Bozzini | Not a contact: use "Nuevo destinatario" |
-
-To show a transfer from both sides:
-
-1. Sign in as Granate and tap **Transferir**.
-2. Tap **Nuevo destinatario**, enter the alias `martin.bozzini` (or tap **Transferir por email** and use the email), an amount, and confirm.
-3. Sign out and sign in as Martin Bozzini: the balance and a "Pago recibido" from Granate are there.
-
-Running the seed again resets all three users.
-
-## Project structure
-
-```text
-app/         Routes, layouts, and loading and error boundaries
-features/    Code grouped by domain: account, auth, movements, transfers
-components/  Shared UI with no domain knowledge
-lib/         Database client and formatters
-prisma/      Schema, migrations and seed
-proxy.ts     Redirects visitors with no session cookie to login
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/pagos-agendados
+# {"paid":N,"failed":N}
 ```
 
-## Decisions
+Sin secreto, el botón **Procesar pagos agendados**, al final de Servicios, ejecuta los pagos de hoy del usuario que inició sesión.
 
-| Topic | Decision | Why |
-|-------|----------|-----|
-| Money | Integer cents | Floating point cannot represent cents exactly. |
-| Current user | Single `getCurrentUser()` function | Screens and queries never read cookies or sessions themselves. |
-| Passwords | Salted scrypt from `node:crypto` | It resists brute force and adds no dependency. |
-| Sessions | Random token in an `httpOnly` cookie, stored as a SHA-256 hash in the database | Logout revokes a session at once, and a database leak exposes no usable token. |
-| Route protection | `proxy.ts` checks the cookie, `getCurrentUser()` validates the session | The proxy avoids rendering private screens for anonymous visitors, without a database query on each request. |
-| "Recordarme" | 7 day persistent cookie, otherwise a browser-session cookie that expires on the server after 1 day | It follows the checkbox in the design with a short default for a banking app. |
-| Data access | Every query filters by `account.userId` | A user cannot read another account by guessing an id. |
-| Search and filters | Stored in the URL | They survive a reload and the way back from the detail page. |
-| Loading | Suspense boundaries with skeletons | The screen layout appears at once and data streams in. |
-| Detail screen | Page at `/movements/[id]` | Required by the brief and missing from Figma. It has a URL and natural loading and not-found states. |
-| Validation libraries | None | Filters and amounts are parsed by small tested functions. |
-| Transfers | One database transaction that locks both accounts with `SELECT … FOR UPDATE` in id order | Concurrent transfers cannot overdraw an account, and two users sending to each other cannot deadlock. Database `CHECK` constraints keep balances non-negative even if the code has a bug. |
-| Double submit | An idempotency key generated when the confirmation screen renders | Repeating the request returns the first transfer, so a retry never charges twice. The same key with another amount or recipient is rejected. |
-| Transfer reference | Sequential `TRF-000001`, shared by both sides | Sender and recipient see the same operation number, as on a bank receipt. |
-| Contacts | Saved after the first transfer; favorites listed first | The list grows from real use, with no extra "add contact" step. |
-| Recipient lookup | By alias by default, by email behind a button | An alias is easy to share and hides the email. Aliases have 1 to 40 characters (letters without accents, digits and dots, with at least one letter) and ignore case: they are stored in lower case, unique, and checked again by a database `CHECK`. The lookup tells whether an alias or email has an account, as bank transfers show the recipient's name. |
-| Quick actions | Transferir, Servicios, Recargas and Tarjetas on Home | Servicios, Recargas and Tarjetas are entry points for planned features and show "Próximamente". |
+## Comandos
 
-## Differences from Figma
+| Comando | Qué hace |
+|---------|----------|
+| `pnpm dev` | Servidor de desarrollo en http://localhost:3000 |
+| `pnpm test` | Tests unitarios y de integración; la base tiene que estar levantada |
+| `pnpm lint` | ESLint |
+| `pnpm build` | Genera el cliente de Prisma y compila para producción |
+| `pnpm start` | Sirve la versión compilada |
+| `pnpm db:up` | Levanta PostgreSQL en Docker |
+| `pnpm db:migrate` | Aplica las migraciones pendientes y regenera el cliente de Prisma |
+| `pnpm db:seed` | Reinicia los usuarios de demo y las promociones (necesita `SEED_USER_PASSWORD`) |
+| `pnpm db:promos` | Carga solo las promociones de demo, sin tocar los usuarios |
+| `docker compose down` | Detiene PostgreSQL y conserva sus datos |
+| `docker compose down -v` | Detiene PostgreSQL y borra sus datos; después hay que correr `db:up`, `db:migrate` y `db:seed` |
 
-- **Colors:** sampled from PNG exports, so they are close approximations.
-- **"Subscripción":** corrected to "Suscripción", matching "Pago de suscripción" in the same design.
-- **Bell:** the brief gives it no behavior, so it reports that there are no notifications.
-- **Logo:** cropped from a PNG export. Replace `public/logo.png` with the original vector.
+## Integración continua
 
-## Known limitations
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) corre en cada push y en cada pull request, sobre una máquina limpia con PostgreSQL 17:
 
-- **Contrast:** the yellow amount is hard to read on white. It is kept to follow the design, and the icon and subtitle also convey the movement type.
-- **Search:** it ignores case but not accents, so "Jose" does not find "José".
-- **List size:** the movement list shows the 50 most recent items, without pagination.
-- **Login attempts:** there is no rate limiting, which a real banking app would need.
-- **Transfers:** there is no daily limit or second factor, only a limit of 1,000,000 per transfer. Deleting a user also deletes their transfers; no screen deletes users.
-- **Card logo:** the Home card always shows the Mastercard logo; the cards feature replaces it.
+1. Instala las dependencias con el lockfile exacto (`pnpm install --frozen-lockfile`).
+2. Genera el cliente de Prisma y aplica todas las migraciones sobre una base vacía.
+3. Corre lint, el chequeo de tipos y los tests contra esa base. Los tests crean sus propios datos, así que no hace falta el seed.
+4. Compila para producción (`pnpm build`).
+
+## Despliegue
+
+La demo corre en [Vercel](https://vercel.com) con PostgreSQL en [Neon](https://neon.tech). Neon da dos URLs de conexión: la **con pooler** (el host incluye `-pooler`) es para la app, y la **directa** es para migrar y cargar datos.
+
+1. En Neon, creá un proyecto y copiá las dos URLs.
+2. Desde tu máquina, con la URL directa, creá las tablas y cargá los datos de demo:
+   ```bash
+   DATABASE_URL='<url directa>' pnpm exec prisma migrate deploy
+   DATABASE_URL='<url directa>' SEED_USER_PASSWORD='<contraseña de la consigna>' pnpm db:seed
+   ```
+3. En Vercel, importá el repositorio y cargá las variables de entorno:
+   - `DATABASE_URL`: la URL con pooler.
+   - `CRON_SECRET`: un secreto largo (por ejemplo, `openssl rand -hex 32`).
+4. Desplegá. [`vercel.json`](vercel.json) programa el cron de pagos programados todos los días a las 11:00 UTC (8:00 en Buenos Aires). Vercel lo llama con `Authorization: Bearer $CRON_SECRET`, que es lo que espera `/api/pagos-agendados`.
+
+Las migraciones nuevas se aplican repitiendo el paso 2 con `prisma migrate deploy`; el build de Vercel no toca la base.
+
+## Probarlo
+
+Iniciá sesión como `soygranate@clublanus.com` con la contraseña de la consigna. El seed también crea a Juan Perez (`juan.perez`, `juan.perez.usd`) y a Martin Bozzini (`martin.bozzini`) para recibir transferencias, y la "Cuenta de prueba" que alimenta **Ingresar dinero**. [docs/DEMO.md](docs/DEMO.md) lista cada usuario, cuenta, tarjeta y saldo, a quién se le puede enviar dinero y un recorrido paso a paso por cada flujo.
+
+## Estructura del proyecto
+
+```text
+app/         Rutas, layouts y estados de carga y error
+  (app)/     Pantallas que requieren sesión
+  (auth)/    Pantalla de ingreso
+  api/       Route handlers (el cron de pagos programados)
+features/    Código agrupado por dominio: account, auth, cards, categories, deposits, exchange,
+             movements, notifications, profile, promotions, services, subscriptions, top-ups, transfers
+components/  UI compartida sin conocimiento del dominio
+lib/         Cliente de base de datos y formateadores
+prisma/      Schema, migraciones y seed
+docs/        Funcionalidades, guía de demo y decisiones técnicas
+odd/tasks/   Documentos de cada funcionalidad: requisitos, tareas y bitácora
+proxy.ts     Redirige al ingreso a quien no tiene cookie de sesión
+```

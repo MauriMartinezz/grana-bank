@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# A newer push to the same branch cancels the run it makes obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, types, tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # The same database as docker-compose.yml, on the same port.
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: grana
+          POSTGRES_PASSWORD: grana
+          POSTGRES_DB: grana_bank
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U grana -d grana_bank"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+
+    env:
+      DATABASE_URL: postgresql://grana:grana@localhost:5433/grana_bank
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Installs the pnpm version pinned in package.json (packageManager).
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The client lives in /generated, which is not committed.
+      - name: Generate the Prisma client
+        run: pnpm exec prisma generate
+
+      # Applies every migration to an empty database, as a fresh setup does.
+      - name: Apply migrations
+        run: pnpm exec prisma migrate deploy
+
+      - name: Lint
+        run: pnpm lint
+
+      # PageProps and LayoutProps are global types Next.js generates under
+      # .next/, which a clean checkout lacks: generate them first.
+      - name: Type check
+        run: pnpm exec next typegen && pnpm exec tsc --noEmit
+
+      # Tests create their own data, so no seed is needed.
+      - name: Tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

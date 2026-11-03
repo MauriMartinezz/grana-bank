@@ -50,6 +50,16 @@ export async function getSessionUser() {
   return session.user;
 }
 
+/**
+ * Which session rows to delete to sign the user out everywhere except on this
+ * browser. Without a cookie, every session of the user matches.
+ */
+export async function otherSessionsWhere(userId: string) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  return token ? { userId, tokenHash: { not: hashToken(token) } } : { userId };
+}
+
 export async function deleteSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;

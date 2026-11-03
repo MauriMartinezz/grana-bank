@@ -1,0 +1,41 @@
+# Servicios
+
+Objective: adhere utility services with their electronic payment number, pay simulated bills from a card of the right currency, and later schedule payments.
+Branch: `feat/accounts` (after the accounts feature's T13). Delivery strategy: `single-pr`. Test runner: Vitest.
+
+## Specs
+
+- S1. User idea: "Se me ocurre que se pueda programar pagos, que se pida un número de pago electrónico, servicios como AySA, Edesur, Edenor, Metrogas y servicios en dólares, quizá que se puedan agregar categorías para hacer los resúmenes más adelante como habíamos hablado". The user approved a three-layer plan: "Me parece bien, empieza por donde decís".
+- S2. Layer 1 (now): adhere a service by company (AySA, Edesur, Edenor, Metrogas) with its electronic payment number (length validated per company) and a nickname; each adhesion gets simulated pending bills with amount and due date derived from the number; paying a bill picks a card of the bill's currency, is atomic with an idempotency key, and creates a "Pago de servicio" movement with a receipt. A bill cannot be paid twice.
+- S3. Layer 2 (later): companies billing in dollars (two examples, e.g. a health plan and an insurance) payable only from USD cards; payments go to the "Servicios" category of odd/tasks/categories.md, editable.
+- S4. Layer 3 (later): automatic debit on the due date and one-off scheduled payments, processed by a route handler meant for a cron plus a "Procesar pagos agendados" button for the demo; a payment without balance ends as failed with a notice and never overdraws; Home shows "Vence en N días" for unscheduled bills.
+- S5. Out of scope: barcode scanning and real payment networks.
+
+## Tasks
+
+- [x] T1 (S2) model and migration: service companies, adhesions, simulated bills, movement type; company number validation. Route: inline. Commit 019354e.
+- [x] T2 (S2) screens: Servicios list, adhere, bills of an adhesion, pay flow with confirmation and receipt. Route: inline. Commit db6d1eb.
+- [x] T3 (S3) dollar companies and the Servicios category. Route: inline. Risk: item 1 (migration replaces the payment number CHECK). Commit 53d130c.
+
+Assumptions (S3): two fictional USD companies, so no real company is shown billing in dollars: "Salud Plena" (Prepaga, 8 digits) and "Austral Seguros" (Seguro, 9 digits), with simulated bills of USD 40 to 250; every service payment, pesos or dollars, takes the user's category whose key is `servicios` (none when the user renamed or deleted it) and stays editable from the movement detail.
+- [x] T4 (S4) scheduled and automatic payments, in three units:
+  - [x] T4a model, migration and `processScheduledPayments` (pays due one-off schedules and auto-debit bills through `payBill` with key `scheduled-<billId>`; no balance or no card ends as failed, never retried until the user schedules again). Route: inline. Risk: items 1 and 4. Commit 596f9b4.
+  - [x] T4b route handler `/api/pagos-agendados` for the cron, `Authorization: Bearer $CRON_SECRET`, refuses when the secret is unset. Route: inline. Risk: item 2. Commit 91913d0.
+  - [x] T4c screens: schedule and cancel on the bill, auto-debit card on the adhesion, "Procesar pagos agendados" button (only the user's bills), failure notices, Home "Vence en N días" for bills with no schedule and no auto-debit. Route: inline. Commit b3df216.
+
+Assumptions (S4): a schedule date runs from today to the due date (today when overdue); the auto-debit pays a bill on or after its due date; a one-off schedule wins over the auto-debit; scheduling again or changing the auto-debit clears a failure.
+
+Route evidence: starts after accounts T13 (BigInt money), because it adds money columns and a movement type.
+
+## Log
+
+- L1 (2026-11-03, user request): "hay que trabajar en la sección de Servicios, propón ideas para que podamos llegar a una buena sección. Se me ocurre que se pueda programar pagos, que se pida un número de pago electrónico, servicios como AySA, Edesur, Edenor, Metrogas y servicios en dólares, quizá que se puedan agregar categorías para hacer los resúmenes más adelante como habíamos hablado"
+- L2 (2026-11-03, user): "Me parece bien, empieza por donde decís" (layer 1 first).
+- L3 (2026-11-03): resumed after the machine ran out of memory (RAM-backed /tmp held 4.5 GB of old scratch and the pnpm store; cleared on the user's request). Postgres was down and the services migration unapplied; after `docker compose up` and `prisma migrate deploy`: vitest 728/728, tsc and eslint clean. T1 and T2 committed. Risk: items 1 (additive migration) and 2 (proxy guard now covers /servicios/:path*). Verifier: S2 pass, S5 respected, no blockers (advisories: adherir page skips getCurrentUser; key replay after card deletion returns IDEMPOTENCY_MISMATCH; cross-account same-key race returns the generic error, still charged once). Native review (risk, reliability): approved and acknowledged; non-blocking advisories R3-misleading-fixture-comment, R3-movement-direction-unproved, R3-overdraw-assertion-weak. Next: T3.
+- L4 (2026-11-03, user): "si, continua" (layer 3 before layer 2; layer 2 waits for odd/tasks/categories.md).
+- L5 (2026-11-03): T4 done. RED observed for the processor, the cron route and the actions before each implementation. vitest 773/773, tsc and eslint clean. `.env.example` could not be edited (blocked by the user's permission settings), so `CRON_SECRET` is documented in the README only. Not checked in a browser: the running dev server keeps the old Prisma client until restarted. Independent verifier: S2, S4, S5 pass, no blockers. Fixed two advisories (a failure is only marked while the bill keeps the schedule or auto-debit the run tried; the cron route reads the request before the secret so it never prerenders), RED observed first; vitest 774/774. Remaining advisories: an auto-debit change racing a payment's commit pays with the previous card (serializable as payment then change); an overlapping run counts an idempotent replay as paid; cancelScheduledPayment has no try/catch; a whitespace-only CRON_SECRET counts as set. Native review (risk, resilience, reliability) of f0be97e..84f1b0a: approved and acknowledged; non-blocking advisories R3-cancel-no-error-handling, R3-global-run-cross-file-interference, R3-overlap-paid-count-unproved, R4-swallowed-bill-errors-invisible-to-cron, R4-unbounded-sequential-cron-run. Next: T3 after odd/tasks/categories.md.
+- L6 (2026-11-03, user): "Pasa a la capa 2" (T5 of categories stays pending).
+- L7 (2026-11-03): T3 done; RED observed first. The existing company list test was updated for the new companies (S3). vitest 817/817, tsc and eslint clean. The new number CHECK compares the company as text, since a new enum value cannot be used in the transaction that adds it; its ELSE branch only accepts an empty number, unreachable because the enum lists every company with a pattern. Independent verifier: S2, S3, S4 pass, no blockers; the migration applies in one transaction on a fresh database, and 28,800 peso bills are identical to the baseline. Fixed the bills.ts header, which still said relative imports only. Native review declined by the user for this candidate (7faa662..303d6cd).
+- L8 (2026-11-03, user): "En servicios los servicios deben aparecer en formato de lista y cuando seleccionas uno te manda a la parte de pagar con el código de pago electronico y etc". Chosen option: "Adheridos directo a pagar" — a service row opens the payment of its next pending bill (its bills when none is pending), and the payment screen shows the electronic payment number and links to the bills and the automatic debit.
+- L9 (2026-11-03, user): "Arregla como se listan los servicios, no quiero que aparezcan 4 opciones, quiero que sean cards y que vos selecciones si quiero adherir aysa o metrogas o lo que sea, por más que el formulario sea prácticamente idéntico". Adherir servicio lists one card per company; each opens `/servicios/adherir/<empresa>` with the number and nickname form for that company.
+- L10 (2026-11-03, user): "En próximos vencimientos tenés que añadir un ícono de servicio". Each Home upcoming bill shows the service payment tile (receipt icon, blue), as in Movimientos.

@@ -11,105 +11,547 @@ enum MovementType {
   SUBSCRIPTION
   RECEIVED
   SENT
+  /// One side of a dollar buy or sell.
+  EXCHANGE
+  /// A SUBE, phone or DirecTV top-up paid from a peso card.
+  TOP_UP
+  /// A utility bill paid from a card of the bill's currency.
+  SERVICE_PAYMENT
+
+  @@map("tipo_movimiento")
 }
 
 enum CardBrand {
   MASTERCARD
   VISA
+  AMEX
+
+  @@map("marca_tarjeta")
+}
+
+/// ISO 4217 code of the money an account holds.
+enum Currency {
+  ARS
+  USD
+
+  @@map("moneda")
+}
+
+/// Seen from the user: BUY spends pesos to get dollars, SELL the opposite.
+enum ExchangeDirection {
+  BUY
+  SELL
+
+  @@map("direccion_cambio")
+}
+
+/// What a top-up loads: a SUBE card, a phone line or a DirecTV account.
+enum TopUpKind {
+  SUBE
+  PHONE
+  DIRECTV
+
+  @@map("tipo_recarga")
+}
+
+/// Who receives a top-up. SUBE and DIRECTV go with their own kind; the
+/// phone companies go with PHONE.
+enum TopUpProvider {
+  SUBE
+  PERSONAL
+  MOVISTAR
+  CLARO
+  TUENTI
+  DIRECTV
+
+  @@map("proveedor_recarga")
+}
+
+/// A utility company whose bills can be paid with an electronic payment number.
+enum ServiceCompany {
+  AYSA
+  EDESUR
+  EDENOR
+  METROGAS
+  SALUD_PLENA
+  AUSTRAL_SEGUROS
+
+  @@map("empresa_servicio")
+}
+
+enum ServiceBillStatus {
+  PENDING
+  PAID
+
+  @@map("estado_factura")
+}
+
+/// Why a scheduled or automatic payment could not run.
+enum ScheduledPaymentFailure {
+  INSUFFICIENT_FUNDS
+  CARD_UNAVAILABLE
+
+  @@map("motivo_fallo_pago")
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  name         String
+  id                  String            @id @default(uuid())
+  email               String            @unique
+  firstName           String            @map("nombre")
+  /// Empty when the user only gave one name.
+  lastName            String            @map("apellido")
+  address             String?           @map("direccion")
+  phone               String?           @map("telefono")
+  /// The account shown first and used by email transfers.
+  preferredCurrency   Currency          @default(ARS) @map("moneda_preferida")
   /// Salted scrypt hash, never the password itself.
-  passwordHash String
-  account      Account?
-  sessions     Session[]
-  contacts     Contact[] @relation("ContactOwner")
-  contactOf    Contact[] @relation("ContactUser")
+  passwordHash        String            @map("hash_contrasena")
+  /// The seeded "Cuenta de prueba" that funds deposits: it never signs in,
+  /// is never found as a recipient and never receives a transfer.
+  isTestAccount       Boolean           @default(false) @map("es_cuenta_prueba")
+  /// When the user last opened Notificaciones; later items count as unread.
+  notificationsSeenAt DateTime?         @map("notificaciones_vistas_en")
+  /// One per currency at most.
+  accounts            Account[]
+  sessions            Session[]
+  contacts            Contact[]         @relation("ContactOwner")
+  exchanges           Exchange[]
+  subeCards           SubeCard[]
+  topUps              TopUp[]
+  serviceAdhesions    ServiceAdhesion[]
+  servicePayments     ServicePayment[]
+  categories          Category[]
+  depositSchedules    DepositSchedule[]
+  topUpSchedules      TopUpSchedule[]
+  subscriptions       Subscription[]
+
+  @@map("usuarios")
 }
 
-/// A user the owner can transfer to. Saved after the first transfer.
+/// An account the owner can transfer to. Saved after the first transfer.
 model Contact {
-  id        String   @id @default(uuid())
-  ownerId   String
-  owner     User     @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  contactId String
-  contact   User     @relation("ContactUser", fields: [contactId], references: [id], onDelete: Cascade)
-  favorite  Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id               String   @id @default(uuid())
+  ownerId          String   @map("propietario_id")
+  owner            User     @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  contactAccountId String   @map("cuenta_contacto_id")
+  contactAccount   Account  @relation(fields: [contactAccountId], references: [id], onDelete: Cascade)
+  favorite         Boolean  @default(false) @map("favorito")
+  createdAt        DateTime @default(now()) @map("creado_en")
 
-  @@unique([ownerId, contactId])
+  @@unique([ownerId, contactAccountId])
+  @@map("contactos")
 }
 
 model Session {
   id        String   @id @default(uuid())
   /// SHA-256 of the cookie token, so a database leak exposes no usable session.
-  tokenHash String   @unique
-  userId    String
+  tokenHash String   @unique @map("hash_token")
+  userId    String   @map("usuario_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
+  expiresAt DateTime @map("vence_en")
 
   @@index([userId])
+  @@map("sesiones")
 }
 
 model Account {
-  id           String     @id @default(uuid())
-  userId       String     @unique
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String           @id @default(uuid())
+  userId          String           @map("usuario_id")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Transfer alias: lower case letters, digits and dots, 1 to 40 characters,
   /// at least one letter. A CHECK constraint enforces it.
-  alias        String     @unique
-  /// ISO 4217 code.
-  currency     String     @default("USD")
-  /// Integer cents, so amounts never go through floating point.
-  balanceCents Int
-  cardBrand    CardBrand
-  cardLast4    String
-  cardHolder   String
+  alias           String           @unique
+  currency        Currency         @default(ARS) @map("moneda")
+  /// Integer cents as a 64-bit BIGINT, so amounts never go through floating
+  /// point and a balance is not capped at 32 bits.
+  balanceCents    BigInt           @map("saldo_centavos")
+  /// The card picked first to pay from this account; the oldest card when
+  /// empty or removed.
+  defaultCardId   String?          @unique @map("tarjeta_predeterminada_id")
+  defaultCard     Card?            @relation("DefaultCard", fields: [defaultCardId], references: [id], onDelete: SetNull)
+  cards           Card[]
+  movements       Movement[]
+  sent            Transfer[]       @relation("TransferFrom")
+  received        Transfer[]       @relation("TransferTo")
+  contactOf       Contact[]
+  exchangesFrom   Exchange[]       @relation("ExchangeFrom")
+  exchangesTo     Exchange[]       @relation("ExchangeTo")
+  topUps          TopUp[]
+  servicePayments ServicePayment[]
+
+  @@unique([userId, currency])
+  @@map("cuentas")
+}
+
+/// A card linked to an account. Only what the card face shows is stored:
+/// never the full number or the security code. CHECK constraints enforce it.
+model Card {
+  id              String            @id @default(uuid())
+  accountId       String            @map("cuenta_id")
+  account         Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  brand           CardBrand         @map("marca")
+  /// The last 4 digits of the card number.
+  last4           String            @map("ultimos_4")
+  holder          String            @map("titular")
   /// Formatted as MM/YY.
-  cardExpiry   String
-  movements    Movement[]
-  sent         Transfer[] @relation("TransferFrom")
-  received     Transfer[] @relation("TransferTo")
+  expiry          String            @map("vencimiento")
+  createdAt       DateTime          @default(now()) @map("creado_en")
+  movements       Movement[]
+  topUps          TopUp[]
+  servicePayments ServicePayment[]
+  autoDebits      ServiceAdhesion[] @relation("AutoDebitCard")
+  subscriptions   Subscription[]
+  defaultOf       Account?          @relation("DefaultCard")
+  scheduledBills  ServiceBill[]     @relation("ScheduledBillCard")
+
+  @@index([accountId])
+  @@map("tarjetas")
 }
 
 model Transfer {
   id             String     @id @default(uuid())
   /// Sequential, so the operation number is readable and never collides.
-  number         Int        @unique @default(autoincrement())
-  fromAccountId  String
+  number         Int        @unique @default(autoincrement()) @map("numero")
+  fromAccountId  String     @map("cuenta_origen_id")
   fromAccount    Account    @relation("TransferFrom", fields: [fromAccountId], references: [id], onDelete: Cascade)
-  toAccountId    String
+  toAccountId    String     @map("cuenta_destino_id")
   toAccount      Account    @relation("TransferTo", fields: [toAccountId], references: [id], onDelete: Cascade)
   /// Integer cents, always positive.
-  amountCents    Int
+  amountCents    BigInt     @map("monto_centavos")
   /// Generated when the confirmation screen renders, so a double submit
   /// creates a single transfer.
-  idempotencyKey String
-  createdAt      DateTime   @default(now())
+  idempotencyKey String     @map("clave_idempotencia")
+  /// The sender's concept, shown to both sides, up to 140 characters.
+  note           String?    @map("nota")
+  createdAt      DateTime   @default(now()) @map("creado_en")
   movements      Movement[]
 
   @@unique([fromAccountId, idempotencyKey])
+  @@map("transferencias")
 }
 
 model Movement {
-  id           String       @id @default(uuid())
-  accountId    String
-  account      Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  type         MovementType
+  id               String          @id @default(uuid())
+  accountId        String          @map("cuenta_id")
+  account          Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  type             MovementType    @map("tipo")
   /// Person or service on the other side of the movement.
-  counterparty String
+  counterparty     String          @map("contraparte")
   /// Integer cents, always positive. The direction comes from `type`.
-  amountCents  Int
+  amountCents      BigInt          @map("monto_centavos")
   /// Operation number shown on the detail screen. Both sides of a transfer
   /// share it, so it is unique per account.
-  reference    String
-  occurredAt   DateTime
-  transferId   String?
-  transfer     Transfer?    @relation(fields: [transferId], references: [id], onDelete: SetNull)
+  reference        String          @map("referencia")
+  occurredAt       DateTime        @map("ocurrido_en")
+  transferId       String?         @map("transferencia_id")
+  transfer         Transfer?       @relation(fields: [transferId], references: [id], onDelete: SetNull)
+  exchangeId       String?         @map("operacion_cambio_id")
+  exchange         Exchange?       @relation(fields: [exchangeId], references: [id], onDelete: SetNull)
+  /// The card the movement went through: the picked card for an exchange,
+  /// the account's first card for a transfer. Empty when the account had no
+  /// card or the card was removed.
+  cardId           String?         @map("tarjeta_id")
+  card             Card?           @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  topUpId          String?         @map("recarga_id")
+  topUp            TopUp?          @relation(fields: [topUpId], references: [id], onDelete: SetNull)
+  servicePaymentId String?         @map("pago_servicio_id")
+  servicePayment   ServicePayment? @relation(fields: [servicePaymentId], references: [id], onDelete: SetNull)
+  /// One of the account owner's categories, private to them. Empty when
+  /// uncategorized or when the category was deleted.
+  categoryId       String?         @map("categoria_id")
+  category         Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@unique([accountId, reference])
   @@index([accountId, occurredAt(sort: Desc)])
+  @@index([cardId])
+  @@index([categoryId])
+  @@map("movimientos")
+}
+
+/// A dollar buy or sell between two accounts of the same user at a fixed rate.
+model Exchange {
+  id             String            @id @default(uuid())
+  /// Sequential, so the operation number is readable and never collides.
+  number         Int               @unique @default(autoincrement()) @map("numero")
+  userId         String            @map("usuario_id")
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  direction      ExchangeDirection @map("direccion")
+  /// Integer cents of each side, always positive.
+  usdCents       BigInt            @map("centavos_usd")
+  arsCents       BigInt            @map("centavos_ars")
+  /// Whole pesos per dollar, for example 1500.
+  rateArsPerUsd  Int               @map("cotizacion_ars_por_usd")
+  fromAccountId  String            @map("cuenta_origen_id")
+  fromAccount    Account           @relation("ExchangeFrom", fields: [fromAccountId], references: [id], onDelete: Cascade)
+  toAccountId    String            @map("cuenta_destino_id")
+  toAccount      Account           @relation("ExchangeTo", fields: [toAccountId], references: [id], onDelete: Cascade)
+  /// Same role as in Transfer: a repeated request creates one exchange.
+  idempotencyKey String            @map("clave_idempotencia")
+  createdAt      DateTime          @default(now()) @map("creado_en")
+  movements      Movement[]
+
+  @@unique([userId, idempotencyKey])
+  @@map("operaciones_cambio")
+}
+
+/// A SUBE transport card the user saved to top it up. A CHECK constraint keeps
+/// the number as 16 digits starting with 6061, stored without spaces.
+model SubeCard {
+  id        String          @id @default(uuid())
+  userId    String          @map("usuario_id")
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  number    String          @map("numero")
+  /// A reminder name such as "sube de mauri", up to 40 characters.
+  nickname  String          @map("apodo")
+  createdAt DateTime        @default(now()) @map("creado_en")
+  schedules TopUpSchedule[]
+
+  @@unique([userId, number])
+  @@map("tarjetas_sube")
+}
+
+/// A SUBE, phone or DirecTV top-up paid with a card of a peso account.
+model TopUp {
+  id             String        @id @default(uuid())
+  /// Sequential, so the operation number is readable and never collides.
+  number         Int           @unique @default(autoincrement()) @map("numero")
+  userId         String        @map("usuario_id")
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind           TopUpKind     @map("tipo")
+  provider       TopUpProvider @map("proveedor")
+  /// The SUBE card id, the 10-digit national phone number or the DirecTV
+  /// account number, digits only.
+  target         String        @map("destino")
+  /// Integer cents, always positive.
+  amountCents    BigInt        @map("monto_centavos")
+  /// The peso account that paid.
+  accountId      String        @map("cuenta_id")
+  account        Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  /// The card picked to pay. Empty when the card was removed later.
+  cardId         String?       @map("tarjeta_id")
+  card           Card?         @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  /// Same role as in Transfer: a repeated request creates one top-up.
+  idempotencyKey String        @map("clave_idempotencia")
+  /// The user's optional note, up to 140 characters.
+  note           String?       @map("nota")
+  createdAt      DateTime      @default(now()) @map("creado_en")
+  movements      Movement[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([accountId])
+  @@index([cardId])
+  @@map("recargas")
+}
+
+/// A utility service the user adhered with its electronic payment number. A
+/// CHECK constraint keeps the number as digits of the company's length.
+model ServiceAdhesion {
+  id              String         @id @default(uuid())
+  userId          String         @map("usuario_id")
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         ServiceCompany @map("empresa")
+  /// The electronic payment number printed on the bill, digits only.
+  paymentNumber   String         @map("numero_pago")
+  /// A reminder name such as "Luz depto", up to 40 characters.
+  nickname        String         @map("apodo")
+  /// The card the bills are paid with on their due date; empty when the
+  /// automatic debit is off or its card was removed.
+  autoDebitCardId String?        @map("tarjeta_debito_id")
+  autoDebitCard   Card?          @relation("AutoDebitCard", fields: [autoDebitCardId], references: [id], onDelete: SetNull)
+  /// Days before the due date to remind each bill: 0 (the same day), 1, 3
+  /// or 7; empty when reminders are off.
+  reminderDays    Int?           @map("dias_recordatorio")
+  createdAt       DateTime       @default(now()) @map("creado_en")
+  bills           ServiceBill[]
+
+  @@unique([userId, company, paymentNumber])
+  @@map("adhesiones_servicio")
+}
+
+/// A simulated bill of an adhered service. Paid at most once: the payment
+/// that settles it is unique per bill, and a CHECK constraint keeps the
+/// status and the payment date together.
+model ServiceBill {
+  id              String                   @id @default(uuid())
+  adhesionId      String                   @map("adhesion_id")
+  adhesion        ServiceAdhesion          @relation(fields: [adhesionId], references: [id], onDelete: Cascade)
+  /// The billed month as shown, for example "Noviembre 2026".
+  period          String                   @map("periodo")
+  /// Integer cents, always positive.
+  amountCents     BigInt                   @map("monto_centavos")
+  currency        Currency                 @default(ARS) @map("moneda")
+  /// A calendar date, without time of day.
+  dueDate         DateTime                 @map("vence_el") @db.Date
+  status          ServiceBillStatus        @default(PENDING) @map("estado")
+  paidAt          DateTime?                @map("pagada_en")
+  /// A one-off payment on this calendar date; it wins over the automatic debit.
+  scheduledFor    DateTime?                @map("programada_para") @db.Date
+  /// The card of the one-off payment. Empty when the card was removed later,
+  /// and then the scheduled payment fails.
+  scheduledCardId String?                  @map("tarjeta_programada_id")
+  scheduledCard   Card?                    @relation("ScheduledBillCard", fields: [scheduledCardId], references: [id], onDelete: SetNull)
+  /// Set when a scheduled or automatic payment failed; it is not retried
+  /// until the user schedules again or changes the automatic debit.
+  failedAt        DateTime?                @map("fallo_en")
+  failureReason   ScheduledPaymentFailure? @map("motivo_fallo")
+  payment         ServicePayment?
+
+  @@unique([adhesionId, period])
+  @@index([scheduledCardId])
+  @@map("facturas_servicio")
+}
+
+/// The payment of one service bill with a card of the bill's currency.
+model ServicePayment {
+  id             String      @id @default(uuid())
+  /// Sequential, so the operation number is readable and never collides.
+  number         Int         @unique @default(autoincrement()) @map("numero")
+  userId         String      @map("usuario_id")
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Unique, so a bill can never be paid twice.
+  billId         String      @unique @map("factura_id")
+  bill           ServiceBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  /// The account that paid.
+  accountId      String      @map("cuenta_id")
+  account        Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  /// The card picked to pay. Empty when the card was removed later.
+  cardId         String?     @map("tarjeta_id")
+  card           Card?       @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  /// Integer cents, always positive: the bill's amount.
+  amountCents    BigInt      @map("monto_centavos")
+  /// Same role as in Transfer: a repeated request creates one payment.
+  idempotencyKey String      @map("clave_idempotencia")
+  /// The user's optional note, up to 140 characters.
+  note           String?     @map("nota")
+  createdAt      DateTime    @default(now()) @map("creado_en")
+  movements      Movement[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([accountId])
+  @@index([cardId])
+  @@map("pagos_servicio")
+}
+
+/// A user's spending category. Names are unique per user ignoring case,
+/// through `key`, the name in lower case.
+model Category {
+  id        String     @id @default(uuid())
+  userId    String     @map("usuario_id")
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Up to 30 characters, trimmed.
+  name      String     @map("nombre")
+  key       String     @map("clave")
+  createdAt DateTime   @default(now()) @map("creado_en")
+  movements Movement[]
+
+  @@unique([userId, key])
+  @@map("categorias")
+}
+
+enum PromotionCategory {
+  DEPORTES
+  SUPERMERCADO
+  CINE
+  GIMNASIO
+  ROPA
+  FARMACIA
+
+  @@map("categoria_promocion")
+}
+
+/// An informative discount of an invented merchant: nothing is applied to
+/// payments. Loaded by the seed from features/promotions/catalog.ts.
+model Promotion {
+  id         String            @id @default(uuid())
+  merchant   String            @map("comercio")
+  category   PromotionCategory @map("categoria")
+  /// 1 to 100.
+  percent    Int               @map("porcentaje")
+  /// The most the discount gives back, in integer cents.
+  capCents   BigInt            @map("tope_centavos")
+  /// The weekdays it applies, 1 (Monday) to 7 (Sunday).
+  weekdays   Int[]             @map("dias")
+  /// Empty when every card applies.
+  cardBrand  CardBrand?        @map("marca_tarjeta")
+  validFrom  DateTime          @map("vigente_desde") @db.Date
+  validUntil DateTime          @map("vigente_hasta") @db.Date
+  conditions String            @map("condiciones")
+
+  @@index([category])
+  @@map("promociones")
+}
+
+/// How often a scheduled deposit or top-up repeats.
+enum ScheduleFrequency {
+  WEEKLY
+  MONTHLY
+
+  @@map("frecuencia_programada")
+}
+
+/// A scheduled deposit, a demo: it is saved and listed, but nothing runs it.
+model DepositSchedule {
+  id          String            @id @default(uuid())
+  userId      String            @map("usuario_id")
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currency    Currency          @map("moneda")
+  /// Integer cents, within the deposit caps.
+  amountCents BigInt            @map("monto_centavos")
+  frequency   ScheduleFrequency @map("frecuencia")
+  /// 1 (Monday) to 7 (Sunday) weekly, 1 to 31 monthly.
+  day         Int               @map("dia")
+  createdAt   DateTime          @default(now()) @map("creado_en")
+
+  @@index([userId])
+  @@map("ingresos_programados")
+}
+
+/// A scheduled SUBE top-up, a demo: it is saved and listed, but nothing runs it.
+model TopUpSchedule {
+  id          String            @id @default(uuid())
+  userId      String            @map("usuario_id")
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subeCardId  String            @map("tarjeta_sube_id")
+  subeCard    SubeCard          @relation(fields: [subeCardId], references: [id], onDelete: Cascade)
+  /// Integer cents, $100 to $50.000 like any top-up.
+  amountCents BigInt            @map("monto_centavos")
+  frequency   ScheduleFrequency @map("frecuencia")
+  /// 1 (Monday) to 7 (Sunday) weekly, 1 to 31 monthly.
+  day         Int               @map("dia")
+  createdAt   DateTime          @default(now()) @map("creado_en")
+
+  @@index([userId])
+  @@index([subeCardId])
+  @@map("recargas_programadas")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+
+  @@map("estado_suscripcion")
+}
+
+/// A monthly subscription, a demo: it is listed and can be cancelled, but
+/// nothing charges it.
+model Subscription {
+  id          String             @id @default(uuid())
+  userId      String             @map("usuario_id")
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  merchant    String             @map("comercio")
+  /// Integer cents of each monthly charge.
+  amountCents BigInt             @map("monto_centavos")
+  currency    Currency           @default(ARS) @map("moneda")
+  /// The card it would be charged to; empty when the card was removed.
+  cardId      String?            @map("tarjeta_id")
+  card        Card?              @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  /// 1 to 31; a shorter month uses its last day.
+  billingDay  Int                @map("dia_cobro")
+  status      SubscriptionStatus @default(ACTIVE) @map("estado")
+  cancelledAt DateTime?          @map("dada_de_baja_en")
+  createdAt   DateTime           @default(now()) @map("creado_en")
+
+  @@index([userId])
+  @@index([cardId])
+  @@map("suscripciones")
 }

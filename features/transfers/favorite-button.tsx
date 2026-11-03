@@ -5,11 +5,11 @@ import { StarIcon } from "@/components/icons";
 import { toggleFavorite } from "./actions";
 
 export function FavoriteButton({
-  contactUserId,
+  contactAccountId,
   name,
   favorite,
 }: {
-  contactUserId: string;
+  contactAccountId: string;
   name: string;
   favorite: boolean;
 }) {
@@ -24,7 +24,7 @@ export function FavoriteButton({
     startTransition(async () => {
       setOptimistic(next);
       const formData = new FormData();
-      formData.set("contactUserId", contactUserId);
+      formData.set("contactAccountId", contactAccountId);
       formData.set("favorite", String(next));
       // On failure the optimistic star reverts on its own; say why.
       const result = await toggleFavorite(formData).catch(() => ({ ok: false }));

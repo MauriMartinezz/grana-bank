@@ -13,27 +13,50 @@ function request(path: string, cookie?: string) {
 
 describe("proxy", () => {
   it.each([
-    "/home",
-    "/movements",
-    "/movements/some-id",
-    "/transfers",
-    "/transfers/new",
-    "/services",
-    "/top-ups",
-    "/cards",
+    "/inicio",
+    "/movimientos",
+    "/movimientos/some-id",
+    "/transferir",
+    "/transferir/nuevo",
+    "/servicios",
+    "/servicios/adherir",
+    "/servicios/adherir/aysa",
+    "/servicios/some-id",
+    "/servicios/pagar/some-id",
+    "/servicios/confirmar",
+    "/servicios/comprobante/some-id",
+    "/ingresar-dinero",
+    "/ingresar-dinero/confirmar",
+    "/ingresar-dinero/programar",
+    "/ingresar-dinero/comprobante/some-id",
+    "/promociones",
+    "/notificaciones",
+    "/suscripciones",
+    "/suscripciones/some-id",
+    "/promociones/some-id",
+    "/recargas",
+    "/recargas/sube",
+    "/recargas/celular/claro",
+    "/recargas/sube/nueva",
+    "/recargas/confirmar",
+    "/recargas/comprobante/some-id",
+    "/tarjetas",
+    "/tarjetas/nueva",
+    "/dolares",
+    "/perfil",
   ])(
     "redirects %s to login without a session cookie",
     (path) => {
       const response = proxy(request(path));
       expect(response.status).toBe(307);
       expect(response.headers.get("location")).toBe(
-        "http://localhost:3000/login",
+        "http://localhost:3000/ingresar",
       );
     },
   );
 
   it("lets a request with a session cookie continue", () => {
-    const response = proxy(request("/home", "token"));
+    const response = proxy(request("/inicio", "token"));
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });
@@ -48,6 +71,22 @@ describe("proxy", () => {
       expect(
         config.matcher.some((pattern) => pattern.startsWith(`/${route.name}`)),
       ).toBe(true);
+    }
+  });
+
+  it("covers the nested screens of every private route that has them", () => {
+    const root = path.join(__dirname, "app/(app)");
+    const nested = readdirSync(root, { withFileTypes: true }).filter(
+      (entry) =>
+        entry.isDirectory() &&
+        readdirSync(path.join(root, entry.name), { withFileTypes: true }).some((child) =>
+          child.isDirectory(),
+        ),
+    );
+
+    expect(nested.length).toBeGreaterThan(0);
+    for (const route of nested) {
+      expect(config.matcher).toContain(`/${route.name}/:path*`);
     }
   });
 });
