@@ -2,7 +2,8 @@
  * Simulated bills. No company is contacted: each adhesion gets the bills of
  * the previous and the current month, with an amount and a due date derived
  * from the company, the payment number and the month, so the same adhesion
- * always shows the same bills. Relative imports only: the seed uses it too.
+ * always shows the same bills. The seed uses it too, through `tsx`, which
+ * resolves the `@/` paths of the modules it imports.
  */
 import { createHash } from "node:crypto";
 import { COMPANY_INFO, type ServiceCompany } from "./companies";
