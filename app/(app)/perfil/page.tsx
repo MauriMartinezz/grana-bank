@@ -4,6 +4,7 @@ import { LogoutIcon } from "@/components/icons";
 import { logout } from "@/features/auth/actions";
 import { listAccounts } from "@/features/account/queries";
 import { getCurrentUser } from "@/features/auth/current-user";
+import { listCategories } from "@/features/categories/categories";
 import { CURRENCY_LABELS } from "@/features/profile/currency-labels";
 import { ProfileAvatar } from "@/features/profile/profile-avatar";
 import { SettingRow, SummaryList, SummaryRow } from "@/features/profile/profile-summary";
@@ -26,7 +27,10 @@ async function Confirmation({ searchParams }: { searchParams: SearchParams }) {
 
 export default async function ProfilePage({ searchParams }: PageProps<"/perfil">) {
   const user = await getCurrentUser();
-  const accounts = await listAccounts(user.id);
+  const [accounts, categories] = await Promise.all([
+    listAccounts(user.id),
+    listCategories(user.id),
+  ]);
 
   return (
     <>
@@ -65,6 +69,9 @@ export default async function ProfilePage({ searchParams }: PageProps<"/perfil">
         </SummaryRow>
         <SummaryRow title="Moneda preferida" href="/perfil/moneda" item="moneda preferida">
           {CURRENCY_LABELS[user.preferredCurrency]}
+        </SummaryRow>
+        <SummaryRow title="Categorías" href="/perfil/categorias" item="categorías">
+          {categories.length > 0 ? categories.map((c) => c.name).join(", ") : "Sin categorías"}
         </SummaryRow>
         <SettingRow title="Tema">
           <ThemeToggle />

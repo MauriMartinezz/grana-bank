@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BackButton } from "@/components/ui/back-button";
 import { getCurrentUser } from "@/features/auth/current-user";
+import { listCategories } from "@/features/categories/categories";
+import { MovementCategoryForm } from "@/features/categories/movement-category-form";
 import { movementSource } from "@/features/movements/movement-source";
 import { MOVEMENT_TYPE_STYLES } from "@/features/movements/movement-type";
 import { getMovement } from "@/features/movements/queries";
@@ -14,7 +16,10 @@ export default async function MovementDetailPage({
 }: PageProps<"/movimientos/[id]">) {
   const { id } = await params;
   const user = await getCurrentUser();
-  const movement = await getMovement(user.id, id);
+  const [movement, categories] = await Promise.all([
+    getMovement(user.id, id),
+    listCategories(user.id),
+  ]);
 
   if (!movement) {
     notFound();
@@ -61,6 +66,28 @@ export default async function MovementDetailPage({
           <div className="flex justify-between gap-6 py-3">
             <dt className="text-muted">N.º de operación</dt>
             <dd className="text-right font-medium">{movement.reference}</dd>
+          </div>
+          {movement.transfer?.note && (
+            <div className="flex justify-between gap-6 py-3">
+              <dt className="text-muted">Nota</dt>
+              <dd className="min-w-0 text-right font-medium break-words">
+                {movement.transfer.note}
+              </dd>
+            </div>
+          )}
+          <div className="py-3">
+            <dt>
+              <label htmlFor="movementCategory" className="text-muted">
+                Categoría <span className="text-xs">(solo la ves vos)</span>
+              </label>
+            </dt>
+            <dd className="mt-1.5">
+              <MovementCategoryForm
+                movementId={movement.id}
+                categoryId={movement.categoryId}
+                categories={categories}
+              />
+            </dd>
           </div>
         </dl>
       </section>
