@@ -1,3 +1,4 @@
+import type { Currency } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { NO_FILTERS, type MovementFilters } from "./filters";
 
@@ -9,15 +10,17 @@ function escapeLikePattern(text: string) {
 }
 
 // Every query goes through `account.userId`, so a user can never read
-// movements from another account, even by guessing an id.
+// movements from another account, even by guessing an id. Without a
+// currency, the movements of every account of the user are listed.
 export function listMovements(
   userId: string,
   { query, type }: MovementFilters = NO_FILTERS,
   limit = MAX_MOVEMENTS,
+  currency?: Currency,
 ) {
   return db.movement.findMany({
     where: {
-      account: { userId },
+      account: { userId, ...(currency && { currency }) },
       ...(type && { type }),
       ...(query && {
         counterparty: {

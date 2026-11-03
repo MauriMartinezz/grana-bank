@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
+import { NO_FILTERS } from "./filters";
 import { getMovement, listMovements } from "./queries";
 
 const OWNER_EMAIL = "owner@queries.test";
@@ -101,6 +102,12 @@ describe("listMovements", () => {
     expect(movements.map((m) => m.counterparty)).toEqual(["Adobe"]);
   });
 
+  it("never returns another user's movements when filtering by currency", async () => {
+    const movements = await listMovements(ownerId, NO_FILTERS, 50, "ARS");
+    expect(movements.map((m) => m.reference)).not.toContain("TEST-OTHER-1");
+    expect(movements.every((m) => m.reference?.startsWith("TEST-OWNER"))).toBe(true);
+  });
+
   it("respects the limit", async () => {
     const movements = await listMovements(
       ownerId,
@@ -112,7 +119,7 @@ describe("listMovements", () => {
 });
 
 describe("listMovements with two accounts", () => {
-  it("returns the movements of every account of the user, with each currency", async () => {
+  it("returns every account by default and only one currency when asked", async () => {
     const usd = await db.account.create({
       data: {
         userId: ownerId,
@@ -136,6 +143,15 @@ describe("listMovements with two accounts", () => {
         ["TEST-OWNER-USD-1", "USD"],
         ["TEST-OWNER-2", "ARS"],
         ["TEST-OWNER-1", "ARS"],
+      ]);
+
+      const inUsd = await listMovements(ownerId, NO_FILTERS, 50, "USD");
+      expect(inUsd.map((m) => m.reference)).toEqual(["TEST-OWNER-USD-1"]);
+
+      const inArs = await listMovements(ownerId, NO_FILTERS, 50, "ARS");
+      expect(inArs.map((m) => m.reference)).toEqual([
+        "TEST-OWNER-2",
+        "TEST-OWNER-1",
       ]);
     } finally {
       await db.account.delete({ where: { id: usd.id } });

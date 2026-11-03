@@ -4,13 +4,20 @@ import type { AccountWithCards } from "./queries";
 
 const BRAND_LABELS = { MASTERCARD: "Mastercard", VISA: "Visa", AMEX: "American Express" };
 
-export function BalanceCard({ account }: { account: AccountWithCards }) {
+export function BalanceCard({
+  account,
+  holderName,
+}: {
+  account: AccountWithCards;
+  /** Shown on the card face when the account has no card yet. */
+  holderName: string;
+}) {
   // The first card added is the one on the face of the balance card.
   const card = account.cards[0];
 
   return (
     <section
-      aria-label="Tarjeta y saldo"
+      aria-label={`Cuenta en ${account.currency}`}
       className="rounded-[28px] bg-garnet p-6 text-white shadow-lg shadow-black/10"
     >
       <div className="flex items-start justify-between">
@@ -27,11 +34,12 @@ export function BalanceCard({ account }: { account: AccountWithCards }) {
         </span>
         {formatAmount(account.balanceCents)}
       </p>
-      {card && (
+      <p className="mt-1 truncate text-xs text-white/80">Alias: {account.alias}</p>
+      {card ? (
         <>
           <p
             aria-label={`Tarjeta terminada en ${card.last4}`}
-            className="mt-5 text-2xl tracking-wide"
+            className="mt-4 text-2xl tracking-wide"
           >
             **** **** **** {card.last4}
           </p>
@@ -43,6 +51,11 @@ export function BalanceCard({ account }: { account: AccountWithCards }) {
             </p>
           </div>
         </>
+      ) : (
+        <div className="mt-4">
+          <p className="truncate text-xl tracking-wide">{account.alias}</p>
+          <p className="mt-4 font-medium">{holderName}</p>
+        </div>
       )}
     </section>
   );
