@@ -85,6 +85,19 @@ describe("listContacts", () => {
   });
 });
 
+describe("listContacts without an account", () => {
+  it("leaves out a contact whose user has no account", async () => {
+    await db.contact.create({ data: { ownerId: owner.id, contactId: noAccount.id } });
+    try {
+      const names = (await listContacts(owner.id)).map((c) => c.name);
+      expect(names).not.toContain("No Account");
+      expect(names).toHaveLength(2);
+    } finally {
+      await db.contact.deleteMany({ where: { ownerId: owner.id, contactId: noAccount.id } });
+    }
+  });
+});
+
 describe("setFavorite", () => {
   it("can remove a favorite again", async () => {
     await setFavorite(owner.id, ana.id, true);
