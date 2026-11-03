@@ -59,8 +59,10 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # PageProps and LayoutProps are global types Next.js generates under
+      # .next/, which a clean checkout lacks: generate them first.
       - name: Type check
-        run: pnpm exec tsc --noEmit
+        run: pnpm exec next typegen && pnpm exec tsc --noEmit
 
       # Tests create their own data, so no seed is needed.
       - name: Tests
