@@ -4,6 +4,7 @@ import { SearchIcon } from "@/components/icons";
 import { StateMessage } from "@/components/ui/state-message";
 import { BalanceCard } from "@/features/account/balance-card";
 import { NotificationsButton } from "@/features/account/notifications-button";
+import { QuickActions } from "@/features/account/quick-actions";
 import { getAccount } from "@/features/account/queries";
 import { getCurrentUser } from "@/features/auth/current-user";
 import { NO_FILTERS } from "@/features/movements/filters";
@@ -46,6 +47,10 @@ export default async function HomePage() {
 
       <div className="mt-4">
         <BalanceCard account={account} />
+      </div>
+
+      <div className="mt-4">
+        <QuickActions />
       </div>
 
       <section className="mt-6">

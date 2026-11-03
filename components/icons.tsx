@@ -140,6 +140,64 @@ export function SwapIcon(props: IconProps) {
   );
 }
 
+const STAR_PATH =
+  "m12 3.5 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z";
+
+export function StarIcon({ filled = false, ...props }: IconProps & { filled?: boolean }) {
+  return filled ? (
+    <Filled {...props}>
+      <path d={STAR_PATH} />
+    </Filled>
+  ) : (
+    <Outline {...props}>
+      <path d={STAR_PATH} />
+    </Outline>
+  );
+}
+
+export function PlusIcon(props: IconProps) {
+  return (
+    <Outline strokeWidth="2.2" {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </Outline>
+  );
+}
+
+export function CheckIcon(props: IconProps) {
+  return (
+    <Outline strokeWidth="2.4" {...props}>
+      <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </Outline>
+  );
+}
+
+export function ReceiptIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <path d="M6 3.5h12v17l-2.5-1.5-2 1.5-1.5-1.2-1.5 1.2-2-1.5L6 20.5z" />
+      <path d="M9 8.5h6M9 12h6M9 15.5h3" />
+    </Outline>
+  );
+}
+
+export function TopUpIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+      <path d="M12 8v6M9.5 11.5 12 14l2.5-2.5M10.5 18.5h3" />
+    </Outline>
+  );
+}
+
+export function CardIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <rect x="3" y="5.5" width="18" height="13" rx="2.5" />
+      <path d="M3 10h18M7 15h3" />
+    </Outline>
+  );
+}
+
 export function MastercardLogo(props: IconProps) {
   return (
     <svg width="36" height="24" viewBox="0 0 36 24" aria-hidden="true" {...props}>

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { isValidEmail, normalizeEmail } from "./email";
 import { verifyPassword } from "./password";
 import { createSession, deleteSession } from "./session";
 
@@ -13,10 +14,6 @@ export type LoginState =
       errors: { email?: string; password?: string; form?: string };
     }
   | undefined;
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// Checked before the pattern, which takes quadratic time on crafted input.
-const MAX_EMAIL_LENGTH = 254;
 
 // Unknown emails verify against this value, so response time does not reveal
 // whether an account exists.
@@ -35,15 +32,13 @@ export async function login(
   _previous: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
-  const email = String(formData.get("email") ?? "")
-    .trim()
-    .toLowerCase();
+  const email = normalizeEmail(String(formData.get("email") ?? ""));
   const password = String(formData.get("password") ?? "");
   const remember = formData.get("remember") === "on";
 
   const errors: NonNullable<LoginState>["errors"] = {};
   if (!email) errors.email = "Ingresá tu email.";
-  else if (email.length > MAX_EMAIL_LENGTH || !EMAIL_PATTERN.test(email)) {
+  else if (!isValidEmail(email)) {
     errors.email = "Ingresá un email válido.";
   }
   if (!password) errors.password = "Ingresá tu contraseña.";

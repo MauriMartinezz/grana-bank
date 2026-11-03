@@ -17,12 +17,13 @@ Branch: `feat/transfers` (from `feat/grana-bank-app` at db44268). Delivery strat
 - S10. Flow: contacts or new recipient, then amount, then confirmation, then a success screen that links to the movement. Loading, error and empty states as in the app feature (S4 there).
 - S11. No Figma design exists: screens follow the existing visual style. UI copy in Spanish.
 - S12. Amounts stay integer cents end to end, parsed from text without floating point.
+- S13. Access points for "pago de servicios" and "cargar tarjetas (aquí se podrán cargar tarjetas prepago de compañías de teléfono, de televisión satelital o cargar la tarjeta de transporte)": "no hace falta implementar todavía pero sí agregar los puntos de acceso". "Puede haber un acceso rápido en el Home, se me ocurre debajo de la tarjeta y arriba de últimos movimientos en forma de cards y que vayan 4 accesos directos por fila". The four are Transferir, Servicios, Recargas and Tarjetas (the last one leads to the cards feature). Unbuilt ones open a "Próximamente" screen.
 
 ## Tasks
 
-- [ ] T1 (S1, S2, S3, S12) inline: schema (Contact, transfer link), migration, seed.
-- [ ] T2 (S7, S8, S9, S12) inline: transfer service and amount parsing, with tests.
-- [ ] T3 (S4, S5, S11) inline: Transferir button and contacts screen with favorites.
+- [x] T1 (S1, S2, S3, S12) inline: schema (Contact, transfer link), migration, seed. Commit 98a16cd.
+- [x] T2 (S7, S8, S9, S12) inline: transfer service and amount parsing, with tests. Commit fcbaeb5.
+- [x] T3 (S4, S5, S11, S13) inline: Home quick actions, "Próximamente" screens, contacts screen with favorites, proxy covers the new routes.
 - [ ] T4 (S6, S8, S10) inline: new recipient, amount, confirmation and success screens.
 - [ ] T5 (S2, S3) inline: README demo credentials and flow.
 
@@ -34,3 +35,10 @@ Route evidence: no writer reason applies. T3 and T4 depend on T1 and T2, so all 
 - L2 (2026-11-03, user): "Me refieron al segundo caso, para poder testear y mostrar en la prueba técnica" (a seeded recipient account, not a sign-up screen).
 - L3 (2026-11-03, user): "No hay diseño, tendremos que implementarlo para sumar puntos en la prueba. Deberá haber un botón Transferir en el que te llevará a una pantalla con una lista de contactos con la posibilidad de añadir como favorito o la posibilidad de transferir a un nuevo usuario (por ahora hagamos esto)"
 - L4 (2026-11-03): This replaces S11 of `odd/tasks/grana-bank-app.md` ("One account per user, single currency. No features beyond the brief"): the user confirmed new features. One account per user and single currency still hold.
+- L5 (2026-11-03): T2 RED observed (missing modules), then 31 tests GREEN. Mutation check: removing `FOR UPDATE` fails the two concurrency tests. Full suite 86 tests, type check and lint pass.
+- L6 (2026-11-03): Independent verifier on 98a16cd..fcbaeb5: no blockers; S1, S2, S3, S7, S9, S12 pass, S8 passes at service level. Probes: upgrade over baseline data keeps rows, 20 parallel drains, 40 opposite transfers, 10 duplicate keys. Advisories, all out of domain: sender without account throws, int4 overflow on the recipient throws and rolls back, a reused key with other values returns the first transfer.
+- L7 (2026-11-03): Native assessment of db44268..fcbaeb5: high risk, review due (item 4 escalated). Review waits for the user's answer about where the access points go.
+- L8 (2026-11-03, user): "Y qué me dices de agregar las siguientes opciones: pago de servicios, cargar tarjetas (aquí se podrán cargar tarjetas prepago de compañías de teléfono, de televisión satelital o cargar la tarjeta de transporte), no hace falta implementar todavía pero sí agregar los puntos de acceso, creo yo que en la barra inferior será un buen lugar para estos puntos de acceso"
+- L9 (2026-11-03, user): "Puede haber un acceso rápido en el Home , se me ocurre debajo de la tarjeta y arriba de últimos movimientos en forma de cards y que vayan 4 accesos directos por fila"
+- L10 (2026-11-03): T3 found that the new private routes were outside the proxy matcher; the existing "covers every private route" test went RED and is GREEN after adding them. Email normalization and validation moved from the login action to `features/auth/email.ts`, shared with the new-recipient lookup; login tests still pass. 99 tests, type check and lint pass.
+- L11 (2026-11-03): Native review granted by the user for db44268..fcbaeb5 (lineage review-bdc40d73d16e11c8, lenses risk, resilience, reliability). The intended-untracked selection rejected every JSON shape tried, so T3 work was stashed while START froze and restored right after.

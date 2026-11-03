@@ -9,6 +9,11 @@ export default function HomeLoading() {
         <Skeleton className="h-7 w-28" />
       </div>
       <Skeleton className="mt-4 h-[190px] rounded-[28px]" />
+      <div className="mt-4 grid grid-cols-4 gap-3">
+        {Array.from({ length: 4 }, (_, i) => (
+          <Skeleton key={i} className="h-[84px] rounded-2xl" />
+        ))}
+      </div>
       <Skeleton className="mt-6 mb-4 h-6 w-48" />
       <MovementListSkeleton />
     </>

@@ -12,7 +12,16 @@ function request(path: string, cookie?: string) {
 }
 
 describe("proxy", () => {
-  it.each(["/home", "/movements", "/movements/some-id"])(
+  it.each([
+    "/home",
+    "/movements",
+    "/movements/some-id",
+    "/transfers",
+    "/transfers/new",
+    "/services",
+    "/top-ups",
+    "/cards",
+  ])(
     "redirects %s to login without a session cookie",
     (path) => {
       const response = proxy(request(path));
