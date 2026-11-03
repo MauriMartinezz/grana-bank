@@ -194,4 +194,14 @@ describe("toggleFavorite", () => {
     await toggleFavorite(form({ contactUserId: recipientId, favorite: "false" }));
     expect(await favorite()).toBe(false);
   });
+
+  it("reports a database failure instead of throwing", async () => {
+    const spy = vi.spyOn(db.contact, "updateMany").mockRejectedValueOnce(new Error("down"));
+    vi.spyOn(console, "error").mockImplementationOnce(() => {});
+
+    expect(await toggleFavorite(form({ contactUserId: recipientId, favorite: "true" }))).toEqual({
+      ok: false,
+    });
+    spy.mockRestore();
+  });
 });

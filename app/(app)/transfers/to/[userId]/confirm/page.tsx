@@ -1,12 +1,11 @@
-import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { BackButton } from "@/components/ui/back-button";
 import { getAccount } from "@/features/account/queries";
 import { getCurrentUser } from "@/features/auth/current-user";
-import { MAX_TRANSFER_CENTS } from "@/features/transfers/amount";
 import { ConfirmForm } from "@/features/transfers/confirm-form";
+import { readConfirmation } from "@/features/transfers/confirmation";
 import { getRecipient } from "@/features/transfers/contacts";
 import { findSentMovementByKey } from "@/features/transfers/transfer";
 import { RecipientSummary } from "@/features/transfers/recipient-summary";
@@ -14,28 +13,14 @@ import { formatMoney } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Confirmar transferencia" };
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function parseCents(value: string | string[] | undefined) {
-  if (typeof value !== "string" || !/^\d{1,12}$/.test(value)) return null;
-  const cents = Number(value);
-  return cents > 0 && cents <= MAX_TRANSFER_CENTS ? cents : null;
-}
-
 export default async function ConfirmTransferPage({
   params,
   searchParams,
 }: PageProps<"/transfers/to/[userId]/confirm">) {
   const [{ userId }, { amount, key }] = await Promise.all([params, searchParams]);
-  const amountCents = parseCents(amount);
-  if (amountCents === null) redirect(`/transfers/to/${userId}`);
-  // The amount step creates the key; without a valid one, start a fresh
-  // confirmation so the key never changes between renders of this URL.
-  if (typeof key !== "string" || !UUID_PATTERN.test(key)) {
-    redirect(`/transfers/to/${userId}/confirm?amount=${amountCents}&key=${randomUUID()}`);
-  }
-  const idempotencyKey = key.toLowerCase();
+  const confirmation = readConfirmation(userId, amount, key);
+  if ("redirectTo" in confirmation) redirect(confirmation.redirectTo);
+  const { amountCents, idempotencyKey } = confirmation;
 
   const user = await getCurrentUser();
   // Back from the success screen lands here: show the receipt instead of

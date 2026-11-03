@@ -8,15 +8,13 @@ import { isValidEmail, normalizeEmail } from "@/features/auth/email";
 import { getCurrentUser } from "@/features/auth/current-user";
 import { formatMoney } from "@/lib/format";
 import { parseAmountToCents } from "./amount";
+import { isIdempotencyKey } from "./confirmation";
 import { findRecipientByEmail, getRecipient, setFavorite } from "./contacts";
 import { transfer, type TransferError } from "./transfer";
 
 /** The typed value comes back because React resets the form after an action. */
 export type FieldState = { value: string; error: string } | undefined;
 export type ConfirmState = { error: string } | undefined;
-
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const TRANSFER_ERRORS: Record<TransferError, string> = {
   INVALID_AMOUNT: "El monto no es válido. Volvé a ingresarlo.",
@@ -26,13 +24,19 @@ const TRANSFER_ERRORS: Record<TransferError, string> = {
   IDEMPOTENCY_MISMATCH: "La operación expiró. Volvé a intentarlo.",
 };
 
-export async function toggleFavorite(formData: FormData) {
+export async function toggleFavorite(formData: FormData): Promise<{ ok: boolean }> {
   const user = await getCurrentUser();
   const contactUserId = String(formData.get("contactUserId") ?? "");
   const favorite = formData.get("favorite") === "true";
 
-  await setFavorite(user.id, contactUserId, favorite);
+  try {
+    await setFavorite(user.id, contactUserId, favorite);
+  } catch (error) {
+    console.error("Favorite update failed", error);
+    return { ok: false };
+  }
   revalidatePath("/transfers");
+  return { ok: true };
 }
 
 export async function lookupRecipient(
@@ -112,7 +116,7 @@ export async function confirmTransfer(
   if (!/^\d{1,12}$/.test(rawAmount)) {
     return { error: TRANSFER_ERRORS.INVALID_AMOUNT };
   }
-  if (!UUID_PATTERN.test(idempotencyKey)) {
+  if (!isIdempotencyKey(idempotencyKey)) {
     return { error: TRANSFER_ERRORS.IDEMPOTENCY_MISMATCH };
   }
 
