@@ -95,32 +95,34 @@ enum ScheduledPaymentFailure {
 }
 
 model User {
-  id                String            @id @default(uuid())
-  email             String            @unique
-  firstName         String            @map("nombre")
+  id                  String            @id @default(uuid())
+  email               String            @unique
+  firstName           String            @map("nombre")
   /// Empty when the user only gave one name.
-  lastName          String            @map("apellido")
-  address           String?           @map("direccion")
-  phone             String?           @map("telefono")
+  lastName            String            @map("apellido")
+  address             String?           @map("direccion")
+  phone               String?           @map("telefono")
   /// The account shown first and used by email transfers.
-  preferredCurrency Currency          @default(ARS) @map("moneda_preferida")
+  preferredCurrency   Currency          @default(ARS) @map("moneda_preferida")
   /// Salted scrypt hash, never the password itself.
-  passwordHash      String            @map("hash_contrasena")
+  passwordHash        String            @map("hash_contrasena")
   /// The seeded "Cuenta de prueba" that funds deposits: it never signs in,
   /// is never found as a recipient and never receives a transfer.
-  isTestAccount     Boolean           @default(false) @map("es_cuenta_prueba")
+  isTestAccount       Boolean           @default(false) @map("es_cuenta_prueba")
+  /// When the user last opened Notificaciones; later items count as unread.
+  notificationsSeenAt DateTime?         @map("notificaciones_vistas_en")
   /// One per currency at most.
-  accounts          Account[]
-  sessions          Session[]
-  contacts          Contact[]         @relation("ContactOwner")
-  exchanges         Exchange[]
-  subeCards         SubeCard[]
-  topUps            TopUp[]
-  serviceAdhesions  ServiceAdhesion[]
-  servicePayments   ServicePayment[]
-  categories        Category[]
-  depositSchedules  DepositSchedule[]
-  topUpSchedules    TopUpSchedule[]
+  accounts            Account[]
+  sessions            Session[]
+  contacts            Contact[]         @relation("ContactOwner")
+  exchanges           Exchange[]
+  subeCards           SubeCard[]
+  topUps              TopUp[]
+  serviceAdhesions    ServiceAdhesion[]
+  servicePayments     ServicePayment[]
+  categories          Category[]
+  depositSchedules    DepositSchedule[]
+  topUpSchedules      TopUpSchedule[]
 
   @@map("usuarios")
 }
@@ -347,6 +349,9 @@ model ServiceAdhesion {
   /// automatic debit is off or its card was removed.
   autoDebitCardId String?        @map("tarjeta_debito_id")
   autoDebitCard   Card?          @relation("AutoDebitCard", fields: [autoDebitCardId], references: [id], onDelete: SetNull)
+  /// Days before the due date to remind each bill: 0 (the same day), 1, 3
+  /// or 7; empty when reminders are off.
+  reminderDays    Int?           @map("dias_recordatorio")
   createdAt       DateTime       @default(now()) @map("creado_en")
   bills           ServiceBill[]
 
