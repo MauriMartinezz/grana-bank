@@ -111,7 +111,7 @@ export async function exchange({
     const { fromAccountId, toAccountId } = accounts;
 
     const locked = await tx.$queryRaw<LockedAccount[]>`
-      SELECT "id", "balanceCents" FROM "Account"
+      SELECT "id", "saldo_centavos" AS "balanceCents" FROM "cuentas"
       WHERE "id" IN (${fromAccountId}, ${toAccountId})
       ORDER BY "id"
       FOR UPDATE`;

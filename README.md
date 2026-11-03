@@ -65,6 +65,7 @@ proxy.ts     Redirects visitors with no session cookie to login
 | Topic | Decision | Why |
 |-------|----------|-----|
 | Money | Integer cents | Floating point cannot represent cents exactly. |
+| Database names | Tables, columns, enum types and constraints in Spanish snake_case (`usuarios`, `cuentas.saldo_centavos`, `moneda`), mapped with Prisma `@@map`/`@map`; code identifiers and enum values stay in English | The database reads in the product's language while the code keeps one language. Raw SQL (the row locks) uses the Spanish names. |
 | Current user | Single `getCurrentUser()` function | Screens and queries never read cookies or sessions themselves. |
 | Passwords | Salted scrypt from `node:crypto` | It resists brute force and adds no dependency. |
 | Sessions | Random token in an `httpOnly` cookie, stored as a SHA-256 hash in the database | Logout revokes a session at once, and a database leak exposes no usable token. |

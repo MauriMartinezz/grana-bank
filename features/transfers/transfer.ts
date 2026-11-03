@@ -74,9 +74,10 @@ export async function transfer({
     }
 
     const locked = await tx.$queryRaw<LockedAccount[]>`
-      SELECT "id", "userId", "balanceCents" FROM "Account"
+      SELECT "id", "usuario_id" AS "userId", "saldo_centavos" AS "balanceCents"
+      FROM "cuentas"
       WHERE "id" = ${recipientAccountId}
-        OR ("userId" = ${senderId} AND "currency" = ${target.currency}::"Currency")
+        OR ("usuario_id" = ${senderId} AND "moneda" = ${target.currency}::"moneda")
       ORDER BY "id"
       FOR UPDATE`;
 

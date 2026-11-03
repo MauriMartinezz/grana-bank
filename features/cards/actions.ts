@@ -30,8 +30,8 @@ type SaveResult = "SAVED" | "ACCOUNT_NOT_FOUND" | "DUPLICATE";
 async function saveCard(userId: string, accountId: string, card: CardFace): Promise<SaveResult> {
   return db.$transaction(async (tx) => {
     const owned = await tx.$queryRaw<{ id: string }[]>`
-      SELECT "id" FROM "Account"
-      WHERE "id" = ${accountId} AND "userId" = ${userId}
+      SELECT "id" FROM "cuentas"
+      WHERE "id" = ${accountId} AND "usuario_id" = ${userId}
       FOR UPDATE`;
     if (owned.length === 0) return "ACCOUNT_NOT_FOUND";
 

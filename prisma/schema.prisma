@@ -13,80 +13,92 @@ enum MovementType {
   SENT
   /// One side of a dollar buy or sell.
   EXCHANGE
+
+  @@map("tipo_movimiento")
 }
 
 enum CardBrand {
   MASTERCARD
   VISA
   AMEX
+
+  @@map("marca_tarjeta")
 }
 
 /// ISO 4217 code of the money an account holds.
 enum Currency {
   ARS
   USD
+
+  @@map("moneda")
 }
 
 /// Seen from the user: BUY spends pesos to get dollars, SELL the opposite.
 enum ExchangeDirection {
   BUY
   SELL
+
+  @@map("direccion_cambio")
 }
 
 model User {
   id                String     @id @default(uuid())
   email             String     @unique
-  firstName         String
+  firstName         String     @map("nombre")
   /// Empty when the user only gave one name.
-  lastName          String
-  address           String?
-  phone             String?
+  lastName          String     @map("apellido")
+  address           String?    @map("direccion")
+  phone             String?    @map("telefono")
   /// The account shown first and used by email transfers.
-  preferredCurrency Currency   @default(ARS)
+  preferredCurrency Currency   @default(ARS) @map("moneda_preferida")
   /// Salted scrypt hash, never the password itself.
-  passwordHash      String
+  passwordHash      String     @map("hash_contrasena")
   /// One per currency at most.
   accounts          Account[]
   sessions          Session[]
   contacts          Contact[]  @relation("ContactOwner")
   exchanges         Exchange[]
+
+  @@map("usuarios")
 }
 
 /// An account the owner can transfer to. Saved after the first transfer.
 model Contact {
   id               String   @id @default(uuid())
-  ownerId          String
+  ownerId          String   @map("propietario_id")
   owner            User     @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  contactAccountId String
+  contactAccountId String   @map("cuenta_contacto_id")
   contactAccount   Account  @relation(fields: [contactAccountId], references: [id], onDelete: Cascade)
-  favorite         Boolean  @default(false)
-  createdAt        DateTime @default(now())
+  favorite         Boolean  @default(false) @map("favorito")
+  createdAt        DateTime @default(now()) @map("creado_en")
 
   @@unique([ownerId, contactAccountId])
+  @@map("contactos")
 }
 
 model Session {
   id        String   @id @default(uuid())
   /// SHA-256 of the cookie token, so a database leak exposes no usable session.
-  tokenHash String   @unique
-  userId    String
+  tokenHash String   @unique @map("hash_token")
+  userId    String   @map("usuario_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
+  expiresAt DateTime @map("vence_en")
 
   @@index([userId])
+  @@map("sesiones")
 }
 
 model Account {
   id            String     @id @default(uuid())
-  userId        String
+  userId        String     @map("usuario_id")
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Transfer alias: lower case letters, digits and dots, 1 to 40 characters,
   /// at least one letter. A CHECK constraint enforces it.
   alias         String     @unique
-  currency      Currency   @default(ARS)
+  currency      Currency   @default(ARS) @map("moneda")
   /// Integer cents as a 64-bit BIGINT, so amounts never go through floating
   /// point and a balance is not capped at 32 bits.
-  balanceCents  BigInt
+  balanceCents  BigInt     @map("saldo_centavos")
   cards         Card[]
   movements     Movement[]
   sent          Transfer[] @relation("TransferFrom")
@@ -96,94 +108,99 @@ model Account {
   exchangesTo   Exchange[] @relation("ExchangeTo")
 
   @@unique([userId, currency])
+  @@map("cuentas")
 }
 
 /// A card linked to an account. Only what the card face shows is stored:
 /// never the full number or the security code. CHECK constraints enforce it.
 model Card {
-  id        String    @id @default(uuid())
-  accountId String
-  account   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  brand     CardBrand
+  id        String     @id @default(uuid())
+  accountId String     @map("cuenta_id")
+  account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  brand     CardBrand  @map("marca")
   /// The last 4 digits of the card number.
-  last4     String
-  holder    String
+  last4     String     @map("ultimos_4")
+  holder    String     @map("titular")
   /// Formatted as MM/YY.
-  expiry    String
-  createdAt DateTime  @default(now())
+  expiry    String     @map("vencimiento")
+  createdAt DateTime   @default(now()) @map("creado_en")
   movements Movement[]
 
   @@index([accountId])
+  @@map("tarjetas")
 }
 
 model Transfer {
   id             String     @id @default(uuid())
   /// Sequential, so the operation number is readable and never collides.
-  number         Int        @unique @default(autoincrement())
-  fromAccountId  String
+  number         Int        @unique @default(autoincrement()) @map("numero")
+  fromAccountId  String     @map("cuenta_origen_id")
   fromAccount    Account    @relation("TransferFrom", fields: [fromAccountId], references: [id], onDelete: Cascade)
-  toAccountId    String
+  toAccountId    String     @map("cuenta_destino_id")
   toAccount      Account    @relation("TransferTo", fields: [toAccountId], references: [id], onDelete: Cascade)
   /// Integer cents, always positive.
-  amountCents    BigInt
+  amountCents    BigInt     @map("monto_centavos")
   /// Generated when the confirmation screen renders, so a double submit
   /// creates a single transfer.
-  idempotencyKey String
-  createdAt      DateTime   @default(now())
+  idempotencyKey String     @map("clave_idempotencia")
+  createdAt      DateTime   @default(now()) @map("creado_en")
   movements      Movement[]
 
   @@unique([fromAccountId, idempotencyKey])
+  @@map("transferencias")
 }
 
 model Movement {
   id           String       @id @default(uuid())
-  accountId    String
+  accountId    String       @map("cuenta_id")
   account      Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  type         MovementType
+  type         MovementType @map("tipo")
   /// Person or service on the other side of the movement.
-  counterparty String
+  counterparty String       @map("contraparte")
   /// Integer cents, always positive. The direction comes from `type`.
-  amountCents  BigInt
+  amountCents  BigInt       @map("monto_centavos")
   /// Operation number shown on the detail screen. Both sides of a transfer
   /// share it, so it is unique per account.
-  reference    String
-  occurredAt   DateTime
-  transferId   String?
+  reference    String       @map("referencia")
+  occurredAt   DateTime     @map("ocurrido_en")
+  transferId   String?      @map("transferencia_id")
   transfer     Transfer?    @relation(fields: [transferId], references: [id], onDelete: SetNull)
-  exchangeId   String?
+  exchangeId   String?      @map("operacion_cambio_id")
   exchange     Exchange?    @relation(fields: [exchangeId], references: [id], onDelete: SetNull)
   /// The card the movement went through: the picked card for an exchange,
   /// the account's first card for a transfer. Empty when the account had no
   /// card or the card was removed.
-  cardId       String?
+  cardId       String?      @map("tarjeta_id")
   card         Card?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
 
   @@unique([accountId, reference])
   @@index([accountId, occurredAt(sort: Desc)])
   @@index([cardId])
+  @@map("movimientos")
 }
 
 /// A dollar buy or sell between two accounts of the same user at a fixed rate.
 model Exchange {
   id             String            @id @default(uuid())
   /// Sequential, so the operation number is readable and never collides.
-  number         Int               @unique @default(autoincrement())
-  userId         String
+  number         Int               @unique @default(autoincrement()) @map("numero")
+  userId         String            @map("usuario_id")
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  direction      ExchangeDirection
+  direction      ExchangeDirection @map("direccion")
   /// Integer cents of each side, always positive.
-  usdCents       BigInt
-  arsCents       BigInt
+  usdCents       BigInt            @map("centavos_usd")
+  arsCents       BigInt            @map("centavos_ars")
   /// Whole pesos per dollar, for example 1500.
-  rateArsPerUsd  Int
-  fromAccountId  String
+  rateArsPerUsd  Int               @map("cotizacion_ars_por_usd")
+  fromAccountId  String            @map("cuenta_origen_id")
   fromAccount    Account           @relation("ExchangeFrom", fields: [fromAccountId], references: [id], onDelete: Cascade)
-  toAccountId    String
+  toAccountId    String            @map("cuenta_destino_id")
   toAccount      Account           @relation("ExchangeTo", fields: [toAccountId], references: [id], onDelete: Cascade)
   /// Same role as in Transfer: a repeated request creates one exchange.
-  idempotencyKey String
-  createdAt      DateTime          @default(now())
+  idempotencyKey String            @map("clave_idempotencia")
+  createdAt      DateTime          @default(now()) @map("creado_en")
   movements      Movement[]
 
   @@unique([userId, idempotencyKey])
+  @@map("operaciones_cambio")
 }
