@@ -113,6 +113,7 @@ model User {
   topUps            TopUp[]
   serviceAdhesions  ServiceAdhesion[]
   servicePayments   ServicePayment[]
+  categories        Category[]
 
   @@map("usuarios")
 }
@@ -204,6 +205,8 @@ model Transfer {
   /// Generated when the confirmation screen renders, so a double submit
   /// creates a single transfer.
   idempotencyKey String     @map("clave_idempotencia")
+  /// The sender's concept, shown to both sides, up to 140 characters.
+  note           String?    @map("nota")
   createdAt      DateTime   @default(now()) @map("creado_en")
   movements      Movement[]
 
@@ -237,10 +240,15 @@ model Movement {
   topUp            TopUp?          @relation(fields: [topUpId], references: [id], onDelete: SetNull)
   servicePaymentId String?         @map("pago_servicio_id")
   servicePayment   ServicePayment? @relation(fields: [servicePaymentId], references: [id], onDelete: SetNull)
+  /// One of the account owner's categories, private to them. Empty when
+  /// uncategorized or when the category was deleted.
+  categoryId       String?         @map("categoria_id")
+  category         Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@unique([accountId, reference])
   @@index([accountId, occurredAt(sort: Desc)])
   @@index([cardId])
+  @@index([categoryId])
   @@map("movimientos")
 }
 
@@ -398,4 +406,20 @@ model ServicePayment {
   @@index([accountId])
   @@index([cardId])
   @@map("pagos_servicio")
+}
+
+/// A user's spending category. Names are unique per user ignoring case,
+/// through `key`, the name in lower case.
+model Category {
+  id        String     @id @default(uuid())
+  userId    String     @map("usuario_id")
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Up to 30 characters, trimmed.
+  name      String     @map("nombre")
+  key       String     @map("clave")
+  createdAt DateTime   @default(now()) @map("creado_en")
+  movements Movement[]
+
+  @@unique([userId, key])
+  @@map("categorias")
 }

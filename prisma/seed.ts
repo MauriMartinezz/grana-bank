@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "../features/auth/password";
+import { defaultCategoryRows } from "../features/categories/names";
 import { simulatedBills } from "../features/services/bills";
 import { PrismaClient, MovementType } from "../generated/prisma/client";
 
@@ -122,6 +123,7 @@ async function main() {
           firstName,
           lastName,
           passwordHash,
+          categories: { create: defaultCategoryRows() },
           accounts: {
             create: accounts.map((account) =>
               accountData(account, `${firstName} ${lastName}`),
@@ -141,6 +143,7 @@ async function main() {
       firstName: "Soy",
       lastName: "Granate",
       passwordHash,
+      categories: { create: defaultCategoryRows() },
       // Only Juan's peso account starts as a contact; Martin shows the
       // "new recipient" flow.
       contacts: { create: { contactAccountId: juanPesos.id } },
