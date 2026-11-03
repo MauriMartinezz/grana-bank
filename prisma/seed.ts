@@ -6,6 +6,7 @@ import { TEST_ACCOUNT } from "../features/deposits/test-account";
 import { PROMOTIONS } from "../features/promotions/catalog";
 import { buenosAiresDate } from "../features/services/due-date";
 import { simulatedBills } from "../features/services/bills";
+import { SEEDED_SUBSCRIPTIONS } from "../features/subscriptions/catalog";
 import { PrismaClient, MovementType } from "../generated/prisma/client";
 
 const { SUBSCRIPTION, RECEIVED, SENT } = MovementType;
@@ -246,6 +247,20 @@ async function main() {
       });
     }
   }
+
+  // Suscripciones: the seeded subscription charges as active subscriptions on
+  // the peso card. A demo: nothing ever charges them.
+  const pesoCard = granate.accounts.find((a) => a.currency === "ARS")!.cards[0];
+  await prisma.subscription.createMany({
+    data: SEEDED_SUBSCRIPTIONS.map(({ merchant, amountCents, billingDay }) => ({
+      userId: granate.id,
+      merchant,
+      amountCents,
+      currency: "ARS" as const,
+      cardId: pesoCard.id,
+      billingDay,
+    })),
+  });
 
   await prisma.$disconnect();
 }

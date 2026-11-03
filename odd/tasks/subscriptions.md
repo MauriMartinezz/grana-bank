@@ -10,11 +10,12 @@ Branch: `feat/accounts`. Delivery strategy: `single-pr`. Test runner: Vitest.
 
 ## Tasks
 
-- [ ] T1 (S2) model, migration, seed, rules and queries. Model, migration and catalog done by the parent (commit after 4b40aa7); seed, rules and queries delegated with T2.
-- [ ] T2 (S2) screens: list, detail with cancel and card change, add from the catalog. Route: delegated (parallel writer). The Perfil entry row is added by the parent after the desktop writer finishes (shared file).
+- [x] T1 (S2) model, migration, seed, rules and queries. Model, migration and catalog done by the parent (commit after 4b40aa7); seed, rules and queries delegated with T2.
+- [x] T2 (S2) screens: list, detail with cancel and card change, add from the catalog. Route: delegated (parallel writer). The Perfil entry row is added by the parent after the desktop writer finishes (shared file).
 
 ## Log
 
 - L1 (2026-11-03, user request): see S1.
 - L2 (2026-11-03, user): "Que queden como demo".
 - L3 (2026-11-03, user): "puedes asignar varios agentes a trabajar en las distintas cosas que están pendientes?"
+- L4 (2026-11-03, T1+T2 writer): seed gives Granate SEEDED_SUBSCRIPTIONS as ACTIVE ARS subscriptions on the peso card (prisma/seed.ts). features/subscriptions/queries.ts (listSubscriptions active-by-next-charge then cancelled newest first, getSubscription owner-only, listPreviousCharges = owner's SUBSCRIPTION movements of the merchant, newest first, 5); actions.ts ("use server": subscribe, cancelSubscription, changeSubscriptionCard, all scoped by userId); client forms change-card-form.tsx, cancel-form.tsx (window.confirm), subscribe-form.tsx; screens app/(app)/suscripciones (list, [id] detail with not-found, nueva catalog; loading.tsx each), each saying it is a demo. RED: `npx vitest run features/subscriptions` failed with both test files unable to import ./queries and ./actions (no tests ran). GREEN: 14/14 passed (queries ordering/ownership/previous charges; subscribe, unknown slug, duplicate active, resubscribe after cancel, no ARS card; cancel idempotent and owner-only; change card same-currency, owner-only, not when cancelled). `npx tsc --noEmit` clean; eslint on the surfaces clean. Seed not run (parent owns it). Detail page types params explicitly because the generated route types do not yet list /suscripciones/[id].
