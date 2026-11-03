@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MovementType {
+  SUBSCRIPTION
+  RECEIVED
+  SENT
+}
+
+enum CardBrand {
+  MASTERCARD
+  VISA
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  /// Salted scrypt hash, never the password itself.
+  passwordHash String
+  account      Account?
+  sessions     Session[]
+  contacts     Contact[] @relation("ContactOwner")
+  contactOf    Contact[] @relation("ContactUser")
+}
+
+/// A user the owner can transfer to. Saved after the first transfer.
+model Contact {
+  id        String   @id @default(uuid())
+  ownerId   String
+  owner     User     @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   User     @relation("ContactUser", fields: [contactId], references: [id], onDelete: Cascade)
+  favorite  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([ownerId, contactId])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  /// SHA-256 of the cookie token, so a database leak exposes no usable session.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+
+  @@index([userId])
+}
+
+model Account {
+  id           String     @id @default(uuid())
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// ISO 4217 code.
+  currency     String     @default("USD")
+  /// Integer cents, so amounts never go through floating point.
+  balanceCents Int
+  cardBrand    CardBrand
+  cardLast4    String
+  cardHolder   String
+  /// Formatted as MM/YY.
+  cardExpiry   String
+  movements    Movement[]
+  sent         Transfer[] @relation("TransferFrom")
+  received     Transfer[] @relation("TransferTo")
+}
+
+model Transfer {
+  id             String     @id @default(uuid())
+  /// Sequential, so the operation number is readable and never collides.
+  number         Int        @unique @default(autoincrement())
+  fromAccountId  String
+  fromAccount    Account    @relation("TransferFrom", fields: [fromAccountId], references: [id], onDelete: Cascade)
+  toAccountId    String
+  toAccount      Account    @relation("TransferTo", fields: [toAccountId], references: [id], onDelete: Cascade)
+  /// Integer cents, always positive.
+  amountCents    Int
+  /// Generated when the confirmation screen renders, so a double submit
+  /// creates a single transfer.
+  idempotencyKey String
+  createdAt      DateTime   @default(now())
+  movements      Movement[]
+
+  @@unique([fromAccountId, idempotencyKey])
+}
+
+model Movement {
+  id           String       @id @default(uuid())
+  accountId    String
+  account      Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  type         MovementType
+  /// Person or service on the other side of the movement.
+  counterparty String
+  /// Integer cents, always positive. The direction comes from `type`.
+  amountCents  Int
+  /// Operation number shown on the detail screen. Both sides of a transfer
+  /// share it, so it is unique per account.
+  reference    String
+  occurredAt   DateTime
+  transferId   String?
+  transfer     Transfer?    @relation(fields: [transferId], references: [id], onDelete: SetNull)
+
+  @@unique([accountId, reference])
+  @@index([accountId, occurredAt(sort: Desc)])
+}
