@@ -1,14 +1,15 @@
 import Link from "next/link";
-import { CardIcon, ReceiptIcon, SwapIcon, TopUpIcon } from "@/components/icons";
+import { CardIcon, PlusIcon, ReceiptIcon, SwapIcon, TopUpIcon } from "@/components/icons";
 import { DollarIcon } from "@/features/exchange/icons";
 
-// Four per row; the fifth starts a second row.
+// Four per row; the fifth and sixth start a second row.
 const ACTIONS = [
   { href: "/transferir", label: "Transferir", Icon: SwapIcon },
   { href: "/servicios", label: "Servicios", Icon: ReceiptIcon },
   { href: "/recargas", label: "Recargas", Icon: TopUpIcon },
   { href: "/tarjetas", label: "Tarjetas", Icon: CardIcon },
   { href: "/dolares", label: "Dólares", Icon: DollarIcon },
+  { href: "/ingresar-dinero", label: "Ingresar dinero", Icon: PlusIcon },
 ];
 
 export function QuickActions() {
