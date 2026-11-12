@@ -36,7 +36,15 @@ export function MovementCategoryForm({
     <form action={action}>
       <input type="hidden" name="movementId" value={movementId} />
       <div className="flex items-center gap-2">
+        {/*
+         * React resets a form after its action, back to each field's default.
+         * A select applies `defaultValue` only when it mounts, so without the
+         * key it would snap back to the category the page first loaded with
+         * ("Sin categoría"), and saving again would clear the new one. Keyed by
+         * the saved category, it remounts with it once the page revalidates.
+         */}
         <select
+          key={categoryId ?? ""}
           id="movementCategory"
           name="categoryId"
           defaultValue={categoryId ?? ""}
