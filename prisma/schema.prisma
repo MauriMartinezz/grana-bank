@@ -134,6 +134,7 @@ model User {
   depositSchedules    DepositSchedule[]
   topUpSchedules      TopUpSchedule[]
   subscriptions       Subscription[]
+  budgets             Budget[]
 
   @@map("usuarios")
 }
@@ -453,9 +454,30 @@ model Category {
   key       String     @map("clave")
   createdAt DateTime   @default(now()) @map("creado_en")
   movements Movement[]
+  budgets   Budget[]
 
   @@unique([userId, key])
   @@map("categorias")
+}
+
+/// A monthly spending limit for one of the user's categories in one
+/// currency. It applies to every month until it is changed or removed.
+model Budget {
+  id          String   @id @default(uuid())
+  userId      String   @map("usuario_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// One of the user's own categories; deleting it removes its budgets.
+  categoryId  String   @map("categoria_id")
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  currency    Currency @map("moneda")
+  /// Integer cents, always positive.
+  amountCents BigInt   @map("monto_centavos")
+  createdAt   DateTime @default(now()) @map("creado_en")
+  updatedAt   DateTime @updatedAt @map("actualizado_en")
+
+  @@unique([userId, categoryId, currency])
+  @@index([categoryId])
+  @@map("presupuestos")
 }
 
 enum PromotionCategory {

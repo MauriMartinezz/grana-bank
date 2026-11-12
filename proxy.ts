@@ -26,6 +26,7 @@ export const config = {
     "/tarjetas/:path*",
     "/dolares/:path*",
     "/perfil/:path*",
+    "/finanzas/:path*",
     // Only a cookie check: every admin page and action also calls requireAdmin().
     "/admin/:path*",
   ],

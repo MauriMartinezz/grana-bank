@@ -44,6 +44,7 @@ describe("proxy", () => {
     "/tarjetas/nueva",
     "/dolares",
     "/perfil",
+    "/finanzas",
     "/admin/promociones",
   ])(
     "redirects %s to login without a session cookie",

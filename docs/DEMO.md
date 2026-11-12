@@ -50,6 +50,7 @@ Una transferencia solo va entre cuentas de la misma moneda. Cada una tiene un to
 | Servicios | Edesur "Luz depto", número de pago `0012345678`, las facturas del mes pasado y de este mes, un recordatorio 3 días antes |
 | Suscripciones | Adobe, Figma, Spotify y Netflix, activas (es una demo: nada las cobra) |
 | Categorías | Alquiler, Comida, Servicios, Regalos, Otros |
+| Presupuestos | Comida $300.000 y Servicios $80.000 por mes, en pesos |
 | Promociones | 12 promociones de comercios inventados, vigentes este mes y el próximo (algunas con banco y compra mínima) |
 
 ## Recorridos para probar
@@ -65,6 +66,7 @@ Una transferencia solo va entre cuentas de la misma moneda. Cada una tiene un to
 9. **Suscripciones.** Perfil → Suscripciones: abrí una para ver el detalle, cambiale la tarjeta o dala de baja, y suscribite a otra desde el catálogo (demo: nada se cobra).
 10. **Privacidad.** El ojo de la tarjeta de saldo de Inicio oculta todos los saldos de la app como `*****` en este dispositivo.
 11. **Notificaciones.** La campana de Inicio lista el dinero que entra y sale, las operaciones con dólares, los pagos programados fallidos y los recordatorios de servicios.
+12. **Finanzas personales.** Inicio → Finanzas: ingresos, gastos y la diferencia del mes, y los gastos por categoría (los que no tienen categoría van en "Sin categoría"); abrí un grupo para ver sus movimientos. Cambiá el presupuesto de Comida para ver "Disponible" o "Te pasaste por", definí uno nuevo abajo y probá el mes anterior o la cuenta en dólares. Después de comprar dólares, la compra aparece en "Conversión"; si en su detalle le ponés una categoría (por ejemplo una nueva "Ahorro" creada en Perfil → Categorías), aparece bajo ese nombre.
 
 ## Reiniciar
 

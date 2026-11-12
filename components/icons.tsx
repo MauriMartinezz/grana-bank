@@ -215,3 +215,15 @@ export function TagIcon(props: IconProps) {
     </Outline>
   );
 }
+
+/** Three bars of different heights, for personal finances. */
+export function ChartIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <path d="M4 20h16" />
+      <path d="M7 16v-5" />
+      <path d="M12 16V6" />
+      <path d="M17 16v-8" />
+    </Outline>
+  );
+}

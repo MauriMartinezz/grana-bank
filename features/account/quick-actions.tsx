@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { CardIcon, PlusIcon, ReceiptIcon, SwapIcon, TagIcon, TopUpIcon } from "@/components/icons";
+import { CardIcon, ChartIcon, PlusIcon, ReceiptIcon, SwapIcon, TagIcon, TopUpIcon } from "@/components/icons";
 import { DollarIcon } from "@/features/exchange/icons";
 
 // Four per row; the rest start a second row. Labels are one word, so each
 // stays on one centered line.
 // Ingresar dinero first: it funds every other operation in the demo.
-const ACTIONS = [
+export const QUICK_ACTIONS = [
   { href: "/ingresar-dinero", label: "Ingresar", Icon: PlusIcon },
   { href: "/transferir", label: "Transferir", Icon: SwapIcon },
   { href: "/servicios", label: "Servicios", Icon: ReceiptIcon },
@@ -13,13 +13,14 @@ const ACTIONS = [
   { href: "/tarjetas", label: "Tarjetas", Icon: CardIcon },
   { href: "/dolares", label: "Dólares", Icon: DollarIcon },
   { href: "/promociones", label: "Promos", Icon: TagIcon },
+  { href: "/finanzas", label: "Finanzas", Icon: ChartIcon },
 ];
 
 export function QuickActions() {
   return (
     <nav aria-label="Accesos rápidos">
       <ul className="grid grid-cols-4 gap-3">
-        {ACTIONS.map(({ href, label, Icon }) => (
+        {QUICK_ACTIONS.map(({ href, label, Icon }) => (
           <li key={href}>
             <Link
               href={href}

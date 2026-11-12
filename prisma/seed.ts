@@ -244,6 +244,21 @@ async function main() {
     }
   }
 
+  // Finanzas personales: two monthly peso budgets, so the screen shows what
+  // is left in each. Budgets repeat every month until changed.
+  const budgetCategories = await prisma.category.findMany({
+    where: { userId: mainUser.id, name: { in: ["Comida", "Servicios"] } },
+  });
+  const BUDGETS: Record<string, number> = { Comida: 30_000_000, Servicios: 8_000_000 };
+  await prisma.budget.createMany({
+    data: budgetCategories.map((category) => ({
+      userId: mainUser.id,
+      categoryId: category.id,
+      currency: "ARS" as const,
+      amountCents: BUDGETS[category.name],
+    })),
+  });
+
   // Suscripciones: the seeded subscription charges as active subscriptions on
   // the peso card. A demo: nothing ever charges them.
   const pesoCard = mainUser.accounts.find((a) => a.currency === "ARS")!.cards[0];
