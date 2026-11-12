@@ -3,12 +3,18 @@ import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
 import { StateMessage } from "@/components/ui/state-message";
 import { getCurrentUser } from "@/features/auth/current-user";
+import { listCardsByAccount } from "@/features/cards/queries";
+import { BRAND_NAMES } from "@/features/cards/validation";
+import { groupByWeekday } from "@/features/promotions/by-day";
 import { CATEGORY_LABELS, PROMOTION_CATEGORIES } from "@/features/promotions/catalog";
 import {
   buenosAiresWeekday,
   DAY_CHIPS,
   DAY_SLUGS,
+  filterByCard,
+  heldBrands,
   promotionsHref,
+  readCardFilter,
   readPromotionFilters,
 } from "@/features/promotions/filters";
 import { PromotionCard } from "@/features/promotions/promotion-card";
@@ -21,10 +27,16 @@ const CHIP =
 
 // Reads the URL at the top level: the route's loading.tsx is its Suspense boundary.
 export default async function PromotionsPage({ searchParams }: PageProps<"/promociones">) {
-  const [params] = await Promise.all([searchParams, getCurrentUser()]);
+  const [params, user] = await Promise.all([searchParams, getCurrentUser()]);
   const now = new Date();
   const filters = readPromotionFilters(params, buenosAiresWeekday(now));
-  const promotions = await listPromotions(filters, now);
+  const [accounts, listed] = await Promise.all([
+    listCardsByAccount(user.id),
+    listPromotions(filters, now),
+  ]);
+  const brands = heldBrands(accounts);
+  const card = readCardFilter(params.tarjeta, brands);
+  const groups = groupByWeekday(filterByCard(listed, card), filters.weekday);
 
   return (
     <>
@@ -38,7 +50,7 @@ export default async function PromotionsPage({ searchParams }: PageProps<"/promo
           {DAY_SLUGS.map((slug, index) => (
             <li key={slug}>
               <Link
-                href={promotionsHref(slug, filters.category)}
+                href={promotionsHref(slug, filters.category, card)}
                 aria-current={filters.day === slug}
                 className={CHIP}
               >
@@ -48,7 +60,7 @@ export default async function PromotionsPage({ searchParams }: PageProps<"/promo
           ))}
           <li>
             <Link
-              href={promotionsHref("todos", filters.category)}
+              href={promotionsHref("todos", filters.category, card)}
               aria-current={filters.day === "todos"}
               className={CHIP}
             >
@@ -62,7 +74,7 @@ export default async function PromotionsPage({ searchParams }: PageProps<"/promo
         <ul className="flex gap-2">
           <li>
             <Link
-              href={promotionsHref(filters.day, null)}
+              href={promotionsHref(filters.day, null, card)}
               aria-current={filters.category === null}
               className={CHIP}
             >
@@ -72,7 +84,7 @@ export default async function PromotionsPage({ searchParams }: PageProps<"/promo
           {PROMOTION_CATEGORIES.map((category) => (
             <li key={category}>
               <Link
-                href={promotionsHref(filters.day, category)}
+                href={promotionsHref(filters.day, category, card)}
                 aria-current={filters.category === category}
                 className={CHIP}
               >
@@ -83,19 +95,55 @@ export default async function PromotionsPage({ searchParams }: PageProps<"/promo
         </ul>
       </nav>
 
-      <div className="mt-6">
-        {promotions.length > 0 ? (
-          <ul aria-label="Promociones" className="space-y-3">
-            {promotions.map((promotion) => (
-              <li key={promotion.id}>
-                <PromotionCard promotion={promotion} />
+      {brands.length > 0 ? (
+        <nav aria-label="Tarjeta" className="-mx-4 mt-3 overflow-x-auto px-4">
+          <ul className="flex gap-2">
+            <li>
+              <Link
+                href={promotionsHref(filters.day, filters.category, null)}
+                aria-current={card === null}
+                className={CHIP}
+              >
+                Todas las tarjetas
+              </Link>
+            </li>
+            {brands.map((brand) => (
+              <li key={brand}>
+                <Link
+                  href={promotionsHref(filters.day, filters.category, brand)}
+                  aria-current={card === brand}
+                  className={CHIP}
+                >
+                  {BRAND_NAMES[brand]}
+                </Link>
               </li>
             ))}
           </ul>
+        </nav>
+      ) : null}
+
+      <div className="mt-6">
+        {groups.length > 0 ? (
+          <div className="space-y-6">
+            {groups.map((group) => (
+              <section key={group.weekday} aria-labelledby={`dia-${group.weekday}`}>
+                <h2 id={`dia-${group.weekday}`} className="mb-3 font-serif text-xl font-bold">
+                  {group.title}
+                </h2>
+                <ul aria-label={`Promociones del ${group.title.toLowerCase()}`} className="space-y-3">
+                  {group.promotions.map((promotion) => (
+                    <li key={promotion.id}>
+                      <PromotionCard promotion={promotion} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
         ) : (
           <StateMessage
             title="No hay promociones con estos filtros"
-            description="Probá con otro día u otra categoría."
+            description="Probá con otro día, otra categoría u otra tarjeta."
           />
         )}
       </div>
