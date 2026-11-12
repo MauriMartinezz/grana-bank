@@ -57,7 +57,8 @@ Las funcionalidades marcadas como **demo** se guardan y se muestran, pero nunca 
 |---------------|----------|
 | Categorías | Categorías por usuario (cinco por defecto), editables en Perfil; se eligen en el flujo de transferencia o en el detalle de cualquier movimiento; los pagos de servicios van a Servicios |
 | Notas | Una nota opcional de hasta 140 caracteres en transferencias, recargas y pagos de servicios |
-| Promociones | Descuentos de comercios inventados con su tope ("20% hasta $15.000"), filtrados por día de la semana y categoría; solo informativos |
+| Promociones | Descuentos de comercios inventados con su tope ("20% hasta $15.000") o "sin límite", la compra mínima cuando la hay ("Compra mínima $30.000") y el banco cuando lo hay, agrupados por día de la semana (lunes a domingo; una promoción válida varios días aparece en cada uno) y filtrables por día, categoría y tarjeta (`?tarjeta=visa`: esa marca más las que aplican a todas las tarjetas); solo informativos |
+| Administración de promociones | Solo para el usuario administrador (`/admin/promociones`, adonde lo lleva el inicio de sesión): crea promociones con banco (opcional), emisora (Visa, Mastercard, American Express o todas las tarjetas), nombre, categoría, días, porcentaje (1 a 100), límite de descuento o "Sin límite", compra mínima o "Sin mínimo", vigencia y descripción, y lista todas las promociones. El servidor valida el rol en la página y en la acción: un usuario común recibe "Página no encontrada" |
 
 ## Perfil
 

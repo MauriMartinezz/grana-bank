@@ -8,6 +8,18 @@ Todos los usuarios del seed comparten una contraseña: la que pasaste en `SEED_U
 
 **`lucia.fernandez@vuelto.test`**
 
+### Administrador
+
+Para crear promociones, corré el seed con `ADMIN_PASSWORD` (la contraseña nunca se guarda en el repositorio):
+
+```bash
+SEED_USER_PASSWORD='<una contraseña a elección>' ADMIN_PASSWORD='<otra contraseña>' pnpm db:seed
+```
+
+Iniciá sesión como **`admin@vuelto.test`** con esa contraseña: entrás directo a **Administración → Promociones** (`/admin/promociones`), con el formulario "Nueva promoción" y la lista de todas las promociones. Las que crees aparecen en Promociones y en "Promos de hoy" para todos los usuarios. Sin `ADMIN_PASSWORD`, el seed no crea (y borra si existía) al administrador.
+
+`pnpm db:seed` y `pnpm db:promos` recargan las promociones de demo y **borran las que creó el administrador**.
+
 ## Usuarios
 
 | Usuario | Email | Cuentas (alias · saldo inicial) | Tarjetas | Rol en la demo |
@@ -38,7 +50,7 @@ Una transferencia solo va entre cuentas de la misma moneda. Cada una tiene un to
 | Servicios | Edesur "Luz depto", número de pago `0012345678`, las facturas del mes pasado y de este mes, un recordatorio 3 días antes |
 | Suscripciones | Adobe, Figma, Spotify y Netflix, activas (es una demo: nada las cobra) |
 | Categorías | Alquiler, Comida, Servicios, Regalos, Otros |
-| Promociones | 12 promociones de comercios inventados, vigentes este mes y el próximo |
+| Promociones | 12 promociones de comercios inventados, vigentes este mes y el próximo (algunas con banco y compra mínima) |
 
 ## Recorridos para probar
 
@@ -60,4 +72,4 @@ Una transferencia solo va entre cuentas de la misma moneda. Cada una tiene un to
 SEED_USER_PASSWORD='<una contraseña a elección>' pnpm db:seed
 ```
 
-Borra y vuelve a crear los cuatro usuarios de arriba (los identifica por email y alias) y recarga las promociones. Los demás usuarios que hayas creado quedan como están.
+Borra y vuelve a crear los cuatro usuarios de arriba (los identifica por email y alias) y al administrador cuando pasás `ADMIN_PASSWORD`, y recarga las promociones (las creadas por el administrador se pierden). Los demás usuarios que hayas creado quedan como están.

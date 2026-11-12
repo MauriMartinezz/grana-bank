@@ -60,9 +60,16 @@ export function readPromotionFilters(
   return { day: DAY_SLUGS[weekday - 1], weekday, category };
 }
 
-/** `20% hasta $15.000`. */
-export function discountText(percent: number, capCents: bigint) {
-  return `${percent}% hasta ${formatMoney(capCents, "ARS")}`;
+/** `20% hasta $15.000`, or `20% sin límite` when the discount has no cap. */
+export function discountText(percent: number, capCents: bigint | null) {
+  return capCents === null
+    ? `${percent}% sin límite`
+    : `${percent}% hasta ${formatMoney(capCents, "ARS")}`;
+}
+
+/** `Compra mínima $30.000`, or null when any purchase applies. */
+export function minimumText(minPurchaseCents: bigint | null) {
+  return minPurchaseCents === null ? null : `Compra mínima ${formatMoney(minPurchaseCents, "ARS")}`;
 }
 
 function capitalize(text: string) {

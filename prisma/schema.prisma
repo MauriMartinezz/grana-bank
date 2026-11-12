@@ -21,6 +21,14 @@ enum MovementType {
   @@map("tipo_movimiento")
 }
 
+/// What a user may do: an admin manages promotions.
+enum UserRole {
+  USER
+  ADMIN
+
+  @@map("rol_usuario")
+}
+
 enum CardBrand {
   MASTERCARD
   VISA
@@ -109,6 +117,8 @@ model User {
   /// The seeded "Cuenta de prueba" that funds deposits: it never signs in,
   /// is never found as a recipient and never receives a transfer.
   isTestAccount       Boolean           @default(false) @map("es_cuenta_prueba")
+  /// Only an admin opens /admin and creates promotions.
+  role                UserRole          @default(USER) @map("rol")
   /// When the user last opened Notificaciones; later items count as unread.
   notificationsSeenAt DateTime?         @map("notificaciones_vistas_en")
   /// One per currency at most.
@@ -459,23 +469,28 @@ enum PromotionCategory {
   @@map("categoria_promocion")
 }
 
-/// An informative discount of an invented merchant: nothing is applied to
-/// payments. Loaded by the seed from features/promotions/catalog.ts.
+/// An informative discount of a merchant: nothing is applied to payments.
+/// Loaded by the seed from features/promotions/catalog.ts, or created by an
+/// admin in /admin/promociones.
 model Promotion {
-  id         String            @id @default(uuid())
-  merchant   String            @map("comercio")
-  category   PromotionCategory @map("categoria")
+  id               String            @id @default(uuid())
+  merchant         String            @map("comercio")
+  category         PromotionCategory @map("categoria")
   /// 1 to 100.
-  percent    Int               @map("porcentaje")
-  /// The most the discount gives back, in integer cents.
-  capCents   BigInt            @map("tope_centavos")
+  percent          Int               @map("porcentaje")
+  /// The most the discount gives back, in integer cents. Empty: no cap.
+  capCents         BigInt?           @map("tope_centavos")
+  /// The smallest purchase it applies to, in integer cents. Empty: no minimum.
+  minPurchaseCents BigInt?           @map("compra_minima_centavos")
+  /// The bank offering it, when one does.
+  bank             String?           @map("banco")
   /// The weekdays it applies, 1 (Monday) to 7 (Sunday).
-  weekdays   Int[]             @map("dias")
+  weekdays         Int[]             @map("dias")
   /// Empty when every card applies.
-  cardBrand  CardBrand?        @map("marca_tarjeta")
-  validFrom  DateTime          @map("vigente_desde") @db.Date
-  validUntil DateTime          @map("vigente_hasta") @db.Date
-  conditions String            @map("condiciones")
+  cardBrand        CardBrand?        @map("marca_tarjeta")
+  validFrom        DateTime          @map("vigente_desde") @db.Date
+  validUntil       DateTime          @map("vigente_hasta") @db.Date
+  conditions       String            @map("condiciones")
 
   @@index([category])
   @@map("promociones")

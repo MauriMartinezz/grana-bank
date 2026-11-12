@@ -1,9 +1,12 @@
 import Link from "next/link";
 import type { Promotion } from "@/generated/prisma/client";
 import { CATEGORY_LABELS } from "./catalog";
-import { cardText, daysText, discountText, validityText } from "./filters";
+import { cardText, daysText, discountText, minimumText, validityText } from "./filters";
 
-/** One promotion in a list: merchant, discount with its cap, days and cards. */
+/**
+ * One promotion in a list: merchant, bank, discount with its cap and minimum,
+ * days and cards.
+ */
 export function PromotionCard({ promotion }: { promotion: Promotion }) {
   return (
     <Link
@@ -13,7 +16,10 @@ export function PromotionCard({ promotion }: { promotion: Promotion }) {
       <span className="flex items-start justify-between gap-3">
         <span className="min-w-0">
           <span className="block truncate font-medium">{promotion.merchant}</span>
-          <span className="block text-xs text-muted">{CATEGORY_LABELS[promotion.category]}</span>
+          <span className="block text-xs text-muted">
+            {promotion.bank ? `${promotion.bank} · ` : ""}
+            {CATEGORY_LABELS[promotion.category]}
+          </span>
         </span>
         <span className="shrink-0 rounded-full bg-garnet-soft px-3 py-1 text-sm font-semibold text-garnet">
           {promotion.percent}%
@@ -21,6 +27,9 @@ export function PromotionCard({ promotion }: { promotion: Promotion }) {
       </span>
       <span className="mt-2 block text-sm font-medium">
         {discountText(promotion.percent, promotion.capCents)}
+        {promotion.minPurchaseCents !== null ? (
+          <span className="font-normal text-muted"> · {minimumText(promotion.minPurchaseCents)}</span>
+        ) : null}
       </span>
       <span className="mt-1 block text-xs text-muted">
         {daysText(promotion.weekdays)} · {cardText(promotion.cardBrand)} ·{" "}

@@ -7,6 +7,7 @@ import {
   cardText,
   daysText,
   discountText,
+  minimumText,
   validityText,
 } from "@/features/promotions/filters";
 import { getPromotion } from "@/features/promotions/queries";
@@ -29,7 +30,16 @@ export default async function PromotionPage({ params }: PageProps<"/promociones/
         <p className="text-sm text-muted">{CATEGORY_LABELS[promotion.category]}</p>
         <p className="mt-1 text-3xl font-semibold">{promotion.percent}% de descuento</p>
         <p className="mt-1 font-medium">{discountText(promotion.percent, promotion.capCents)}</p>
+        {promotion.minPurchaseCents !== null ? (
+          <p className="mt-1 text-sm text-muted">{minimumText(promotion.minPurchaseCents)}</p>
+        ) : null}
         <dl className="mt-6 divide-y divide-line text-sm">
+          {promotion.bank ? (
+            <div className="flex justify-between gap-6 py-3">
+              <dt className="text-muted">Banco</dt>
+              <dd className="text-right font-medium">{promotion.bank}</dd>
+            </div>
+          ) : null}
           <div className="flex justify-between gap-6 py-3">
             <dt className="text-muted">Días</dt>
             <dd className="text-right font-medium">{daysText(promotion.weekdays)}</dd>

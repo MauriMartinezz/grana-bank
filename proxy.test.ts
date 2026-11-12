@@ -44,6 +44,7 @@ describe("proxy", () => {
     "/tarjetas/nueva",
     "/dolares",
     "/perfil",
+    "/admin/promociones",
   ])(
     "redirects %s to login without a session cookie",
     (path) => {
@@ -59,6 +60,10 @@ describe("proxy", () => {
     const response = proxy(request("/inicio", "token"));
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("covers the admin view", () => {
+    expect(config.matcher).toContain("/admin/:path*");
   });
 
   it("covers every private route", () => {

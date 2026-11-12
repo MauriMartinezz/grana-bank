@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { isValidEmail, normalizeEmail } from "./email";
+import { landingPath } from "./landing";
 import { verifyPassword } from "./password";
 import { createSession, deleteSession } from "./session";
 
@@ -45,6 +46,7 @@ export async function login(
   if (!password) errors.password = "Ingresá tu contraseña.";
   if (Object.keys(errors).length > 0) return { email, remember, errors };
 
+  let landing: string;
   try {
     const user = await authenticate(email, password);
     if (!user) {
@@ -55,6 +57,7 @@ export async function login(
       };
     }
     await createSession(user.id, remember);
+    landing = landingPath(user.role);
   } catch (error) {
     console.error("Login failed", error);
     return {
@@ -65,7 +68,7 @@ export async function login(
   }
 
   // Outside the try block: redirect() works by throwing.
-  redirect("/inicio");
+  redirect(landing);
 }
 
 export async function logout() {

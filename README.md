@@ -129,6 +129,7 @@ Después de traer cambios que tocan `prisma/`, corré `pnpm db:migrate` y reinic
 |----------|-------------|-------------------------|----------|
 | `DATABASE_URL` | Sí | `postgresql://vuelto:vuelto@localhost:5433/vuelto` | La base de Docker de `docker-compose.yml` |
 | `SEED_USER_PASSWORD` | Solo para `pnpm db:seed` | no está: se pasa en el comando | Contraseña de todos los usuarios del seed |
+| `ADMIN_PASSWORD` | No, solo para `pnpm db:seed` | no está: se pasa en el comando | Si está, el seed crea al administrador `admin@vuelto.test` con esa contraseña; si no, no hay administrador |
 | `CRON_SECRET` | No | no está: agregala en `.env` | Secreto Bearer de `/api/pagos-agendados`; sin él, el endpoint rechaza todo |
 
 ### Pagos programados
@@ -153,8 +154,8 @@ Sin secreto, el botón **Procesar pagos agendados**, al final de Servicios, ejec
 | `pnpm start` | Sirve la versión compilada |
 | `pnpm db:up` | Levanta PostgreSQL en Docker |
 | `pnpm db:migrate` | Aplica las migraciones pendientes y regenera el cliente de Prisma |
-| `pnpm db:seed` | Reinicia los usuarios de demo y las promociones (necesita `SEED_USER_PASSWORD`) |
-| `pnpm db:promos` | Carga solo las promociones de demo, sin tocar los usuarios |
+| `pnpm db:seed` | Reinicia los usuarios de demo y las promociones (necesita `SEED_USER_PASSWORD`; con `ADMIN_PASSWORD` crea también al administrador) |
+| `pnpm db:promos` | Recarga solo las promociones de demo, sin tocar los usuarios; borra las que creó el administrador |
 | `docker compose down` | Detiene PostgreSQL y conserva sus datos |
 | `docker compose down -v` | Detiene PostgreSQL y borra sus datos; después hay que correr `db:up`, `db:migrate` y `db:seed` |
 

@@ -31,6 +31,10 @@ export type CatalogPromotion = {
   percent: number;
   /** Whole pesos. */
   capPesos: number;
+  /** Whole pesos; absent when any purchase applies. */
+  minPurchasePesos?: number;
+  /** Absent when no bank offers it. */
+  bank?: string;
   /** 1 (Monday) to 7 (Sunday). */
   weekdays: number[];
   /** Null when every card applies. */
@@ -62,9 +66,11 @@ export const PROMOTIONS: CatalogPromotion[] = [
     category: "SUPERMERCADO",
     percent: 25,
     capPesos: 8_000,
+    minPurchasePesos: 30_000,
+    bank: "Banco Ceibo",
     weekdays: [2, 4],
     cardBrand: null,
-    conditions: "En compras desde $30.000. Excluye bebidas alcohólicas y electrónica.",
+    conditions: "Excluye bebidas alcohólicas y electrónica.",
   },
   {
     merchant: "Súper Ahorro",
@@ -125,6 +131,8 @@ export const PROMOTIONS: CatalogPromotion[] = [
     category: "ROPA",
     percent: 35,
     capPesos: 25_000,
+    minPurchasePesos: 50_000,
+    bank: "Banco Ombú",
     weekdays: [7],
     cardBrand: "AMEX",
     conditions: "En la colección de temporada, en local y online.",

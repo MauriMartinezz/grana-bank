@@ -5,6 +5,7 @@ import {
   daysText,
   discountText,
   filterByCard,
+  minimumText,
   heldBrands,
   promotionsHref,
   readCardFilter,
@@ -54,6 +55,15 @@ describe("readPromotionFilters", () => {
 describe("texts", () => {
   it("writes the discount with its cap", () => {
     expect(discountText(20, BigInt(1_500_000))).toBe("20% hasta $15.000");
+  });
+
+  it("says when the discount has no cap", () => {
+    expect(discountText(10, null)).toBe("10% sin límite");
+  });
+
+  it("writes the minimum purchase only when there is one", () => {
+    expect(minimumText(BigInt(3_000_000))).toBe("Compra mínima $30.000");
+    expect(minimumText(null)).toBeNull();
   });
 
   it("names the days, every day and weekends", () => {

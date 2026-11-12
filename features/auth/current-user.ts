@@ -1,6 +1,7 @@
 import { redirect, unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 import { fullName } from "@/features/account/name";
+import { landingPath } from "./landing";
 import { getSessionUser } from "./session";
 
 /**
@@ -15,7 +16,8 @@ export const getCurrentUser = cache(async () => {
 });
 
 /**
- * Skips the login form for a valid session. A database failure leaves the form
+ * Skips the login form for a valid session, to home or, for an admin, to the
+ * admin view. A database failure leaves the form
  * on screen, because that form already reports the failure when it is used.
  */
 export async function redirectIfSignedIn() {
@@ -26,5 +28,5 @@ export async function redirectIfSignedIn() {
     console.error("Could not read the session", error);
     return null;
   });
-  if (user) redirect("/inicio");
+  if (user) redirect(landingPath(user.role));
 }

@@ -1,7 +1,8 @@
 /**
  * Loads the invented promotions, in force from the first day of this month to
  * the last day of the next one, so the demo always shows them. The seed calls
- * it, and `pnpm db:promos` runs it alone, without touching the users.
+ * it, and `pnpm db:promos` runs it alone, without touching the users. It
+ * deletes every promotion first, those an admin created included.
  */
 import "dotenv/config";
 import { pathToFileURL } from "node:url";
@@ -14,9 +15,11 @@ export async function loadPromotions(prisma: PrismaClient, now: Date = new Date(
   const { year, month } = buenosAiresDate(now);
   await prisma.promotion.deleteMany();
   await prisma.promotion.createMany({
-    data: PROMOTIONS.map(({ capPesos, ...promotion }) => ({
+    data: PROMOTIONS.map(({ capPesos, minPurchasePesos, bank, ...promotion }) => ({
       ...promotion,
       capCents: BigInt(capPesos) * BigInt(100),
+      minPurchaseCents: minPurchasePesos === undefined ? null : BigInt(minPurchasePesos) * BigInt(100),
+      bank: bank ?? null,
       validFrom: new Date(Date.UTC(year, month - 1, 1)),
       validUntil: new Date(Date.UTC(year, month + 1, 0)),
     })),

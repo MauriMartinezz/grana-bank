@@ -53,6 +53,18 @@ describe("listPromotions", () => {
     ]);
   });
 
+  it("lists a promotion without cap first among those of its discount", async () => {
+    await db.promotion.create({
+      data: promotion("martes cine 40 sin limite", { percent: 40, capCents: null }),
+    });
+    expect(mine(await listPromotions({ weekday: 2, category: null }, NOW))).toEqual([
+      `${PREFIX} martes cine 40 sin limite`,
+      `${PREFIX} martes cine 40 tope alto`,
+      `${PREFIX} martes cine 40`,
+      `${PREFIX} martes cine 10`,
+    ]);
+  });
+
   it("filters by category and shows every day without a weekday", async () => {
     expect(mine(await listPromotions({ weekday: 5, category: "ROPA" }, NOW))).toEqual([
       `${PREFIX} viernes ropa`,

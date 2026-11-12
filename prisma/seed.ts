@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { ADMIN_EMAIL, seedAdmin } from "../features/admin/seed-admin";
 import { hashPassword } from "../features/auth/password";
 import { defaultCategoryRows } from "../features/categories/names";
 import { TEST_ACCOUNT } from "../features/deposits/test-account";
@@ -226,6 +227,12 @@ async function main() {
 
   // Promociones: the invented catalog (also `pnpm db:promos` on its own).
   await loadPromotions(prisma);
+
+  // The admin who creates promotions, only when ADMIN_PASSWORD is set: the
+  // password never lives in the repository. Without it, no admin remains.
+  if (await seedAdmin(prisma, process.env.ADMIN_PASSWORD)) {
+    console.log(`Admin: ${ADMIN_EMAIL}`);
+  }
 
   // Seeded movements went through their account's card, like a transfer.
   for (const { id, cards } of mainUser.accounts) {

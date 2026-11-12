@@ -7,7 +7,8 @@ import { buenosAiresWeekday } from "./filters";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BEST_FIRST: Prisma.PromotionOrderByWithRelationInput[] = [
   { percent: "desc" },
-  { capCents: "desc" },
+  // No cap gives back the most, so it goes first.
+  { capCents: { sort: "desc", nulls: "first" } },
   { merchant: "asc" },
   { id: "asc" },
 ];
@@ -49,4 +50,11 @@ export function listTodayPromotions(now: Date) {
 
 export function getPromotion(id: string) {
   return UUID.test(id) ? db.promotion.findUnique({ where: { id } }) : Promise.resolve(null);
+}
+
+/** Every promotion, in force or not, newest first: the admin list. */
+export function listAllPromotions() {
+  return db.promotion.findMany({
+    orderBy: [{ validFrom: "desc" }, { merchant: "asc" }, { id: "asc" }],
+  });
 }
