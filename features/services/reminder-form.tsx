@@ -33,7 +33,9 @@ export function ReminderForm({ adhesionId, selected }: { adhesionId: string; sel
         <label htmlFor="reminderDays" className="mb-1.5 text-sm font-medium">
           Recordatorio
         </label>
+        {/* Keyed by the saved value: React resets the form after the action, and a select applies defaultValue only on mount. */}
         <select
+          key={selected ?? ""}
           id="reminderDays"
           name="reminderDays"
           defaultValue={selected === null ? "" : String(selected)}

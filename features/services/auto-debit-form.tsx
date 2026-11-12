@@ -37,7 +37,9 @@ export function AutoDebitForm({
         <label htmlFor="autoDebitCardId" className="mb-1.5 text-sm font-medium">
           Débito automático
         </label>
+        {/* Keyed by the saved value: React resets the form after the action, and a select applies defaultValue only on mount. */}
         <select
+          key={selected}
           id="autoDebitCardId"
           name="cardId"
           defaultValue={selected}

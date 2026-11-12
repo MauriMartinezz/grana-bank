@@ -37,7 +37,9 @@ export function ChangeCardForm({
         <label htmlFor="subscriptionCardId" className="mb-1.5 text-sm font-medium">
           Tarjeta
         </label>
+        {/* Keyed by the saved value: React resets the form after the action, and a select applies defaultValue only on mount. */}
         <select
+          key={selected}
           id="subscriptionCardId"
           name="cardId"
           defaultValue={selected}
