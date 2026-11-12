@@ -3,7 +3,9 @@ import type { Currency } from "@/generated/prisma/client";
 import { MOVEMENT_TYPE_STYLES } from "@/features/movements/movement-type";
 import { formatAmount, formatMoney } from "@/lib/format";
 import { BudgetEditor } from "./budget-forms";
+import { groupAnchor } from "./links";
 import type { listMonthMovements } from "./queries";
+import { BudgetProgressBar } from "./spending-bar";
 import {
   budgetStatusLabel,
   type BudgetStatus,
@@ -23,10 +25,6 @@ const dayFormatter = new Intl.DateTimeFormat("es-AR", {
 const STATUS_CLASS: Record<BudgetStatus["kind"], string> = {
   available: "bg-garnet-soft text-garnet",
   over: "bg-yellow-soft text-ink",
-};
-const BAR_CLASS: Record<BudgetStatus["kind"], string> = {
-  available: "bg-garnet-fill",
-  over: "bg-yellow",
 };
 
 /** A CSS bar; the numbers next to it carry the same information. */
@@ -87,11 +85,19 @@ function GroupMovements({ movements }: { movements: SpendingMovement[] }) {
 }
 
 /** One category of the month: opens to show its budget and its movements. */
-function GroupRow({ group, currency }: { group: SpendingGroup<SpendingMovement>; currency: Currency }) {
+function GroupRow({
+  group,
+  currency,
+  open,
+}: {
+  group: SpendingGroup<SpendingMovement>;
+  currency: Currency;
+  open: boolean;
+}) {
   const { budget } = group;
   return (
-    <li>
-      <details className="rounded-2xl bg-surface">
+    <li id={groupAnchor(group.key)} className="scroll-mt-4">
+      <details open={open} className="rounded-2xl bg-surface">
         <summary className="flex cursor-pointer list-none flex-col gap-2 p-4">
           <span className="flex items-baseline justify-between gap-3">
             <span className="truncate font-medium">{group.name}</span>
@@ -100,8 +106,7 @@ function GroupRow({ group, currency }: { group: SpendingGroup<SpendingMovement>;
           <span className="text-xs text-muted">
             {movementsLabel(group.count)} · {group.percent}% del mes
           </span>
-          <Bar percent={group.percent} className="bg-garnet-fill" />
-          {budget && (
+          {budget ? (
             <span className="mt-1 flex flex-col gap-2">
               <span className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
                 <span>
@@ -110,11 +115,10 @@ function GroupRow({ group, currency }: { group: SpendingGroup<SpendingMovement>;
                 </span>
                 <BudgetStatusBadge status={budget.status} currency={currency} />
               </span>
-              <Bar
-                percent={budgetPercent(group.totalCents, budget.amountCents)}
-                className={BAR_CLASS[budget.status.kind]}
-              />
+              <BudgetProgressBar spentCents={group.totalCents} budgetCents={budget.amountCents} />
             </span>
+          ) : (
+            <Bar percent={group.percent} className="bg-garnet-fill" />
           )}
         </summary>
         <div className="flex flex-col gap-4 border-t border-line p-4">
@@ -139,17 +143,20 @@ function GroupRow({ group, currency }: { group: SpendingGroup<SpendingMovement>;
   );
 }
 
+/** The month's groups; those in `openKeys` (from `?categoria=`) start open. */
 export function SpendingGroups({
   groups,
   currency,
+  openKeys,
 }: {
   groups: SpendingGroup<SpendingMovement>[];
   currency: Currency;
+  openKeys: ReadonlySet<string>;
 }) {
   return (
     <ul aria-label="Gastos por categoría" className="flex flex-col gap-3">
       {groups.map((group) => (
-        <GroupRow key={group.key} group={group} currency={currency} />
+        <GroupRow key={group.key} group={group} currency={currency} open={openKeys.has(group.key)} />
       ))}
     </ul>
   );

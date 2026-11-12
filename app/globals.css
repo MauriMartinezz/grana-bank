@@ -47,6 +47,23 @@
   --color-line: #e2dbcf;
   /* Translucent overlays (track backgrounds, skeletons), used with an opacity. */
   --color-shade: #000000;
+  /*
+   * Chart categories (Finanzas): eight earthy hues around the brand olive, in a
+   * fixed order checked with the dataviz palette validator against the surface
+   * (adjacent pairs CVD-safe, at least 3:1). Labels inside them are white.
+   * Moss, slate blue, brick, teal, terracotta, violet, gold, plum.
+   */
+  --color-chart-1: #568637;
+  --color-chart-2: #3978c6;
+  --color-chart-3: #bc5858;
+  --color-chart-4: #009da4;
+  --color-chart-5: #ce6e48;
+  --color-chart-6: #8a67c1;
+  --color-chart-7: #b2860c;
+  --color-chart-8: #c971a4;
+  /* Neutral grays for "Sin categoría" and "Resto" (folded categories). */
+  --color-chart-uncategorized: #8f8b7d;
+  --color-chart-rest: #6f6c60;
 }
 
 /*
@@ -68,6 +85,17 @@
   --color-muted: #aaa697;
   --color-line: #33352d;
   --color-shade: #ffffff;
+  /* The same chart hues, stepped for the dark surface and validated again. */
+  --color-chart-1: #5f8f42;
+  --color-chart-2: #4c7fc0;
+  --color-chart-3: #c35e5d;
+  --color-chart-4: #009aa1;
+  --color-chart-5: #c97654;
+  --color-chart-6: #8a68c1;
+  --color-chart-7: #987206;
+  --color-chart-8: #ba5b94;
+  --color-chart-uncategorized: #8a877a;
+  --color-chart-rest: #6f6d62;
   color-scheme: dark;
 }
 

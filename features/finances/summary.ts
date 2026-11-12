@@ -61,7 +61,8 @@ export function budgetStatusLabel(status: BudgetStatus, currency: Currency): str
   return status.kind === "over" ? `Te pasaste por ${amount}` : `Disponible ${amount}`;
 }
 
-function percentOf(part: bigint, total: bigint): number {
+/** Whole-number share of `total`, rounded half up; 0 when there is no total. */
+export function percentOf(part: bigint, total: bigint): number {
   if (total === ZERO) return 0;
   // Rounded half up with integers, so cents never go through floating point.
   return Number((part * BigInt(200) + total) / (total * BigInt(2)));

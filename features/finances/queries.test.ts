@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { MovementType } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { listBudgets, listMonthMovements } from "./queries";
+import { listBudgets, listCategoryOrder, listMonthMovements } from "./queries";
 
 const EMAILS = ["owner@finances-queries.test", "stranger@finances-queries.test"];
 
@@ -126,5 +126,22 @@ describe("listBudgets", () => {
       }),
     ]);
     expect((await listBudgets(strangerId, "ARS")).map((b) => b.amountCents)).toEqual([BigInt(9_000)]);
+  });
+});
+
+describe("listCategoryOrder", () => {
+  it("lists only the user's category ids, oldest first, whatever their names", async () => {
+    const created = [];
+    for (const [index, name] of ["Zapatos", "Alquiler"].entries()) {
+      created.push(
+        await db.category.create({
+          data: { userId: ownerId, name, key: name.toLowerCase(), createdAt: new Date(Date.UTC(2030, 0, index + 1)) },
+        }),
+      );
+    }
+    const [first] = await db.category.findMany({ where: { userId: ownerId, key: "comida" } });
+
+    expect(await listCategoryOrder(ownerId)).toEqual([first.id, created[0].id, created[1].id]);
+    expect(await listCategoryOrder(strangerId)).toHaveLength(1);
   });
 });

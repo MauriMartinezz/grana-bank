@@ -9,8 +9,11 @@ import { accountParam, pickSelectedAccount } from "@/features/account/selected-a
 import { getCurrentUser } from "@/features/auth/current-user";
 import { listCategories } from "@/features/categories/categories";
 import { AddBudgetForm } from "@/features/finances/budget-forms";
+import { buildSpendingSegments } from "@/features/finances/chart";
+import { financesHref, openGroupKeys } from "@/features/finances/links";
 import { addMonths, currentMonth, formatMonth, parseMonth } from "@/features/finances/month";
-import { listBudgets, listMonthMovements } from "@/features/finances/queries";
+import { listBudgets, listCategoryOrder, listMonthMovements } from "@/features/finances/queries";
+import { SpendingBar } from "@/features/finances/spending-bar";
 import {
   Bar,
   budgetPercent,
@@ -27,7 +30,7 @@ const MONTH_LINK = "flex size-11 items-center justify-center rounded-full bg-sur
 
 // Reads the URL at the top level: the route's loading.tsx is its Suspense boundary.
 export default async function FinancesPage({ searchParams }: PageProps<"/finanzas">) {
-  const [{ cuenta, mes }, user] = await Promise.all([searchParams, getCurrentUser()]);
+  const [{ cuenta, mes, categoria }, user] = await Promise.all([searchParams, getCurrentUser()]);
   const now = new Date();
   const accounts = await listAccounts(user.id);
   const account = pickSelectedAccount(accounts, cuenta, user.preferredCurrency);
@@ -38,13 +41,20 @@ export default async function FinancesPage({ searchParams }: PageProps<"/finanza
   const month = parseMonth(mes, now);
   const isCurrentMonth = month === currentMonth(now);
 
-  const [movements, budgets, categories] = await Promise.all([
+  const [movements, budgets, categories, categoryOrder] = await Promise.all([
     listMonthMovements(user.id, currency, month),
     listBudgets(user.id, currency),
     listCategories(user.id),
+    listCategoryOrder(user.id),
   ]);
   const overview = summarizeMonth(movements, budgets);
   const summary = overview.expenses;
+  const segments = buildSpendingSegments(summary, categoryOrder);
+  const openKeys = openGroupKeys(
+    categoria,
+    segments,
+    summary.groups.map((group) => group.key),
+  );
   const budgeted = new Set(budgets.map((budget) => budget.categoryId));
   const unbudgeted = categories.filter((category) => !budgeted.has(category.id));
 
@@ -52,8 +62,8 @@ export default async function FinancesPage({ searchParams }: PageProps<"/finanza
   const currencies = accounts
     .map((a) => a.currency)
     .sort((a, b) => Number(b === user.preferredCurrency) - Number(a === user.preferredCurrency));
-  const monthHref = (target: string) =>
-    `/finanzas?cuenta=${accountParam(currency)}&mes=${target}`;
+  const page = { cuenta: accountParam(currency), mes: month };
+  const monthHref = (target: string) => financesHref({ ...page, mes: target });
   const monthName = formatMonth(month);
 
   return (
@@ -153,8 +163,13 @@ export default async function FinancesPage({ searchParams }: PageProps<"/finanza
             />
           </div>
         )}
+        {segments.length > 0 && (
+          <div className="mb-3">
+            <SpendingBar segments={segments} currency={currency} page={page} />
+          </div>
+        )}
         {summary.groups.length > 0 && (
-          <SpendingGroups groups={summary.groups} currency={currency} />
+          <SpendingGroups groups={summary.groups} currency={currency} openKeys={openKeys} />
         )}
       </section>
 

@@ -32,3 +32,16 @@ export function listBudgets(userId: string, currency: Currency) {
     include: { category: { select: { id: true, name: true } } },
   });
 }
+
+/**
+ * The user's category ids, oldest first: a category's position here picks its
+ * chart color, so it keeps the same one every month and after a rename.
+ */
+export async function listCategoryOrder(userId: string): Promise<string[]> {
+  const categories = await db.category.findMany({
+    where: { userId },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: { id: true },
+  });
+  return categories.map((category) => category.id);
+}
