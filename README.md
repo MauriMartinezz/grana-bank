@@ -57,7 +57,7 @@ El detalle completo está en [docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md).
 | Lenguaje | TypeScript 5 |
 | Base de datos | PostgreSQL 17 (imagen de Docker `postgres:17-alpine`) |
 | ORM | Prisma 7 con el adaptador del driver `pg` |
-| Tests | Vitest 5, contra la base real |
+| Tests | Vitest 5, contra la base real; Playwright (Chromium) para los tests e2e |
 | Lint | ESLint 9 con `eslint-config-next` |
 | Gestor de paquetes | pnpm (versión fijada en `package.json` → `packageManager`) |
 
@@ -149,6 +149,7 @@ Sin secreto, el botón **Procesar pagos agendados**, al final de Servicios, ejec
 |---------|----------|
 | `pnpm dev` | Servidor de desarrollo en http://localhost:3000 |
 | `pnpm test` | Tests unitarios y de integración; la base tiene que estar levantada |
+| `pnpm test:e2e` | Tests e2e con Playwright, contra su propia base `vuelto_e2e` (ver [Tests e2e](#tests-e2e)) |
 | `pnpm lint` | ESLint |
 | `pnpm build` | Genera el cliente de Prisma y compila para producción |
 | `pnpm start` | Sirve la versión compilada |
@@ -159,6 +160,19 @@ Sin secreto, el botón **Procesar pagos agendados**, al final de Servicios, ejec
 | `docker compose down` | Detiene PostgreSQL y conserva sus datos |
 | `docker compose down -v` | Detiene PostgreSQL y borra sus datos; después hay que correr `db:up`, `db:migrate` y `db:seed` |
 
+
+## Tests e2e
+
+Playwright recorre en Chromium los flujos principales: el ingreso de un usuario y del administrador, el acceso a las pantallas privadas, cambiar la categoría de un movimiento, una transferencia vista desde los dos lados y Finanzas con sus presupuestos. Por ahora se corren solo en local.
+
+Requisitos: la base de Docker levantada (`pnpm db:up`) y el navegador de Playwright instalado una vez:
+
+```bash
+pnpm exec playwright install chromium
+pnpm test:e2e
+```
+
+Usa su propia base, `vuelto_e2e`, en el mismo PostgreSQL de Docker: la crea si no existe, le aplica las migraciones y la vuelve a cargar con el seed en cada corrida, así que la base de desarrollo `vuelto` y tu `.env` no se tocan. Compila la app y la sirve en http://localhost:3100, así que puede correr con `pnpm dev` abierto en el puerto 3000. Las contraseñas de los usuarios de esa base son valores de prueba definidos en `e2e/env.ts`. Si un test falla, `pnpm exec playwright show-report` abre el reporte.
 
 ## Probarlo
 
@@ -176,6 +190,7 @@ features/    Código agrupado por dominio: account, auth, cards, categories, dep
 components/  UI compartida sin conocimiento del dominio
 lib/         Cliente de base de datos y formateadores
 prisma/      Schema, migraciones y seed
+e2e/         Tests e2e de Playwright
 docs/        Funcionalidades, guía de demo y decisiones técnicas
 odd/tasks/   Documentos de cada funcionalidad: requisitos, tareas y bitácora
 proxy.ts     Redirige al ingreso a quien no tiene cookie de sesión

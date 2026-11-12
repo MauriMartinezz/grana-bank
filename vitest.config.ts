@@ -9,6 +9,6 @@ export default defineConfig({
     environment: "node",
     setupFiles: ["dotenv/config"],
     include: ["**/*.test.ts"],
-    exclude: ["node_modules", ".next", "generated"],
+    exclude: ["node_modules", ".next", "generated", "e2e/**"],
   },
 });

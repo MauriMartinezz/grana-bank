@@ -94,6 +94,8 @@ Un pago de servicio programado o automático usa una clave por factura, así que
 
 Vitest corre tests unitarios para las reglas puras y tests de integración contra la base PostgreSQL real, porque los bloqueos, los índices únicos y las restricciones `CHECK` son parte del comportamiento y un mock los escondería. La concurrencia se prueba disparando muchos pedidos a la vez y verificando que el dinero se mueva exactamente una vez.
 
+Playwright prueba los flujos en el navegador, donde aparecen errores que los tests de Vitest no ven (por ejemplo, un formulario que vuelve a su valor inicial después de guardar). Corre contra una compilación de producción (`next build` y `next start` en el puerto 3100), más parecida a un deploy que `next dev` y sin chocar con un `next dev` abierto, y contra su propia base `vuelto_e2e`, que se vuelve a cargar con el seed antes de cada corrida. Esa preparación es el primer paso del comando del `webServer` de Playwright, porque la compilación ya necesita la base migrada. Usa un solo worker: todos los tests comparten los usuarios del seed.
+
 ## Tabla de referencia
 
 | Tema | Decisión | Por qué |
