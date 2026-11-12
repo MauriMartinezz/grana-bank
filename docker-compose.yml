@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: grana
-      POSTGRES_PASSWORD: grana
-      POSTGRES_DB: grana_bank
+      POSTGRES_USER: vuelto
+      POSTGRES_PASSWORD: vuelto
+      POSTGRES_DB: vuelto
     ports:
       - "5433:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U grana -d grana_bank"]
+      test: ["CMD-SHELL", "pg_isready -U vuelto -d vuelto"]
       interval: 2s
       timeout: 3s
       retries: 15

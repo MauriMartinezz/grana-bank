@@ -3,7 +3,7 @@
  * the seed uses it too.
  */
 export const TEST_ACCOUNT = {
-  email: "cuenta.prueba@granabank.test",
+  email: "cuenta.prueba@vuelto.test",
   firstName: "Cuenta de prueba",
   /** Large enough that the demo never runs it dry: 10.000 million per currency. */
   balanceCents: BigInt(1_000_000_000_000),

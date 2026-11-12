@@ -3,7 +3,7 @@
  * charges them. Relative imports only: the seed uses it too.
  */
 
-/** Granate's subscriptions from the Figma design, matching their seeded charges. */
+/** The demo user's subscriptions, matching their seeded charges. */
 export const SEEDED_SUBSCRIPTIONS = [
   { merchant: "Adobe", amountCents: 12_500, billingDay: 30 },
   { merchant: "Figma", amountCents: 12_500, billingDay: 27 },

@@ -23,7 +23,7 @@ describe("buildFeed", () => {
         ...empty,
         movements: [
           movement("RECEIVED", "2026-11-10T12:00:00Z"),
-          movement("SENT", "2026-11-10T11:00:00Z", { counterparty: "Martin Bozzini" }),
+          movement("SENT", "2026-11-10T11:00:00Z", { counterparty: "Martín Gómez" }),
           movement("TOP_UP", "2026-11-10T10:00:00Z", { counterparty: "Carga SUBE" }),
           movement("SERVICE_PAYMENT", "2026-11-10T09:00:00Z", { counterparty: "Pago Edesur · Luz" }),
           movement("SUBSCRIPTION", "2026-11-10T08:00:00Z", { counterparty: "Netflix" }),
@@ -35,7 +35,7 @@ describe("buildFeed", () => {
 
     expect(feed.map(({ title, detail, href }) => ({ title, detail, href }))).toEqual([
       { title: "Recibiste $1.500", detail: "De Juan Perez", href: "/movimientos/m-RECEIVED-2026-11-10T12:00:00Z" },
-      { title: "Enviaste $1.500", detail: "A Martin Bozzini", href: "/movimientos/m-SENT-2026-11-10T11:00:00Z" },
+      { title: "Enviaste $1.500", detail: "A Martín Gómez", href: "/movimientos/m-SENT-2026-11-10T11:00:00Z" },
       { title: "Recargaste $1.500", detail: "Carga SUBE", href: "/movimientos/m-TOP_UP-2026-11-10T10:00:00Z" },
       { title: "Pagaste $1.500", detail: "Pago Edesur · Luz", href: "/movimientos/m-SERVICE_PAYMENT-2026-11-10T09:00:00Z" },
       { title: "Se cobró $1.500", detail: "Suscripción a Netflix", href: "/movimientos/m-SUBSCRIPTION-2026-11-10T08:00:00Z" },

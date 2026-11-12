@@ -11,7 +11,7 @@ describe("normalizeAlias", () => {
 describe("isValidAlias", () => {
   it.each([
     "juan.perez",
-    "granate",
+    "vuelto",
     "a",
     "juan.123",
     "1a",

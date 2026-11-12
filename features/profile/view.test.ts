@@ -21,8 +21,8 @@ describe("parseView", () => {
 });
 
 describe("view storage", () => {
-  it("stores the choice under grana-view", () => {
-    expect(VIEW_STORAGE_KEY).toBe("grana-view");
+  it("stores the choice under vuelto-view", () => {
+    expect(VIEW_STORAGE_KEY).toBe("vuelto-view");
   });
 
   it("offers automatic first, then desktop, then mobile", () => {

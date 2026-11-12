@@ -15,7 +15,7 @@ const movements: Array<[MovementType, string, number, string]> = [
   [RECEIVED, "Ronaldo", 9500, "2026-10-29T11:05:00Z"],
   [SUBSCRIPTION, "Figma", 12500, "2026-10-27T09:30:00Z"],
   [SENT, "Juan Perez", 9500, "2026-10-25T18:45:00Z"],
-  [RECEIVED, "Martin Bozzini", 9500, "2026-10-24T16:10:00Z"],
+  [RECEIVED, "Martín Gómez", 9500, "2026-10-24T16:10:00Z"],
   [RECEIVED, "José Suárez", 9500, "2026-10-22T10:00:00Z"],
   [SENT, "Juan Rodríguez", 9500, "2026-10-20T20:15:00Z"],
   [RECEIVED, "Julio César", 9500, "2026-10-18T13:40:00Z"],
@@ -40,7 +40,7 @@ const recipients: Array<{
   accounts: SeedAccount[];
 }> = [
   {
-    email: "juanperez@clublanus.com",
+    email: "juanperez@vuelto.test",
     firstName: "Juan",
     lastName: "Perez",
     accounts: [
@@ -55,13 +55,13 @@ const recipients: Array<{
     ],
   },
   {
-    email: "martinbozzini@clublanus.com",
+    email: "martingomez@vuelto.test",
     firstName: "Martin",
-    lastName: "Bozzini",
+    lastName: "Gómez",
     accounts: [
       {
         currency: "ARS",
-        alias: "martin.bozzini",
+        alias: "martin.gomez",
         balanceCents: 18000,
         card: { brand: "VISA", last4: "7390", expiry: "08/29" },
       },
@@ -99,10 +99,10 @@ async function main() {
   // with their bills and payments, so running the seed twice leaves the same
   // data. Users are matched by email and by seeded alias, so a seeded
   // user who changed their email in Perfil is replaced too.
-  const email = "soygranate@clublanus.com";
+  const email = "lucia.fernandez@vuelto.test";
   const seededAliases = [
-    "soy.granate",
-    "soy.granate.usd",
+    "lucia.fernandez",
+    "lucia.fernandez.usd",
     ...recipients.flatMap((r) => r.accounts.map((a) => a.alias)),
     ...TEST_ACCOUNT.accounts.map((a) => a.alias),
   ];
@@ -140,12 +140,12 @@ async function main() {
   );
   const juanPesos = created[0].accounts.find((a) => a.currency === "ARS")!;
 
-  const holder = "Soy Granate";
-  const granate = await prisma.user.create({
+  const holder = "Lucía Fernández";
+  const mainUser = await prisma.user.create({
     data: {
       email,
-      firstName: "Soy",
-      lastName: "Granate",
+      firstName: "Lucía",
+      lastName: "Fernández",
       passwordHash,
       categories: { create: defaultCategoryRows() },
       // Only Juan's peso account starts as a contact; Martin shows the
@@ -171,7 +171,7 @@ async function main() {
             ...accountData(
               {
                 currency: "ARS",
-                alias: "soy.granate",
+                alias: "lucia.fernandez",
                 // $2.500.000, so the demo can buy dollars.
                 balanceCents: 250_000_000,
                 card: { brand: "MASTERCARD", last4: "1234", expiry: "02/30" },
@@ -193,7 +193,7 @@ async function main() {
           accountData(
             {
               currency: "USD",
-              alias: "soy.granate.usd",
+              alias: "lucia.fernandez.usd",
               balanceCents: 25000,
               card: { brand: "VISA", last4: "5678", expiry: "11/29" },
             },
@@ -228,7 +228,7 @@ async function main() {
   await loadPromotions(prisma);
 
   // Seeded movements went through their account's card, like a transfer.
-  for (const { id, cards } of granate.accounts) {
+  for (const { id, cards } of mainUser.accounts) {
     if (cards[0]) {
       await prisma.movement.updateMany({
         where: { accountId: id },
@@ -239,10 +239,10 @@ async function main() {
 
   // Suscripciones: the seeded subscription charges as active subscriptions on
   // the peso card. A demo: nothing ever charges them.
-  const pesoCard = granate.accounts.find((a) => a.currency === "ARS")!.cards[0];
+  const pesoCard = mainUser.accounts.find((a) => a.currency === "ARS")!.cards[0];
   await prisma.subscription.createMany({
     data: SEEDED_SUBSCRIPTIONS.map(({ merchant, amountCents, billingDay }) => ({
-      userId: granate.id,
+      userId: mainUser.id,
       merchant,
       amountCents,
       currency: "ARS" as const,

@@ -1,6 +1,6 @@
 # Decisiones técnicas
 
-Por qué GranaBank está hecho como está. Cada sección dice primero la decisión y después el motivo.
+Por qué Vuelto está hecho como está. Cada sección dice primero la decisión y después el motivo.
 
 ## Dinero
 
@@ -108,7 +108,7 @@ Vitest corre tests unitarios para las reglas puras y tests de integración contr
 | Acceso a datos | Cada consulta filtra por `account.userId` | Un usuario no puede leer otra cuenta adivinando un id. |
 | Búsqueda y filtros | Guardados en la URL | Sobreviven a una recarga y a la vuelta desde la página de detalle. |
 | Carga | Límites de Suspense con esqueletos | El layout de la pantalla aparece al instante y los datos llegan después. |
-| Pantalla de detalle | Página en `/movimientos/[id]` | La pide la consigna y falta en Figma. Tiene URL y estados naturales de carga y de no encontrado. |
+| Pantalla de detalle | Página en `/movimientos/[id]` | Tiene URL y estados naturales de carga y de no encontrado. |
 | Librerías de validación | Ninguna | Los filtros y los montos se interpretan con funciones chicas y testeadas. |
 | Transferencias | Una transacción de base que bloquea ambas cuentas con `SELECT … FOR UPDATE` en orden de id | Las transferencias concurrentes no pueden dejar una cuenta en negativo, y dos usuarios que se envían dinero mutuamente no pueden bloquearse. Las restricciones `CHECK` de la base mantienen los saldos no negativos aunque el código tenga un error. |
 | Doble envío | Una clave de idempotencia generada cuando se renderiza la pantalla de confirmación | Repetir el pedido devuelve la primera transferencia, así que un reintento nunca cobra dos veces. La misma clave con otro monto u otro destinatario se rechaza. |

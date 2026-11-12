@@ -20,8 +20,8 @@ describe("parseTheme", () => {
 });
 
 describe("theme storage", () => {
-  it("stores the choice under grana-theme", () => {
-    expect(THEME_STORAGE_KEY).toBe("grana-theme");
+  it("stores the choice under vuelto-theme", () => {
+    expect(THEME_STORAGE_KEY).toBe("vuelto-theme");
   });
 
   it("offers light first, then dark", () => {

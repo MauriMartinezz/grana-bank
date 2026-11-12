@@ -21,10 +21,10 @@ export default function LoginPage() {
       <div className="mb-8 flex flex-col items-center text-center">
         <Image src="/logo.png" alt="" width={72} height={72} unoptimized />
         <h1 className="mt-3 text-[40px] leading-tight font-bold text-garnet">
-          GranaBank
+          Vuelto
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Con cada compra, sumás orgullo granate
+          Tu plata, sin vueltas
         </p>
       </div>
       <LoginForm />

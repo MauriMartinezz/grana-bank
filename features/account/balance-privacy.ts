@@ -4,7 +4,7 @@
  * the mask and the amount never shows for a moment before hiding.
  */
 
-export const BALANCE_STORAGE_KEY = "grana-balance";
+export const BALANCE_STORAGE_KEY = "vuelto-balance";
 export const BALANCE_MASK = "*****";
 
 /** Only a stored "hidden" hides the balance. */

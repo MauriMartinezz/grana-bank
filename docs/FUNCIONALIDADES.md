@@ -1,6 +1,6 @@
 # Funcionalidades
 
-Qué hace GranaBank, pantalla por pantalla. Para los usuarios de prueba y los recorridos paso a paso, mirá [DEMO.md](DEMO.md); para los motivos detrás de la implementación, [DECISIONES.md](DECISIONES.md).
+Qué hace Vuelto, pantalla por pantalla. Para los usuarios de prueba y los recorridos paso a paso, mirá [DEMO.md](DEMO.md); para los motivos detrás de la implementación, [DECISIONES.md](DECISIONES.md).
 
 Las funcionalidades marcadas como **demo** se guardan y se muestran, pero nunca mueven dinero.
 
@@ -77,7 +77,7 @@ Las funcionalidades marcadas como **demo** se guardan y se muestran, pero nunca 
 |------|------------|
 | Colores | Tomados de exportaciones PNG, así que son aproximaciones cercanas |
 | "Subscripción" | Corregido a "Suscripción", igual que "Pago de suscripción" en el mismo diseño |
-| Campana | La consigna no le da comportamiento; abre Notificaciones, con la cantidad sin leer |
+| Campana | Abre Notificaciones, con la cantidad sin leer |
 | Varias tarjetas | El diseño muestra una sola tarjeta. Con varias, el saldo aparece una vez y las tarjetas siguen en un carrusel |
 | Logo | Recortado de una exportación PNG. Reemplazá `public/logo.png` por el vector original |
 

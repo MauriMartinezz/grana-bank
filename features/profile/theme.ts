@@ -4,7 +4,7 @@ export const THEMES = ["light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
 
 /** The localStorage key that keeps this device's choice. */
-export const THEME_STORAGE_KEY = "grana-theme";
+export const THEME_STORAGE_KEY = "vuelto-theme";
 
 /** Reads a stored value: anything other than a known theme means light. */
 export function parseTheme(value: string | null | undefined): Theme {

@@ -41,7 +41,7 @@ function SideBar({ pathname }: { pathname: string | null }) {
     >
       <Link href="/inicio" className="mb-4 flex items-center gap-2 rounded-xl px-3 py-2">
         <Image src="/logo.png" alt="" width={32} height={32} unoptimized />
-        <span className="font-serif text-lg font-bold text-garnet">GranaBank</span>
+        <span className="font-serif text-lg font-bold text-garnet">Vuelto</span>
       </Link>
       {NAV_LINKS.filter((link) => link.href !== PROFILE_HREF).map((link) => (
         <NavLink key={link.href} link={link} pathname={pathname} />

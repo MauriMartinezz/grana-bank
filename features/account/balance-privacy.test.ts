@@ -16,7 +16,7 @@ describe("parseBalanceHidden", () => {
 
   it("masks the balance with five asterisks", () => {
     expect(BALANCE_MASK).toBe("*****");
-    expect(BALANCE_STORAGE_KEY).toBe("grana-balance");
+    expect(BALANCE_STORAGE_KEY).toBe("vuelto-balance");
   });
 });
 

@@ -20,19 +20,19 @@ jobs:
       db:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: grana
-          POSTGRES_PASSWORD: grana
-          POSTGRES_DB: grana_bank
+          POSTGRES_USER: vuelto
+          POSTGRES_PASSWORD: vuelto
+          POSTGRES_DB: vuelto
         ports:
           - 5433:5432
         options: >-
-          --health-cmd "pg_isready -U grana -d grana_bank"
+          --health-cmd "pg_isready -U vuelto -d vuelto"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 15
 
     env:
-      DATABASE_URL: postgresql://grana:grana@localhost:5433/grana_bank
+      DATABASE_URL: postgresql://vuelto:vuelto@localhost:5433/vuelto
 
     steps:
       - uses: actions/checkout@v4

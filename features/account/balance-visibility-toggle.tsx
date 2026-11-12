@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 import { EyeIcon, EyeOffIcon } from "@/components/icons";
 import { BALANCE_STORAGE_KEY, parseBalanceHidden } from "./balance-privacy";
 
-const CHANGE_EVENT = "grana-balance-change";
+const CHANGE_EVENT = "vuelto-balance-change";
 
 function readHidden() {
   // The attribute is the source of truth: the head script set it, and it keeps

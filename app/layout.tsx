@@ -18,8 +18,8 @@ const robotoSlab = Roboto_Slab({
 });
 
 export const metadata: Metadata = {
-  title: { default: "GranaBank", template: "%s · GranaBank" },
-  description: "Con cada compra, sumás orgullo granate",
+  title: { default: "Vuelto", template: "%s · Vuelto" },
+  description: "Tu plata, sin vueltas",
 };
 
 export const viewport: Viewport = {

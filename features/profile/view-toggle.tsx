@@ -4,7 +4,7 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 import { VIEWS, VIEW_STORAGE_KEY, type View, parseView } from "@/features/profile/view";
 
 const LABELS: Record<View, string> = { auto: "Automática", desktop: "Escritorio", mobile: "Móvil" };
-const CHANGE_EVENT = "grana-view-change";
+const CHANGE_EVENT = "vuelto-view-change";
 
 // The choice for this visit when storage is blocked.
 let unsavedView: View | null = null;

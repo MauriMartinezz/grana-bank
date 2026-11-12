@@ -1,10 +1,10 @@
-# GranaBank
+# Vuelto
 
-[![CI](https://github.com/MauriMartinezz/grana-bank/actions/workflows/ci.yml/badge.svg)](https://github.com/MauriMartinezz/grana-bank/actions/workflows/ci.yml)
+[![CI](https://github.com/MauriMartinezz/vuelto/actions/workflows/ci.yml/badge.svg)](https://github.com/MauriMartinezz/vuelto/actions/workflows/ci.yml)
 
-**Demo:** [_LINK_](https://github.com/MauriMartinezz/grana-bank)
+**Demo:** [_LINK_](https://github.com/MauriMartinezz/vuelto)
 
-Prueba técnica realizada para el Club Atlético Lanús hecha en NextJS + Postgres simulando una billetera virtual. 
+Billetera virtual hecha con Next.js + Postgres: cuentas en pesos y dólares, transferencias, tarjetas, suscripciones y más.
 
 
 ## Documentación
@@ -89,7 +89,7 @@ Instalá esto antes de empezar:
 | [Docker](https://docs.docker.com/get-docker/) con Compose v2 | Docker Desktop, o Docker Engine con el plugin Compose | Corre PostgreSQL | `docker compose version` |
 | Git | cualquiera | Clona el repositorio | `git --version` |
 
-Los puertos **3000** (la app) y **5433** (PostgreSQL) tienen que estar libres. También necesitás la contraseña del usuario principal que figura en la consigna del desafío: el seed la lee de `SEED_USER_PASSWORD` y nunca se guarda en el repositorio.
+Los puertos **3000** (la app) y **5433** (PostgreSQL) tienen que estar libres. También necesitás elegir una contraseña para los usuarios demo: el seed la lee de `SEED_USER_PASSWORD` y nunca se guarda en el repositorio.
 
 Corepack viene con Node.js; si falta `pnpm`, corré `corepack enable` una vez.
 
@@ -97,8 +97,8 @@ Corepack viene con Node.js; si falta `pnpm`, corré `corepack enable` una vez.
 
 ```bash
 # 1. Obtener el código
-git clone git@github.com:MauriMartinezz/grana-bank.git
-cd grana-bank
+git clone git@github.com:MauriMartinezz/vuelto.git
+cd vuelto
 
 # 2. Configurar el entorno (los valores por defecto sirven para la base de Docker)
 cp .env.example .env
@@ -113,13 +113,13 @@ pnpm db:up
 pnpm db:migrate
 
 # 6. Cargar los datos de demo: usuarios, cuentas, tarjetas, servicios, promociones
-SEED_USER_PASSWORD='<contraseña de la consigna>' pnpm db:seed
+SEED_USER_PASSWORD='<una contraseña a elección>' pnpm db:seed
 
 # 7. Levantar la app
 pnpm dev
 ```
 
-Abrí http://localhost:3000, mejor en una vista de celular (herramientas del navegador → modo dispositivo) o elegí **Perfil → Vista → Escritorio**, e iniciá sesión como `soygranate@clublanus.com` con la contraseña de la consigna.
+Abrí http://localhost:3000, mejor en una vista de celular (herramientas del navegador → modo dispositivo) o elegí **Perfil → Vista → Escritorio**, e iniciá sesión como `lucia.fernandez@vuelto.test` con la contraseña que pasaste en `SEED_USER_PASSWORD`.
 
 Después de traer cambios que tocan `prisma/`, corré `pnpm db:migrate` y reiniciá `pnpm dev`: un servidor en marcha mantiene el cliente de Prisma que cargó al iniciar.
 
@@ -127,7 +127,7 @@ Después de traer cambios que tocan `prisma/`, corré `pnpm db:migrate` y reinic
 
 | Variable | Obligatoria | Valor en `.env.example` | Para qué |
 |----------|-------------|-------------------------|----------|
-| `DATABASE_URL` | Sí | `postgresql://grana:grana@localhost:5433/grana_bank` | La base de Docker de `docker-compose.yml` |
+| `DATABASE_URL` | Sí | `postgresql://vuelto:vuelto@localhost:5433/vuelto` | La base de Docker de `docker-compose.yml` |
 | `SEED_USER_PASSWORD` | Solo para `pnpm db:seed` | no está: se pasa en el comando | Contraseña de todos los usuarios del seed |
 | `CRON_SECRET` | No | no está: agregala en `.env` | Secreto Bearer de `/api/pagos-agendados`; sin él, el endpoint rechaza todo |
 
@@ -161,7 +161,7 @@ Sin secreto, el botón **Procesar pagos agendados**, al final de Servicios, ejec
 
 ## Probarlo
 
-Iniciá sesión como `soygranate@clublanus.com` con la contraseña de la consigna. El seed también crea a Juan Perez (`juan.perez`, `juan.perez.usd`) y a Martin Bozzini (`martin.bozzini`) para recibir transferencias, y la "Cuenta de prueba" que alimenta **Ingresar dinero**. [docs/DEMO.md](docs/DEMO.md) lista cada usuario, cuenta, tarjeta y saldo, a quién se le puede enviar dinero y un recorrido paso a paso por cada flujo.
+Iniciá sesión como `lucia.fernandez@vuelto.test` con la contraseña que pasaste en `SEED_USER_PASSWORD`. El seed también crea a Juan Perez (`juan.perez`, `juan.perez.usd`) y a Martín Gómez (`martin.gomez`) para recibir transferencias, y la "Cuenta de prueba" que alimenta **Ingresar dinero**. [docs/DEMO.md](docs/DEMO.md) lista cada usuario, cuenta, tarjeta y saldo, a quién se le puede enviar dinero y un recorrido paso a paso por cada flujo.
 
 ## Estructura del proyecto
 

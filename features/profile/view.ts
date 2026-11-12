@@ -9,7 +9,7 @@ export const VIEWS = ["auto", "desktop", "mobile"] as const;
 export type View = (typeof VIEWS)[number];
 
 /** The localStorage key that keeps this device's choice. */
-export const VIEW_STORAGE_KEY = "grana-view";
+export const VIEW_STORAGE_KEY = "vuelto-view";
 
 /** Reads a stored value: anything other than a known view means automatic. */
 export function parseView(value: string | null | undefined): View {

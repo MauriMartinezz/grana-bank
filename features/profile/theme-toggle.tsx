@@ -4,7 +4,7 @@ import { useLayoutEffect, useSyncExternalStore } from "react";
 import { THEMES, THEME_STORAGE_KEY, type Theme, parseTheme } from "@/features/profile/theme";
 
 const LABELS: Record<Theme, string> = { light: "Claro", dark: "Oscuro" };
-const CHANGE_EVENT = "grana-theme-change";
+const CHANGE_EVENT = "vuelto-theme-change";
 
 // The choice for this visit when storage is blocked.
 let unsavedTheme: Theme | null = null;
